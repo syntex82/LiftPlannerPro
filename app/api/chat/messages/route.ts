@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -7,23 +6,58 @@ import { prisma } from '@/lib/prisma'
 // In-memory store for real-time updates
 const messageSubscribers = new Map<string, Set<(data: any) => void>>()
 
+// Map room IDs to group slugs
+const roomIdToSlug: Record<number, string> = {
+  1: 'general',
+  2: 'project-discussion',
+  3: 'technical-support',
+  4: 'live-video',
+  5: 'announcements'
+}
+
 async function getMessagesFromDB(roomId: number) {
   try {
+    // Try to get messages from GroupMessage first (new system)
+    const slug = roomIdToSlug[roomId]
+    if (slug) {
+      try {
+        const group = await prisma.group.findUnique({
+          where: { slug },
+          select: { id: true }
+        })
+
+        if (group) {
+          const messages = await prisma.groupMessage.findMany({
+            where: { groupId: group.id, isDeleted: false },
+            orderBy: { createdAt: 'asc' },
+            take: 50,
+            include: {
+              sender: { select: { id: true, name: true, email: true, image: true } }
+            }
+          })
+
+          return messages.map(msg => ({
+            id: msg.id,
+            content: msg.content,
+            username: msg.sender?.name || msg.sender?.email || 'Unknown',
+            messageType: msg.messageType,
+            created_at: msg.createdAt.toISOString(),
+            replyTo: msg.replyToId,
+            avatar: msg.sender?.image
+          }))
+        }
+      } catch (e) {
+        // Group table might not exist yet
+      }
+    }
+
+    // Fallback to old ChatMessage system
     const messages = await prisma.chatMessage.findMany({
-      where: {
-        roomId: roomId
-      },
-      orderBy: {
-        createdAt: 'asc'
-      },
+      where: { roomId },
+      orderBy: { createdAt: 'asc' },
       take: 50,
       include: {
-        user: {
-          select: {
-            name: true,
-            email: true
-          }
-        }
+        user: { select: { name: true, email: true } }
       }
     })
 
@@ -43,16 +77,55 @@ async function getMessagesFromDB(roomId: number) {
 
 async function insertMessageToDB({ roomId, userId, content, messageType, replyTo }: any) {
   try {
-    // Get user by email to get their ID
+    // Get user by email
     const user = await prisma.user.findUnique({
       where: { email: userId },
-      select: { id: true, name: true, email: true }
+      select: { id: true, name: true, email: true, image: true }
     })
 
     if (!user) {
       throw new Error('User not found')
     }
 
+    // Try to insert into GroupMessage first (new system)
+    const slug = roomIdToSlug[roomId]
+    if (slug) {
+      try {
+        const group = await prisma.group.findUnique({
+          where: { slug },
+          select: { id: true }
+        })
+
+        if (group) {
+          const message = await prisma.groupMessage.create({
+            data: {
+              groupId: group.id,
+              senderId: user.id,
+              content,
+              messageType: messageType || 'text',
+              replyToId: replyTo
+            },
+            include: {
+              sender: { select: { id: true, name: true, email: true, image: true } }
+            }
+          })
+
+          return {
+            id: message.id,
+            content: message.content,
+            username: message.sender?.name || message.sender?.email || 'Unknown',
+            messageType: message.messageType,
+            created_at: message.createdAt.toISOString(),
+            replyTo: message.replyToId,
+            avatar: message.sender?.image
+          }
+        }
+      } catch (e) {
+        // Group table might not exist yet
+      }
+    }
+
+    // Fallback to old ChatMessage system
     const message = await prisma.chatMessage.create({
       data: {
         content,
@@ -62,12 +135,7 @@ async function insertMessageToDB({ roomId, userId, content, messageType, replyTo
         userId: user.id
       },
       include: {
-        user: {
-          select: {
-            name: true,
-            email: true
-          }
-        }
+        user: { select: { name: true, email: true } }
       }
     })
 
@@ -86,7 +154,7 @@ async function insertMessageToDB({ roomId, userId, content, messageType, replyTo
 }
 
 // Helper functions
-async function getUserFromSession(request: NextRequest) {
+async function getUserFromSession() {
   try {
     const session = await getServerSession(authOptions)
     return session?.user?.email || 'anonymous'
@@ -183,7 +251,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from session/auth
-    const userId = await getUserFromSession(request)
+    const userId = await getUserFromSession()
     console.log('👤 User from session:', userId)
 
     if (!userId || userId === 'anonymous') {
@@ -247,7 +315,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get user from session
-    const userId = await getUserFromSession(request)
+    const userId = await getUserFromSession()
     if (!userId || userId === 'anonymous') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

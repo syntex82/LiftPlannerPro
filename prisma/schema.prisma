@@ -56,6 +56,24 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Enhanced Profile Fields (like NodePress)
+  username        String?   @unique
+  headline        String?            // Professional headline
+  about           String?   @db.Text // About me / bio
+  jobTitle        String?
+  location        String?
+  website         String?
+  phone           String?
+  coverImage      String?            // Profile cover/banner image
+  skills          String[]  @default([])
+  interests       String[]  @default([])
+  socialLinks     Json?              // { linkedin, twitter, github, etc. }
+  isPublic        Boolean   @default(true)
+  followersCount  Int       @default(0)
+  followingCount  Int       @default(0)
+  onlineStatus    String    @default("offline") // online, away, busy, offline
+  lastSeenAt      DateTime?
+
   accounts              Account[]
   sessions              Session[]
   projects              Project[]
@@ -78,6 +96,17 @@ model User {
   maintenanceSchedules MaintenanceSchedule[]
   equipmentUsageLogs  EquipmentUsageLog[]
   profile             UserProfile?
+
+  // Social Features Relations
+  followers           UserFollow[]       @relation("UserFollow_followingIdToUser")
+  following           UserFollow[]       @relation("UserFollow_followerIdToUser")
+  conversations1      Conversation[]     @relation("Conversation_participant1IdToUser")
+  conversations2      Conversation[]     @relation("Conversation_participant2IdToUser")
+  directMessages      DirectMessage[]
+  ownedGroups         Group[]
+  groupMemberships    GroupMember[]
+  groupMessages       GroupMessage[]
+  activities          Activity[]
 }
 
 model UserProfile {
@@ -661,4 +690,200 @@ enum PaymentStatus {
   PARTIALLY_PAID
   REFUNDED
   FAILED
+}
+
+// ============================================
+// SOCIAL FEATURES (like NodePress)
+// ============================================
+
+// User Following System
+model UserFollow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User     @relation("UserFollow_followerIdToUser", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollow_followingIdToUser", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("user_follows")
+}
+
+// Direct Messaging - Conversations
+model Conversation {
+  id             String    @id @default(cuid())
+  participant1Id String
+  participant2Id String
+  lastMessageAt  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  participant1   User            @relation("Conversation_participant1IdToUser", fields: [participant1Id], references: [id], onDelete: Cascade)
+  participant2   User            @relation("Conversation_participant2IdToUser", fields: [participant2Id], references: [id], onDelete: Cascade)
+  messages       DirectMessage[]
+
+  @@unique([participant1Id, participant2Id])
+  @@index([lastMessageAt])
+  @@index([participant1Id])
+  @@index([participant2Id])
+  @@map("conversations")
+}
+
+// Direct Messages
+model DirectMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String       @db.Text
+  messageType    String       @default("text") // text, image, file, gif, video_call
+  media          Json?        @default("[]")   // Array of media URLs
+  isRead         Boolean      @default(false)
+  readAt         DateTime?
+  isEdited       Boolean      @default(false)
+  editedAt       DateTime?
+  isDeleted      Boolean      @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@index([isRead])
+  @@index([senderId])
+  @@map("direct_messages")
+}
+
+// Groups for Team Chat, Support, Project Discussions
+model Group {
+  id          String          @id @default(cuid())
+  name        String
+  slug        String          @unique
+  description String?
+  icon        String?         // Icon name from lucide
+  type        GroupType       @default(PUBLIC)
+  category    GroupCategory   @default(TEAM)
+  ownerId     String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  owner       User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members     GroupMember[]
+  messages    GroupMessage[]
+
+  @@index([createdAt])
+  @@index([ownerId])
+  @@index([slug])
+  @@index([type])
+  @@index([category])
+  @@map("groups")
+}
+
+enum GroupType {
+  PUBLIC      // Anyone can join
+  PRIVATE     // Invite only
+  SYSTEM      // System-created groups (like Support)
+}
+
+enum GroupCategory {
+  TEAM        // General team discussions
+  PROJECT     // Project-specific discussions
+  SUPPORT     // Technical support
+  ANNOUNCEMENT // Announcements (admin only posting)
+  VIDEO       // Video call groups
+}
+
+// Group Members
+model GroupMember {
+  id       String          @id @default(cuid())
+  groupId  String
+  userId   String
+  role     GroupMemberRole @default(MEMBER)
+  isMuted  Boolean         @default(false)
+  isBanned Boolean         @default(false)
+  joinedAt DateTime        @default(now())
+
+  group    Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([joinedAt])
+  @@index([userId])
+  @@map("group_members")
+}
+
+enum GroupMemberRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+// Group Messages
+model GroupMessage {
+  id          String   @id @default(cuid())
+  groupId     String
+  senderId    String
+  content     String   @db.Text
+  messageType String   @default("text") // text, image, file, gif, system
+  media       Json?    @default("[]")   // Array of media URLs
+  replyToId   String?                    // ID of message being replied to
+  isPinned    Boolean  @default(false)
+  isEdited    Boolean  @default(false)
+  editedAt    DateTime?
+  isDeleted   Boolean  @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender      User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([groupId])
+  @@index([senderId])
+  @@index([isPinned])
+  @@map("group_messages")
+}
+
+// User Activity Feed
+model Activity {
+  id          String       @id @default(cuid())
+  userId      String
+  type        ActivityType
+  targetType  String?      // group, project, user, etc.
+  targetId    String?      // ID of the related content
+  title       String
+  description String?
+  link        String?
+  imageUrl    String?
+  metadata    Json?
+  isPublic    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@index([isPublic])
+  @@map("activities")
+}
+
+enum ActivityType {
+  JOINED_GROUP
+  LEFT_GROUP
+  SENT_MESSAGE
+  STARTED_VIDEO_CALL
+  COMPLETED_PROJECT
+  EARNED_CERTIFICATE
+  UPDATED_PROFILE
+  FOLLOWED_USER
+  CREATED_PROJECT
+  SHARED_FILE
 }

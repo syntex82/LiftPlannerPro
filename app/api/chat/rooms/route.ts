@@ -1,97 +1,120 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
-// In-memory rooms storage (replace with database later)
-const roomsStore = [
-  { id: 1, name: 'General', type: 'channel', icon: 'hash', unread_count: 0, description: 'General discussion for all team members' },
-  { id: 2, name: 'Project Discussion', type: 'channel', icon: 'folder', unread_count: 0, description: 'Discuss lift plans and CAD projects' },
-  { id: 3, name: 'Technical Support', type: 'channel', icon: 'help-circle', unread_count: 0, description: 'Get help with technical issues' },
-  { id: 4, name: 'Live Video', type: 'channel', icon: 'video', unread_count: 0, description: 'Join video calls and screen sharing sessions' },
-  { id: 5, name: 'Announcements', type: 'channel', icon: 'megaphone', unread_count: 0, description: 'Important announcements and updates' }
+// Default rooms (fallback if database groups don't exist)
+const defaultRooms = [
+  { id: 1, name: 'General', type: 'channel', icon: 'hash', unread_count: 0, description: 'General discussion for all team members', category: 'TEAM' },
+  { id: 2, name: 'Project Discussion', type: 'channel', icon: 'folder', unread_count: 0, description: 'Discuss lift plans and CAD projects', category: 'PROJECT' },
+  { id: 3, name: 'Technical Support', type: 'channel', icon: 'help-circle', unread_count: 0, description: 'Get help with technical issues', category: 'SUPPORT' },
+  { id: 4, name: 'Live Video', type: 'channel', icon: 'video', unread_count: 0, description: 'Join video calls and screen sharing sessions', category: 'VIDEO' },
+  { id: 5, name: 'Announcements', type: 'channel', icon: 'megaphone', unread_count: 0, description: 'Important announcements and updates', category: 'ANNOUNCEMENT' }
 ]
 
-// Helper functions
-async function getUserFromSession(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    return session?.user?.email || null
-  } catch (error) {
-    console.error('Session error:', error)
-    return null
-  }
-}
-
-async function getUserChatRooms(userId: string) {
-  // Return default rooms for now
-  return roomsStore
-}
-
-async function createChatRoom({ name, type, projectId, createdBy }: any) {
-  const newRoom = {
-    id: roomsStore.length + 1,
-    name,
-    type: type || 'channel',
-    icon: 'hash',
-    unread_count: 0,
-    description: `Chat room created by ${createdBy}`,
-    projectId,
-    createdBy
-  }
-  roomsStore.push(newRoom as any)
-  return newRoom
-}
-
-async function addRoomParticipant(roomId: number, userId: string) {
-  // In a real implementation, this would add the user to the room participants table
-  console.log(`Added user ${userId} to room ${roomId}`)
-}
-
-// Get user's chat rooms
+// Get user's chat rooms (from database groups)
 export async function GET(request: NextRequest) {
   try {
-    // Get user from session
-    const userId = await getUserFromSession(request)
-    if (!userId) {
-      // Return default rooms for anonymous users (array directly)
-      return NextResponse.json(roomsStore)
+    const session = await getServerSession(authOptions)
+
+    // Try to fetch from database
+    try {
+      const groups = await prisma.group.findMany({
+        where: {
+          OR: [
+            { type: 'PUBLIC' },
+            { type: 'SYSTEM' },
+            ...(session?.user?.id ? [{ members: { some: { userId: session.user.id } } }] : [])
+          ]
+        },
+        include: {
+          messages: {
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+            select: { content: true, createdAt: true }
+          },
+          _count: { select: { members: true, messages: true } }
+        },
+        orderBy: { createdAt: 'asc' }
+      })
+
+      if (groups.length > 0) {
+        // Map database groups to room format
+        const rooms = groups.map((group, index) => ({
+          id: index + 1,
+          dbId: group.id,
+          name: group.name,
+          type: 'channel',
+          icon: group.icon || 'hash',
+          unread_count: 0,
+          description: group.description,
+          category: group.category,
+          memberCount: group._count.members,
+          messageCount: group._count.messages,
+          lastMessage: group.messages[0]?.content || null,
+          lastMessageTime: group.messages[0]?.createdAt?.toISOString() || null
+        }))
+        return NextResponse.json(rooms)
+      }
+    } catch (dbError) {
+      // Database might not have the Group table yet, continue with fallback
+      console.log('Groups table not found, using fallback rooms')
     }
 
-    // Get user's chat rooms
-    const rooms = await getUserChatRooms(userId)
-
-    // Return array directly for compatibility
-    return NextResponse.json(rooms)
+    // Fallback to default rooms
+    return NextResponse.json(defaultRooms)
 
   } catch (error) {
     console.error('Get chat rooms error:', error)
-    return NextResponse.json({ error: 'Failed to fetch rooms' }, { status: 500 })
+    return NextResponse.json(defaultRooms)
   }
 }
 
 // Create a new chat room
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { name, type = 'general', projectId } = body
-
-    const userId = await getUserFromSession(request)
-    if (!userId) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Create new chat room
-    const newRoom = await createChatRoom({
-      name,
-      type,
-      projectId,
-      createdBy: userId
+    const { name, description, icon = 'hash', type = 'PUBLIC', category = 'TEAM' } = await request.json()
+
+    if (!name?.trim()) {
+      return NextResponse.json({ error: 'Room name required' }, { status: 400 })
+    }
+
+    // Generate slug from name
+    const slug = name.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
+
+    // Create group in database
+    const group = await prisma.group.create({
+      data: {
+        name: name.trim(),
+        slug,
+        description: description?.trim() || null,
+        icon,
+        type,
+        category,
+        ownerId: session.user.id,
+        members: {
+          create: { userId: session.user.id, role: 'OWNER' }
+        }
+      }
     })
 
-    // Add creator as participant
-    await addRoomParticipant(newRoom.id, userId)
-
-    return NextResponse.json({ room: newRoom })
+    return NextResponse.json({
+      id: 999, // Placeholder ID for frontend
+      dbId: group.id,
+      name: group.name,
+      type: 'channel',
+      icon: group.icon,
+      unread_count: 0,
+      description: group.description,
+      category: group.category
+    })
 
   } catch (error) {
     console.error('Create chat room error:', error)
