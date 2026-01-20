@@ -87,14 +87,14 @@ export default function Hero() {
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Button>
               </Link>
-              <Link href="/features">
+              <Link href="/about">
                 <Button
                   size="lg"
                   variant="outline"
                   className="group border-slate-600 text-white hover:bg-white/5 hover:border-slate-400 px-8 py-6 text-lg font-semibold transition-all duration-300 bg-transparent rounded-xl"
                 >
                   <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                  Watch Demo
+                  Learn More
                 </Button>
               </Link>
             </div>
