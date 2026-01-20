@@ -11,7 +11,7 @@ import { DeviceNotification, QuickDeviceNotification } from "@/components/ui/dev
 import { useDeviceDetection, canHandleFeature } from "@/lib/deviceDetection"
 import IssueReporter from "@/components/issue-reporter"
 import TensionCalculator from "@/components/tension-calculator"
-import ChatWindow from "@/components/Chat/ChatWindow"
+import TeamChat from "@/components/Chat/TeamChat"
 import ProjectCreationModal from "@/components/project-creation-modal"
 import ProjectCategories from "@/components/project-categories"
 import LiftPlanningAI from "@/components/lift-planning-ai"
@@ -786,9 +786,9 @@ export default function DashboardPage() {
             <MessageSquare className="w-5 h-5 text-cyan-400" />
             Team Chat
           </h2>
-          <div className="dashboard-card overflow-hidden" data-chat-section>
-            <div className="h-96">
-              <ChatWindow />
+          <div className="overflow-hidden" data-chat-section>
+            <div className="h-[600px]">
+              <TeamChat />
             </div>
           </div>
         </div>
