@@ -13,6 +13,10 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || ''
 
 export async function POST(request: NextRequest) {
   try {
+    if (!stripe || !webhookSecret) {
+      return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 })
+    }
+
     const body = await request.text()
     const signature = request.headers.get('stripe-signature')!
 
@@ -97,6 +101,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
 async function handleSubscriptionCheckout(session: Stripe.Checkout.Session, customerId: string, subscriptionId: string) {
   try {
+    if (!stripe) return
 
     // Get customer details from Stripe
     const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer
@@ -248,6 +253,7 @@ async function handleCustomerCreated(customer: Stripe.Customer) {
 
 async function updateUserSubscription(subscription: Stripe.Subscription) {
   try {
+    if (!stripe) return
     const customerId = subscription.customer as string
     const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer
 
