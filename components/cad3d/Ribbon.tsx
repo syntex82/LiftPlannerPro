@@ -55,32 +55,56 @@ export default function Ribbon() {
       <div className="h-28 bg-gradient-to-b from-gray-800 to-gray-900 border-b-2 border-gray-700 pointer-events-auto">
         <div className="h-full flex items-stretch pointer-events-auto w-full">
           {activeTab==='file' && (
-            <div className="flex flex-col border-r border-gray-600 px-4 py-2 min-w-fit">
-              <div className="text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wide">Project</div>
-              <div className="flex gap-2">
-                <button className="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-gray-700/60 min-w-[70px] h-16 text-gray-300" title="New project (clears current scene)" onClick={()=>fire({action:'reset'})}>
-                  <FilePlus className="mb-1 opacity-80" />
-                  <span className="text-[10px] font-semibold">New</span>
-                </button>
-                <button className="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-gray-700/60 min-w-[70px] h-16 text-gray-300" title="Open project (.cad3d.json)" onClick={onOpen}>
-                  <FolderOpen className="mb-1 opacity-80" />
-                  <span className="text-[10px] font-semibold">Open</span>
-                </button>
-                <button className="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-gray-700/60 min-w-[70px] h-16 text-gray-300" title="Save project as .cad3d.json" onClick={onSave}>
-                  <Save className="mb-1 opacity-80" />
-                  <span className="text-[10px] font-semibold">Save</span>
-                </button>
+            <div className="flex">
+              {/* Project Section */}
+              <div className="flex flex-col border-r border-gray-600 px-3 py-2">
+                <div className="text-[10px] font-semibold text-gray-400 mb-1 uppercase tracking-wide">Project</div>
+                <div className="flex gap-1 flex-1 items-center">
+                  <button className="flex flex-col items-center justify-center p-2 rounded hover:bg-gray-700/60 w-14 h-14 text-gray-300" title="New project (clears current scene)" onClick={()=>fire({action:'reset'})}>
+                    <FilePlus className="w-5 h-5 mb-0.5 opacity-80" />
+                    <span className="text-[9px] font-medium">New</span>
+                  </button>
+                  <button className="flex flex-col items-center justify-center p-2 rounded hover:bg-gray-700/60 w-14 h-14 text-gray-300" title="Open project (.cad3d.json)" onClick={onOpen}>
+                    <FolderOpen className="w-5 h-5 mb-0.5 opacity-80" />
+                    <span className="text-[9px] font-medium">Open</span>
+                  </button>
+                  <button className="flex flex-col items-center justify-center p-2 rounded hover:bg-gray-700/60 w-14 h-14 text-gray-300" title="Save project as .cad3d.json" onClick={onSave}>
+                    <Save className="w-5 h-5 mb-0.5 opacity-80" />
+                    <span className="text-[9px] font-medium">Save</span>
+                  </button>
+                </div>
               </div>
-              <div className="text-xs font-semibold text-gray-300 mb-2 mt-3 uppercase tracking-wide">Library</div>
-              <div className="flex gap-2">
-                <button className="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-orange-700/60 min-w-[70px] h-16 text-orange-300" title="Load equipment from rigging library" onClick={()=>fire({action:'load-from-library'})}>
-                  <FolderOpen className="mb-1 opacity-80" />
-                  <span className="text-[10px] font-semibold">Load Lib</span>
-                </button>
-                <button className="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-orange-700/60 min-w-[70px] h-16 text-orange-300" title="Save selected objects to rigging library" onClick={()=>fire({action:'save-to-library'})}>
-                  <Package className="mb-1 opacity-80" />
-                  <span className="text-[10px] font-semibold">Save to Lib</span>
-                </button>
+              {/* Library Section */}
+              <div className="flex flex-col border-r border-gray-600 px-3 py-2">
+                <div className="text-[10px] font-semibold text-orange-400 mb-1 uppercase tracking-wide">Library</div>
+                <div className="flex gap-1 flex-1 items-center">
+                  <button className="flex flex-col items-center justify-center p-2 rounded hover:bg-orange-700/40 w-14 h-14 text-orange-300" title="Load equipment from rigging library" onClick={()=>fire({action:'load-from-library'})}>
+                    <FolderOpen className="w-5 h-5 mb-0.5 opacity-80" />
+                    <span className="text-[9px] font-medium">Load</span>
+                  </button>
+                  <button className="flex flex-col items-center justify-center p-2 rounded hover:bg-orange-700/40 w-14 h-14 text-orange-300" title="Save selected objects to rigging library" onClick={()=>fire({action:'save-to-library'})}>
+                    <Package className="w-5 h-5 mb-0.5 opacity-80" />
+                    <span className="text-[9px] font-medium">Save</span>
+                  </button>
+                </div>
+              </div>
+              {/* Export Section */}
+              <div className="flex flex-col border-r border-gray-600 px-3 py-2">
+                <div className="text-[10px] font-semibold text-gray-400 mb-1 uppercase tracking-wide">Export</div>
+                <div className="flex gap-1 flex-1 items-center">
+                  <button className="flex flex-col items-center justify-center p-2 rounded hover:bg-gray-700/60 w-14 h-14 text-gray-300" title="Export as STL" onClick={()=>fire({action:'export', data:'stl'})}>
+                    <BoxIcon className="w-5 h-5 mb-0.5 opacity-80" />
+                    <span className="text-[9px] font-medium">STL</span>
+                  </button>
+                  <button className="flex flex-col items-center justify-center p-2 rounded hover:bg-gray-700/60 w-14 h-14 text-gray-300" title="Export as OBJ" onClick={()=>fire({action:'export', data:'obj'})}>
+                    <BoxIcon className="w-5 h-5 mb-0.5 opacity-80" />
+                    <span className="text-[9px] font-medium">OBJ</span>
+                  </button>
+                  <button className="flex flex-col items-center justify-center p-2 rounded hover:bg-gray-700/60 w-14 h-14 text-gray-300" title="Export as GLTF" onClick={()=>fire({action:'export', data:'gltf'})}>
+                    <BoxIcon className="w-5 h-5 mb-0.5 opacity-80" />
+                    <span className="text-[9px] font-medium">GLTF</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
