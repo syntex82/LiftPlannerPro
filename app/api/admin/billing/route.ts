@@ -4,9 +4,12 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-07-30.basil',
-})
+// Only initialize Stripe if API key is available
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-07-30.basil',
+    })
+  : null
 
 // Admin email list
 const adminEmails = [
@@ -417,6 +420,9 @@ async function getBillingOverview() {
 
 async function getSubscriptionPlans() {
   try {
+    if (!stripe) {
+      return NextResponse.json([mockBillingData.subscriptionPlans])
+    }
     // Get products and prices from Stripe
     const [products, prices] = await Promise.all([
       stripe.products.list({ active: true }),
@@ -448,6 +454,9 @@ async function getSubscriptionPlans() {
 
 async function getRecentTransactions() {
   try {
+    if (!stripe) {
+      return NextResponse.json(mockBillingData.recentTransactions)
+    }
     const charges = await stripe.charges.list({
       limit: 20,
       expand: ['data.customer']
@@ -478,6 +487,9 @@ async function getRecentTransactions() {
 
 async function getRevenueHistory() {
   try {
+    if (!stripe) {
+      return NextResponse.json(mockBillingData.revenueHistory)
+    }
     // Get charges from last 12 months
     const twelveMonthsAgo = Math.floor(Date.now() / 1000) - (12 * 30 * 24 * 60 * 60)
 
