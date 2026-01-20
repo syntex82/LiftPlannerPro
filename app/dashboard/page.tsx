@@ -37,8 +37,14 @@ import {
   Smartphone,
   Monitor,
   MessageSquare,
-  Receipt, Move3d,
-  Pencil
+  Receipt,
+  Move3d,
+  Pencil,
+  Sparkles,
+  ArrowRight,
+  Zap,
+  Target,
+  LayoutDashboard
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -353,11 +359,15 @@ export default function DashboardPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <div className="text-white text-lg font-medium">Loading your workspace...</div>
-          <div className="text-slate-400 text-sm mt-1">Please wait</div>
+          <div className="relative w-20 h-20 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+            <div className="absolute inset-2 rounded-full border-4 border-cyan-500 border-b-transparent animate-spin" style={{ animationDirection: 'reverse', animationDuration: '0.8s' }}></div>
+          </div>
+          <div className="text-white text-xl font-semibold mb-2">Loading your workspace</div>
+          <div className="text-slate-400 text-sm">Preparing your lift planning tools...</div>
         </div>
       </div>
     )
@@ -383,7 +393,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Animated background elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-cyan-600/5 rounded-full blur-[100px]"></div>
+        <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-purple-600/5 rounded-full blur-[80px]"></div>
+      </div>
+
       {/* Device Notifications */}
       {showDeviceNotification && (
         <QuickDeviceNotification
@@ -393,523 +410,411 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="flex justify-between items-center h-14 sm:h-16">
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <Image src="/company-logo.png" alt="Lift Planner Pro" width={24} height={24} className="sm:w-8 sm:h-8 rounded-lg" />
-              <span className="text-white font-bold text-lg sm:text-xl hidden xs:block">Lift Planner Pro</span>
-              <span className="text-white font-bold text-lg sm:text-xl xs:hidden">LPP</span>
-              {/* Device indicator */}
-              <div className="hidden sm:flex items-center space-x-1 text-slate-400">
-                {deviceInfo.isMobile && <Smartphone className="w-4 h-4" />}
-                {deviceInfo.isDesktop && <Monitor className="w-4 h-4" />}
+      {/* Beautiful Header */}
+      <header className="relative z-10 border-b border-slate-800/50 backdrop-blur-xl bg-slate-900/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl blur opacity-30"></div>
+                <Image src="/company-logo.png" alt="Lift Planner Pro" width={36} height={36} className="relative rounded-xl" />
+              </div>
+              <div className="hidden sm:block">
+                <span className="text-white font-bold text-xl">Lift Planner Pro</span>
+                <span className="ml-2 px-2 py-0.5 text-xs bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-500/30 rounded-full text-blue-300">
+                  Dashboard
+                </span>
               </div>
             </div>
 
-            <div className="flex items-center space-x-1 sm:space-x-4">
-              <div className="hidden md:flex items-center space-x-2">
-                <User className="w-4 h-4 text-slate-400" />
-                <span className="text-white text-sm sm:text-base">{session.user?.name}</span>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* User info with avatar */}
+              <div className="hidden md:flex items-center space-x-3 px-3 py-1.5 rounded-full bg-slate-800/50 border border-slate-700/50">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm">
+                  {session.user?.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <span className="text-white text-sm font-medium">{session.user?.name}</span>
                 {getSubscriptionBadge(session.user?.subscription || 'free')}
               </div>
 
-              {/* Issue Reporter */}
-              <IssueReporter />
+              {/* Quick actions */}
+              <div className="flex items-center space-x-1">
+                <IssueReporter />
 
-              {/* Documentation & About Links - Hidden on mobile */}
-              <div className="hidden lg:flex items-center space-x-2">
-                <Link prefetch={false} href="/documentation">
-                  <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    Docs
+                <Link prefetch={false} href="/documentation" className="hidden lg:block">
+                  <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800/50">
+                    <BookOpen className="w-5 h-5" />
                   </Button>
                 </Link>
 
-                <Link prefetch={false} href="/about">
-                  <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                    <Info className="w-4 h-4 mr-2" />
-                    About
-                  </Button>
-                </Link>
-
-                {/* Admin Panel Link */}
                 {isAdminUser(session.user?.email) && (
-                  <Link prefetch={false} href="/admin">
-                    <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                      <Shield className="w-4 h-4 mr-2" />
-                      Admin Panel
+                  <Link prefetch={false} href="/admin" className="hidden lg:block">
+                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800/50">
+                      <Shield className="w-5 h-5" />
                     </Button>
                   </Link>
                 )}
-              </div>
 
-              {/* Mobile menu button */}
-              <div className="lg:hidden">
-                <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white p-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="text-slate-400 hover:text-white hover:bg-slate-800/50"
+                >
+                  <LogOut className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Sign Out</span>
                 </Button>
               </div>
-
-              <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-slate-300 hover:text-white">
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-        {/* Welcome Section */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-            Welcome back, {session.user?.name?.split(' ')[0]}!
-          </h1>
-          <p className="text-slate-400 text-sm sm:text-base">
-            Ready to plan your next lift? Create a new project or continue working on existing ones.
-          </p>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section with Stats */}
+        <div className="mb-10">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
+                Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">{session.user?.name?.split(' ')[0]}</span>
+              </h1>
+              <p className="text-slate-400 text-lg">
+                Ready to plan your next lift? Your workspace is ready.
+              </p>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="flex gap-4">
+              <div className="dashboard-stat">
+                <div className="text-2xl font-bold text-white">{projects.length}</div>
+                <div className="text-slate-400 text-sm">Projects</div>
+              </div>
+              <div className="dashboard-stat">
+                <div className="text-2xl font-bold text-green-400">Active</div>
+                <div className="text-slate-400 text-sm">Status</div>
+              </div>
+            </div>
+          </div>
+
           {/* Device info for mobile users */}
           {deviceInfo.isMobile && (
-            <div className="mt-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-              <p className="text-blue-300 text-sm">
-                📱 You're using a mobile device. Some features work best on desktop computers.
-              </p>
+            <div className="mt-6 p-4 bg-gradient-to-r from-blue-900/20 to-cyan-900/20 border border-blue-500/30 rounded-xl backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <Smartphone className="w-5 h-5 text-blue-400" />
+                <p className="text-blue-300 text-sm">
+                  You're on mobile. Some features work best on desktop computers.
+                </p>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {/* Quick Help Card */}
-          <Card className="lg:col-span-6 bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-500/50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <BookOpen className="w-8 h-8 text-blue-400" />
-                  <div>
-                    <h3 className="text-white font-semibold">New to Lift Planner Pro?</h3>
-                    <p className="text-slate-300 text-sm">Check out our comprehensive documentation and guides</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Link href="/documentation">
-                    <Button variant="outline" className="border-blue-500 text-blue-300 hover:bg-blue-500/20">
-                      <BookOpen className="w-4 h-4 mr-2" />
-                      Documentation
-                    </Button>
-                  </Link>
-                  <Link href="/about">
-                    <Button variant="outline" className="border-purple-500 text-purple-300 hover:bg-purple-500/20">
-                      <Info className="w-4 h-4 mr-2" />
-                      About
-                    </Button>
-                  </Link>
-                </div>
+        {/* Primary Actions - Beautiful Cards */}
+        <div className="mb-10">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-blue-400" />
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* New Project - Primary CTA */}
+            {/* New Project */}
+            <div
+              className="quick-action col-span-2 lg:col-span-1 bg-gradient-to-br from-blue-600/20 to-cyan-600/20 border-blue-500/30 hover:border-blue-400/50"
+              onClick={() => setShowProjectModal(true)}
+            >
+              <div className="quick-action-icon bg-gradient-to-br from-blue-500 to-cyan-500 text-white">
+                <Plus className="w-7 h-7" />
               </div>
-            </CardContent>
-          </Card>
+              <h3 className="text-white font-semibold">New Project</h3>
+              <p className="text-slate-400 text-xs mt-1">Start fresh</p>
+            </div>
+
+            {/* 2D CAD */}
+            <div
+              className="quick-action"
+              onClick={() => {
+                if (!canHandleFeature('cad-editor', deviceInfo)) {
+                  setShowDeviceNotification('CAD Editor works best on desktop computers.')
+                } else {
+                  window.location.href = '/cad'
+                }
+              }}
+            >
+              <div className="quick-action-icon bg-gradient-to-br from-green-500/20 to-emerald-500/20 text-green-400">
+                <Ruler className="w-6 h-6" />
+              </div>
+              <h3 className="text-white font-semibold">2D CAD</h3>
+              <p className="text-slate-400 text-xs mt-1">Draw plans</p>
+            </div>
+
+            {/* 3D CAD */}
+            <Link prefetch={false} href="/cad-3d" className="quick-action">
+              <div className="quick-action-icon bg-gradient-to-br from-sky-500/20 to-blue-500/20 text-sky-400">
+                <Move3d className="w-6 h-6" />
+              </div>
+              <h3 className="text-white font-semibold">3D CAD</h3>
+              <p className="text-slate-400 text-xs mt-1">3D models</p>
+            </Link>
+
+            {/* RAMS */}
+            <Link prefetch={false} href="/rams" className="quick-action">
+              <div className="quick-action-icon bg-gradient-to-br from-purple-500/20 to-pink-500/20 text-purple-400">
+                <FileText className="w-6 h-6" />
+              </div>
+              <h3 className="text-white font-semibold">RAMS</h3>
+              <p className="text-slate-400 text-xs mt-1">Safety docs</p>
+            </Link>
+          </div>
         </div>
 
-        {/* Main Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <Card
-            className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center"
-            onClick={() => setShowProjectModal(true)}
-          >
-            <CardContent className="p-4 w-full">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Plus className="w-6 h-6 text-white" />
+        {/* Tools Grid - Beautiful Cards */}
+        <div className="mb-10">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-yellow-400" />
+            Professional Tools
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {/* Training */}
+            <Link prefetch={false} href="/training" className="group">
+              <div className="dashboard-card p-5 h-full">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-6 h-6 text-indigo-400" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-white font-semibold text-sm">New Project</h3>
-                  <p className="text-slate-400 text-xs">CAD, RAMS, Loft & more</p>
-                </div>
+                <h3 className="text-white font-semibold mb-1">Training</h3>
+                <p className="text-slate-400 text-xs">Interactive scenarios</p>
+                <Badge className="mt-2 bg-green-500/20 text-green-400 border-green-500/30 text-xs">New</Badge>
               </div>
-            </CardContent>
-          </Card>
+            </Link>
 
-          <div
-            onClick={() => {
-              if (!canHandleFeature('cad-editor', deviceInfo)) {
-                setShowDeviceNotification('CAD Editor works best on desktop computers with larger screens and precise mouse control.')
-              } else {
-                window.location.href = '/cad'
-              }
-            }}
-          >
-            <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer relative h-32 flex items-center">
-              <CardContent className="p-4 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Ruler className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm">2D CAD Editor</h3>
-                    <p className="text-slate-400 text-xs">2D drawing tools</p>
-                    {!canHandleFeature('cad-editor', deviceInfo) && (
-                      <Badge variant="outline" className="mt-1 text-xs border-amber-500 text-amber-400">
-                        Desktop Rec.
-                      </Badge>
-                    )}
-                  </div>
+            {/* LMS */}
+            <Link prefetch={false} href="/lms" className="group">
+              <div className="dashboard-card p-5 h-full">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <GraduationCap className="w-6 h-6 text-purple-400" />
                 </div>
-              </CardContent>
-            </Card>
+                <h3 className="text-white font-semibold mb-1">Learning</h3>
+                <p className="text-slate-400 text-xs">Courses & certs</p>
+              </div>
+            </Link>
+
+            {/* Calculator */}
+            <Link prefetch={false} href="/calculator" className="group">
+              <div className="dashboard-card p-5 h-full">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Calculator className="w-6 h-6 text-orange-400" />
+                </div>
+                <h3 className="text-white font-semibold mb-1">Load Calc</h3>
+                <p className="text-slate-400 text-xs">Crane calculations</p>
+              </div>
+            </Link>
+
+            {/* Rigging Library */}
+            <Link prefetch={false} href="/rigging-library" className="group">
+              <div className="dashboard-card p-5 h-full">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Package className="w-6 h-6 text-amber-400" />
+                </div>
+                <h3 className="text-white font-semibold mb-1">Rigging</h3>
+                <p className="text-slate-400 text-xs">Equipment library</p>
+              </div>
+            </Link>
+
+            {/* Rigging Loft */}
+            <Link prefetch={false} href="/rigging-loft" className="group">
+              <div className="dashboard-card p-5 h-full">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Package className="w-6 h-6 text-rose-400" />
+                </div>
+                <h3 className="text-white font-semibold mb-1">Loft</h3>
+                <p className="text-slate-400 text-xs">Manage equipment</p>
+              </div>
+            </Link>
+
+            {/* Tension Calculator */}
+            <Link prefetch={false} href="/tension-calculator" className="group">
+              <div className="dashboard-card p-5 h-full">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <LinkIcon className="w-6 h-6 text-violet-400" />
+                </div>
+                <h3 className="text-white font-semibold mb-1">Tension</h3>
+                <p className="text-slate-400 text-xs">Sling angles</p>
+              </div>
+            </Link>
+
+            {/* Safety Library */}
+            <Link prefetch={false} href="/safety" className="group">
+              <div className="dashboard-card p-5 h-full">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Shield className="w-6 h-6 text-green-400" />
+                </div>
+                <h3 className="text-white font-semibold mb-1">Safety</h3>
+                <p className="text-slate-400 text-xs">Guidelines</p>
+              </div>
+            </Link>
+
+            {/* Step Plan */}
+            <Link prefetch={false} href="/step-plan" className="group">
+              <div className="dashboard-card p-5 h-full">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Clock className="w-6 h-6 text-cyan-400" />
+                </div>
+                <h3 className="text-white font-semibold mb-1">Step Plan</h3>
+                <p className="text-slate-400 text-xs">Sequences</p>
+              </div>
+            </Link>
+
+            {/* Expenses */}
+            <Link prefetch={false} href="/expenses" className="group">
+              <div className="dashboard-card p-5 h-full">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Receipt className="w-6 h-6 text-emerald-400" />
+                </div>
+                <h3 className="text-white font-semibold mb-1">Expenses</h3>
+                <p className="text-slate-400 text-xs">Track costs</p>
+              </div>
+            </Link>
+
+            {/* Lift Planning AI */}
+            <div
+              className="group cursor-pointer"
+              onClick={() => setShowLiftPlanningAI(true)}
+            >
+              <div className="dashboard-card p-5 h-full bg-gradient-to-br from-indigo-900/30 to-purple-900/30 border-indigo-500/30">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-white font-semibold mb-1">AI Planner</h3>
+                <p className="text-slate-400 text-xs">Generate plans</p>
+                <Badge className="mt-2 bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-xs">AI</Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Projects - Beautiful Design */}
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <FolderOpen className="w-5 h-5 text-blue-400" />
+              Recent Projects
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowProjectModal(true)}
+              className="text-blue-400 hover:text-blue-300"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              New
+            </Button>
           </div>
 
-          <Link prefetch={false} href="/lms">
-            <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center">
-              <CardContent className="p-4 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <GraduationCap className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm">Learning System</h3>
-                    <p className="text-slate-400 text-xs">Training & certificates</p>
-                    {!deviceInfo.isDesktop && (
-                      <Badge variant="outline" className="text-amber-400 border-amber-500/30 text-xs mt-1">
-                        Desktop Rec.
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link prefetch={false} href="/training">
-            <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center">
-              <CardContent className="p-4 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <BookOpen className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm">Training Module</h3>
-                    <p className="text-slate-400 text-xs">Interactive lift training</p>
-                    <Badge variant="outline" className="text-green-400 border-green-500/30 text-xs mt-1">
-                      New
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link prefetch={false} href="/rigging-library">
-            <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center">
-              <CardContent className="p-4 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Package className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm">Rigging Library</h3>
-                    <p className="text-slate-400 text-xs">Equipment database</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link prefetch={false} href="/rams">
-            <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center">
-              <CardContent className="p-4 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm">RAMS Generator</h3>
-                    <p className="text-slate-400 text-xs">Safety documents</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link prefetch={false} href="/rigging-loft">
-            <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center">
-              <CardContent className="p-4 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Package className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm">Rigging Loft</h3>
-                    <p className="text-slate-400 text-xs">Equipment management</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link prefetch={false} href="/calculator">
-            <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center">
-              <CardContent className="p-4 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Calculator className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm">Load Calculator</h3>
-                    <p className="text-slate-400 text-xs">Crane calculations</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          {/* 3D CAD Entry */}
-          <Link prefetch={false} href="/cad-3d">
-            <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center">
-              <CardContent className="p-4 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Move3d className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm">3D CAD (Beta)</h3>
-                    <p className="text-slate-400 text-xs">Explore crane models in 3D</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link prefetch={false} href="/tension-calculator">
-            <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center">
-              <CardContent className="p-4 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <LinkIcon className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm">Tension Calculator</h3>
-                    <p className="text-slate-400 text-xs">Chainblock & sling angles</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link prefetch={false} href="/safety">
-            <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center">
-              <CardContent className="p-4 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Shield className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm">Safety Library</h3>
-                    <p className="text-slate-400 text-xs">Guidelines & regulations</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link prefetch={false} href="/step-plan">
-            <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center">
-              <CardContent className="p-4 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm">Step Plan</h3>
-                    <p className="text-slate-400 text-xs">Project sequence</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link prefetch={false} href="/expenses">
-            <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center">
-              <CardContent className="p-4 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Receipt className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm">Expenses & Lodging</h3>
-                    <p className="text-slate-400 text-xs">Track work expenses</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Card
-            className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center"
-            onClick={() => setShowLiftPlanningAI(true)}
-          >
-            <CardContent className="p-4 w-full">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-6 h-6 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-white font-semibold text-sm">Lift Planning AI</h3>
-                  <p className="text-slate-400 text-xs">Generate lift plans with AI</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-colors cursor-pointer h-32 flex items-center"
-            onClick={() => {
-              // Scroll to chat section
-              const chatSection = document.querySelector('[data-chat-section]')
-              if (chatSection) {
-                chatSection.scrollIntoView({ behavior: 'smooth' })
-              }
-            }}
-          >
-            <CardContent className="p-4 w-full">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-cyan-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <MessageSquare className="w-6 h-6 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-white font-semibold text-sm">Team Chat</h3>
-                  <p className="text-slate-400 text-xs">Collaborate with your team</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Projects */}
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <FolderOpen className="w-5 h-5 mr-2" />
-              Recent Projects
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <div className="dashboard-card p-6">
             {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-                <p className="text-slate-400">Loading projects...</p>
+              <div className="flex items-center justify-center py-12">
+                <div className="relative w-12 h-12">
+                  <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+                </div>
               </div>
             ) : projects.length === 0 ? (
               <div className="text-center py-12">
-                <FolderOpen className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                <h3 className="text-slate-300 text-lg font-semibold mb-2">No projects yet</h3>
-                <p className="text-slate-400 mb-4">Create your first lift planning project to get started</p>
-                <Button onClick={() => {
-                  console.log('Create Project button clicked')
-                  createNewProject()
-                }} className="bg-blue-600 hover:bg-blue-700">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center">
+                  <FolderOpen className="w-10 h-10 text-slate-500" />
+                </div>
+                <h3 className="text-white text-xl font-semibold mb-2">No projects yet</h3>
+                <p className="text-slate-400 mb-6 max-w-sm mx-auto">Create your first lift planning project to get started with professional documentation.</p>
+                <Button
+                  onClick={() => setShowProjectModal(true)}
+                  className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white px-6"
+                >
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Project
+                  Create First Project
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {projects.map((project) => (
-                  <Card key={project.id} className="bg-slate-700/50 border-slate-600 hover:bg-slate-700/70 transition-colors">
-                    <CardHeader>
-                      <CardTitle className="text-white text-lg">{project.name}</CardTitle>
-                      <p className="text-slate-400 text-sm">
-                        Updated {new Date(project.updatedAt).toLocaleDateString()}
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-slate-300 text-sm mb-4">{project.description}</p>
-                      <div className="flex justify-between items-center">
-                        <div className="flex space-x-2">
-                          <Button
-                            size="sm"
-                            className="bg-blue-600 hover:bg-blue-700"
-                            onClick={() => {
-                              // Check if this is a localStorage project
-                              if (project.id.startsWith('lift_planner_project_')) {
-                                // This is a localStorage project
-                                router.push(`/cad?projectKey=${project.id}&name=${encodeURIComponent(project.name)}`)
-                              } else {
-                                // This is a database project
-                                router.push(`/cad?project=${project.id}`)
-                              }
-                            }}
-                          >
-                            Open
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-slate-600 text-slate-300 hover:bg-slate-800"
-                          >
-                            Details
-                          </Button>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            deleteProject(project.id, project.name)
-                          }}
-                          className="border-red-600 text-red-400 hover:bg-red-900/20"
-                          title="Delete Project"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                  <div key={project.id} className="project-card">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-blue-400" />
                       </div>
-                    </CardContent>
-                  </Card>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          deleteProject(project.id, project.name)
+                        }}
+                        className="w-8 h-8 text-slate-500 hover:text-red-400 hover:bg-red-500/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <h3 className="text-white font-semibold mb-1 truncate">{project.name}</h3>
+                    <p className="text-slate-400 text-sm mb-4 line-clamp-2">{project.description || 'No description'}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 text-xs">
+                        {new Date(project.updatedAt).toLocaleDateString()}
+                      </span>
+                      <Button
+                        size="sm"
+                        className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30"
+                        onClick={() => {
+                          if (project.id.startsWith('lift_planner_project_')) {
+                            router.push(`/cad?projectKey=${project.id}&name=${encodeURIComponent(project.name)}`)
+                          } else {
+                            router.push(`/cad?project=${project.id}`)
+                          }
+                        }}
+                      >
+                        Open
+                        <ArrowRight className="w-3 h-3 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Subscription Status */}
-        {session.user?.subscription === 'free' && (
-          <Card className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-blue-500/50 mt-8">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Crown className="w-8 h-8 text-yellow-400" />
-                  <div>
-                    <h3 className="text-white font-semibold">Upgrade to Pro</h3>
-                    <p className="text-slate-300">Unlock advanced features and unlimited projects</p>
-                  </div>
-                </div>
-                <Link prefetch={false} href="/#pricing">
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    Upgrade Now
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+          </div>
+        </div>
 
         {/* Team Chat */}
-        <Card className="bg-slate-800/50 border-slate-700 mt-6" data-chat-section>
-          <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <MessageSquare className="w-5 h-5 mr-2" />
-              Team Chat
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
+        <div className="mb-10">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-cyan-400" />
+            Team Chat
+          </h2>
+          <div className="dashboard-card overflow-hidden" data-chat-section>
             <div className="h-96">
               <ChatWindow />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        {/* Upgrade Banner */}
+        {session.user?.subscription === 'free' && (
+          <div className="dashboard-card bg-gradient-to-r from-blue-900/40 via-purple-900/40 to-blue-900/40 border-blue-500/30 p-6 mb-10">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
+                  <Crown className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Upgrade to Pro</h3>
+                  <p className="text-slate-300">Unlock unlimited projects, AI features & priority support</p>
+                </div>
+              </div>
+              <Link prefetch={false} href="/#pricing">
+                <Button className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white px-6">
+                  Upgrade Now
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Project Creation Modal */}

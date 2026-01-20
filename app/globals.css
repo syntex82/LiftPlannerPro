@@ -213,3 +213,151 @@ html {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.7);
 }
+
+/* Hero animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes gradient-x {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(2deg);
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.animate-gradient-x {
+  animation: gradient-x 3s ease infinite;
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Dashboard card styles */
+.dashboard-card {
+  @apply relative overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80;
+  @apply backdrop-blur-xl border border-slate-700/50 rounded-2xl;
+  @apply hover:border-slate-600/50 hover:shadow-xl hover:shadow-blue-500/5;
+  @apply transition-all duration-300;
+}
+
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+}
+
+.dashboard-stat {
+  @apply relative p-6 rounded-xl;
+  @apply bg-gradient-to-br from-slate-800/60 to-slate-900/60;
+  @apply border border-slate-700/30;
+  @apply hover:border-blue-500/30 transition-all duration-300;
+}
+
+.dashboard-stat-icon {
+  @apply w-12 h-12 rounded-xl flex items-center justify-center;
+  @apply bg-gradient-to-br from-blue-500/20 to-cyan-500/20;
+  @apply text-blue-400;
+}
+
+/* Quick action button */
+.quick-action {
+  @apply flex flex-col items-center justify-center p-6 rounded-xl;
+  @apply bg-gradient-to-br from-slate-800/50 to-slate-900/50;
+  @apply border border-slate-700/30;
+  @apply hover:border-blue-500/40 hover:bg-slate-800/70;
+  @apply hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/10;
+  @apply transition-all duration-300 cursor-pointer;
+}
+
+.quick-action-icon {
+  @apply w-14 h-14 rounded-xl flex items-center justify-center mb-3;
+  @apply text-2xl;
+}
+
+/* Project card */
+.project-card {
+  @apply relative overflow-hidden p-5 rounded-xl;
+  @apply bg-gradient-to-br from-slate-800/60 to-slate-900/60;
+  @apply border border-slate-700/40;
+  @apply hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/5;
+  @apply transition-all duration-300 cursor-pointer;
+}
+
+.project-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 60%, rgba(59, 130, 246, 0.05));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.project-card:hover::after {
+  opacity: 1;
+}
+
+/* Light mode adjustments */
+.light .dashboard-card {
+  @apply bg-gradient-to-br from-white/90 to-slate-50/90 border-slate-200/50;
+}
+
+.light .dashboard-stat {
+  @apply bg-gradient-to-br from-white/80 to-slate-50/80 border-slate-200/50;
+}
+
+.light .quick-action {
+  @apply bg-gradient-to-br from-white/70 to-slate-50/70 border-slate-200/50;
+  @apply hover:border-blue-400/50;
+}
+
+.light .project-card {
+  @apply bg-gradient-to-br from-white/80 to-slate-50/80 border-slate-200/50;
+}
