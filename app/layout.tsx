@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import AuthSessionProvider from '@/components/providers/session-provider'
+import { ThemeProvider } from '@/components/theme-provider'
 import { GoogleAnalytics } from '@/components/analytics/google-analytics'
 import { seoConfig } from '@/lib/seo-config'
 import BusinessStructuredData from '@/components/seo/BusinessStructuredData'
@@ -80,7 +81,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script
           type="application/ld+json"
@@ -91,10 +92,17 @@ export default function RootLayout({
         <BusinessStructuredData />
       </head>
       <body className={`${inter.variable} ${inter.className} antialiased`}>
-        <GoogleAnalytics />
-        <AuthSessionProvider>
-          {children}
-        </AuthSessionProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <GoogleAnalytics />
+          <AuthSessionProvider>
+            {children}
+          </AuthSessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

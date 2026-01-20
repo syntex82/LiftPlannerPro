@@ -7,6 +7,7 @@ import { Menu, X, User } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import LogoutButton from "@/components/auth/LogoutButton"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 export default function Navigation() {
   const { data: session } = useSession()
@@ -51,6 +52,8 @@ export default function Navigation() {
             <Link href="/contact" className="text-slate-300 hover:text-white transition-colors">
               Contact
             </Link>
+
+            <ThemeToggle />
 
             {session ? (
               <div className="flex items-center space-x-4">

@@ -26,6 +26,11 @@ import ProfessionalFeaturesPanel from "@/components/cad/ProfessionalFeaturesPane
 import CADExportDialog from "@/components/cad/CADExportDialog"
 import CADImportDialog from "@/components/cad/CADImportDialog"
 import LiftingScenarioLibrary from "@/components/cad/LiftingScenarioLibrary"
+import { useAutoSave } from "@/hooks/useAutoSave"
+import { RecoveryDialog } from "@/components/cad/RecoveryDialog"
+import { TemplateLibrary } from "@/components/cad/TemplateLibrary"
+import { DrawingTemplate } from "@/lib/drawing-templates"
+import { GroundBearingCalculator } from "@/components/cad/GroundBearingCalculator"
 
 import { CraneSpecifications } from "@/lib/crane-models"
 import { exportDrawing } from "@/lib/cad-2d-export"
@@ -298,6 +303,8 @@ function CADEditorContent() {
   const [showConfigurableCraneDialog, setShowConfigurableCraneDialog] = useState(false)
   const [showCraneBuilderDialog, setShowCraneBuilderDialog] = useState(false)
   const [showScenarioLibrary, setShowScenarioLibrary] = useState(false)
+  const [showTemplateLibrary, setShowTemplateLibrary] = useState(false)
+  const [showGroundBearingCalc, setShowGroundBearingCalc] = useState(false)
   const [selectedCrane, setSelectedCrane] = useState<CraneSpecifications | null>(null)
   const [showCraneConfig, setShowCraneConfig] = useState(false)
   const [configuringCrane, setConfiguringCrane] = useState<DrawingElement | null>(null)
@@ -490,6 +497,62 @@ function CADEditorContent() {
   }, [])
 
   // Reset tool states when switching tools
+  // Auto-save hook
+  const {
+    lastSaved,
+    hasUnsavedChanges,
+    recoveryData,
+    showRecoveryPrompt,
+    setShowRecoveryPrompt,
+    clearAutoSave,
+    dismissRecovery,
+    saveNow
+  } = useAutoSave(
+    elements,
+    projectName,
+    zoom,
+    pan,
+    layers,
+    drawingScale,
+    drawingUnits,
+    projectInfo,
+    true // enabled
+  )
+
+  // Handle recovery
+  const handleRecover = useCallback(() => {
+    if (recoveryData) {
+      setElements(recoveryData.elements || [])
+      setProjectName(recoveryData.projectName || 'Recovered Project')
+      setZoom(recoveryData.zoom || 1)
+      setPan(recoveryData.pan || { x: 0, y: 0 })
+      if (recoveryData.layers) setLayers(recoveryData.layers)
+      if (recoveryData.drawingScale) setDrawingScale(recoveryData.drawingScale)
+      if (recoveryData.drawingUnits) setDrawingUnits(recoveryData.drawingUnits as any)
+      if (recoveryData.projectInfo) setProjectInfo(recoveryData.projectInfo)
+      clearAutoSave()
+    }
+  }, [recoveryData, clearAutoSave])
+
+  // Handle loading a template
+  const handleLoadTemplate = useCallback((template: DrawingTemplate) => {
+    // Generate unique IDs for template elements
+    const newElements = template.elements.map((el: any) => ({
+      ...el,
+      id: `${el.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }))
+
+    setElements(newElements)
+    setProjectName(template.projectInfo.title || 'New Project')
+    setDrawingScale(template.drawingScale)
+    setDrawingUnits(template.drawingUnits as any)
+    setLayers(template.layers)
+    setProjectInfo(template.projectInfo)
+    setZoom(1)
+    setPan({ x: 0, y: 0 })
+    setShowTemplateLibrary(false)
+  }, [])
+
   useEffect(() => {
     if (tool !== 'arc') {
       setArcStep(0)
@@ -6711,6 +6774,16 @@ function CADEditorContent() {
             )}
           </Button>
 
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowGroundBearingCalc(true)}
+            className="text-slate-300 hover:text-white"
+          >
+            <Calculator className="w-4 h-4 mr-2" />
+            Ground Bearing
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white">
@@ -7947,6 +8020,16 @@ function CADEditorContent() {
             )}
             <span>Elements: <span className="text-white">{elements.length}</span></span>
             <span>Selected: <span className="text-white">{selectedElements.length}</span></span>
+            {/* Auto-save indicator */}
+            <span className="flex items-center gap-1">
+              {hasUnsavedChanges ? (
+                <span className="text-amber-400">● Unsaved</span>
+              ) : lastSaved ? (
+                <span className="text-green-400">✓ Saved {lastSaved.toLocaleTimeString()}</span>
+              ) : (
+                <span className="text-slate-500">Auto-save enabled</span>
+              )}
+            </span>
           </div>
         </div>
       )}
@@ -10119,6 +10202,16 @@ function CADEditorContent() {
                     </Button>
                     <Button
                       onClick={() => {
+                        setShowTemplateLibrary(true)
+                        setShowProjectDialog(false)
+                      }}
+                      variant="ghost"
+                      className="text-sm"
+                    >
+                      📋 From Template
+                    </Button>
+                    <Button
+                      onClick={() => {
                         const recentProjects = getRecentProjects()
                         if (recentProjects.length === 0) {
                           alert('No recent projects found. Save a project first!')
@@ -10652,6 +10745,27 @@ function CADEditorContent() {
           setElements([...elements, element as DrawingElement])
           setShowScenarioLibrary(false)
         }}
+      />
+
+      {/* Auto-save Recovery Dialog */}
+      <RecoveryDialog
+        open={showRecoveryPrompt}
+        recoveryData={recoveryData}
+        onRecover={handleRecover}
+        onDiscard={dismissRecovery}
+      />
+
+      {/* Drawing Templates Library */}
+      <TemplateLibrary
+        open={showTemplateLibrary}
+        onClose={() => setShowTemplateLibrary(false)}
+        onSelectTemplate={handleLoadTemplate}
+      />
+
+      {/* Ground Bearing Pressure Calculator */}
+      <GroundBearingCalculator
+        open={showGroundBearingCalc}
+        onClose={() => setShowGroundBearingCalc(false)}
       />
     </div>
   )
