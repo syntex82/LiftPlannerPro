@@ -185,11 +185,35 @@ export class WebRTCManager {
 
   // Initialize WebRTC peer connection
   private createPeerConnection(): RTCPeerConnection {
+    // Configuration with multiple STUN/TURN servers for better NAT traversal
+    // Works with both HTTP (localhost) and HTTPS (production)
     const configuration: RTCConfiguration = {
       iceServers: [
+        // Google's free STUN servers
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-      ]
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        // OpenRelay TURN servers (free, for testing - replace with your own in production)
+        {
+          urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        }
+      ],
+      // ICE candidate policy - allow all candidates
+      iceCandidatePoolSize: 10
     }
 
     const pc = new RTCPeerConnection(configuration)

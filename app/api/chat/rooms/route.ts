@@ -4,9 +4,11 @@ import { authOptions } from '@/lib/auth'
 
 // In-memory rooms storage (replace with database later)
 const roomsStore = [
-  { id: 1, name: 'General Chat', type: 'general', unread_count: 0 },
-  { id: 2, name: 'Project Discussion', type: 'project', unread_count: 0 },
-  { id: 3, name: 'Technical Support', type: 'support', unread_count: 0 }
+  { id: 1, name: 'General', type: 'channel', icon: 'hash', unread_count: 0, description: 'General discussion for all team members' },
+  { id: 2, name: 'Project Discussion', type: 'channel', icon: 'folder', unread_count: 0, description: 'Discuss lift plans and CAD projects' },
+  { id: 3, name: 'Technical Support', type: 'channel', icon: 'help-circle', unread_count: 0, description: 'Get help with technical issues' },
+  { id: 4, name: 'Live Video', type: 'channel', icon: 'video', unread_count: 0, description: 'Join video calls and screen sharing sessions' },
+  { id: 5, name: 'Announcements', type: 'channel', icon: 'megaphone', unread_count: 0, description: 'Important announcements and updates' }
 ]
 
 // Helper functions
@@ -29,12 +31,14 @@ async function createChatRoom({ name, type, projectId, createdBy }: any) {
   const newRoom = {
     id: roomsStore.length + 1,
     name,
-    type,
+    type: type || 'channel',
+    icon: 'hash',
     unread_count: 0,
+    description: `Chat room created by ${createdBy}`,
     projectId,
     createdBy
   }
-  roomsStore.push(newRoom)
+  roomsStore.push(newRoom as any)
   return newRoom
 }
 

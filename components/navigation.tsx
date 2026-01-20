@@ -59,8 +59,13 @@ export default function Navigation() {
               <div className="flex items-center space-x-4">
                 <Link href="/dashboard">
                   <Button variant="ghost" className="text-slate-300 hover:text-white">
-                    <User className="w-4 h-4 mr-2" />
                     Dashboard
+                  </Button>
+                </Link>
+                <Link href="/profile">
+                  <Button variant="ghost" className="text-slate-300 hover:text-white">
+                    <User className="w-4 h-4 mr-2" />
+                    Profile
                   </Button>
                 </Link>
                 <LogoutButton
