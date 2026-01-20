@@ -7,6 +7,14 @@ import { trackPageView, trackUserInteraction, trackAuthEvent } from '@/component
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { DeviceNotification, QuickDeviceNotification } from "@/components/ui/device-notification"
 import { useDeviceDetection, canHandleFeature } from "@/lib/deviceDetection"
 import IssueReporter from "@/components/issue-reporter"
@@ -428,43 +436,69 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center space-x-2 sm:space-x-4">
-              {/* User info with avatar */}
-              <div className="hidden md:flex items-center space-x-3 px-3 py-1.5 rounded-full bg-slate-800/50 border border-slate-700/50">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm">
-                  {session.user?.name?.charAt(0).toUpperCase() || 'U'}
-                </div>
-                <span className="text-white text-sm font-medium">{session.user?.name}</span>
-                {getSubscriptionBadge(session.user?.subscription || 'free')}
-              </div>
-
               {/* Quick actions */}
               <div className="flex items-center space-x-1">
                 <IssueReporter />
 
                 <Link prefetch={false} href="/documentation" className="hidden lg:block">
-                  <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800/50">
+                  <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800/50" title="Documentation">
                     <BookOpen className="w-5 h-5" />
                   </Button>
                 </Link>
-
-                {isAdminUser(session.user?.email) && (
-                  <Link prefetch={false} href="/admin" className="hidden lg:block">
-                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800/50">
-                      <Shield className="w-5 h-5" />
-                    </Button>
-                  </Link>
-                )}
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSignOut}
-                  className="text-slate-400 hover:text-white hover:bg-slate-800/50"
-                >
-                  <LogOut className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Sign Out</span>
-                </Button>
               </div>
+
+              {/* User Dropdown Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center space-x-3 px-3 py-1.5 rounded-full bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 transition-colors cursor-pointer">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm">
+                      {session.user?.name?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                    <span className="hidden sm:block text-white text-sm font-medium">{session.user?.name}</span>
+                    {getSubscriptionBadge(session.user?.subscription || 'free')}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-slate-800 border-slate-700 text-white">
+                  <DropdownMenuLabel className="text-slate-300">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium text-white">{session.user?.name}</p>
+                      <p className="text-xs text-slate-400">{session.user?.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-slate-700" />
+                  <DropdownMenuItem asChild className="cursor-pointer hover:bg-slate-700 focus:bg-slate-700">
+                    <Link href="/profile" className="flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>My Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer hover:bg-slate-700 focus:bg-slate-700">
+                    <Link href="/profile?tab=settings" className="flex items-center">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  {isAdminUser(session.user?.email) && (
+                    <>
+                      <DropdownMenuSeparator className="bg-slate-700" />
+                      <DropdownMenuItem asChild className="cursor-pointer hover:bg-orange-500/20 focus:bg-orange-500/20 text-orange-400">
+                        <Link href="/admin" className="flex items-center">
+                          <Shield className="mr-2 h-4 w-4" />
+                          <span>Admin Panel</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator className="bg-slate-700" />
+                  <DropdownMenuItem
+                    onClick={handleSignOut}
+                    className="cursor-pointer hover:bg-red-500/20 focus:bg-red-500/20 text-red-400"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>

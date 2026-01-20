@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { 
@@ -129,6 +130,7 @@ interface ChatRoom {
 }
 
 function TeamChatContent({ projectId }: { projectId?: number }) {
+  const { data: session } = useSession()
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [rooms, setRooms] = useState<ChatRoom[]>([])
@@ -141,11 +143,13 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
   const [showUserList, setShowUserList] = useState(true)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showGifPicker, setShowGifPicker] = useState(false)
-  const [currentUserName] = useState('User')
   const [showPermissionModal, setShowPermissionModal] = useState(false)
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [isScreenSharing, setIsScreenSharing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Get current user name from session
+  const currentUserName = session?.user?.name || 'User'
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -282,7 +286,7 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
           roomId: currentRoom,
           content: messageContent,
           messageType,
-          replyToId: replyTo?.id
+          replyTo: replyTo?.id
         })
       })
 

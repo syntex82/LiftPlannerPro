@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 // In-memory store for user status (use your database in production)
 const userStatus = new Map<number, {
@@ -11,41 +14,56 @@ const userStatus = new Map<number, {
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
     const { searchParams } = new URL(request.url)
     const roomId = searchParams.get('roomId')
 
-    // TODO: Get users from your database
-    // For now, return mock users
+    // Get users from database
+    try {
+      const dbUsers = await prisma.user.findMany({
+        where: {
+          isActive: true
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          onlineStatus: true,
+          lastSeenAt: true
+        },
+        orderBy: { name: 'asc' },
+        take: 50
+      })
+
+      if (dbUsers.length > 0) {
+        const users = dbUsers.map((user, index) => ({
+          id: index + 1,
+          dbId: user.id,
+          name: user.name || 'Unknown User',
+          email: user.email,
+          avatar: user.image,
+          isOnline: user.onlineStatus === 'ONLINE',
+          status: user.onlineStatus?.toLowerCase() || 'offline',
+          lastSeen: user.lastSeenAt?.toISOString()
+        }))
+
+        return NextResponse.json(users)
+      }
+    } catch (dbError) {
+      console.log('Database query failed, using fallback users:', dbError)
+    }
+
+    // Fallback mock users if database fails
     const users = [
       {
         id: 1,
-        name: 'John Smith',
-        email: 'john@company.com',
-        isOnline: true
-      },
-      {
-        id: 2,
-        name: 'Sarah Johnson',
-        email: 'sarah@company.com',
-        isOnline: false
-      },
-      {
-        id: 3,
-        name: 'Mike Wilson',
-        email: 'mike@company.com',
+        name: session?.user?.name || 'Current User',
+        email: session?.user?.email || 'user@company.com',
         isOnline: true
       }
     ]
 
-    // If roomId provided, filter users in that room
-    if (roomId) {
-      // TODO: Filter users who are participants in the room
-      // SELECT u.* FROM users u 
-      // JOIN chat_participants p ON u.id = p.user_id 
-      // WHERE p.room_id = ?
-    }
-
-    // Return array directly for compatibility
     return NextResponse.json(users)
 
   } catch (error) {
