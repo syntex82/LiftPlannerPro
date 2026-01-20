@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const roomId = searchParams.get('roomId')
 
-    // Get users from database
+    // Get users from database with professional profile data
     try {
       const dbUsers = await prisma.user.findMany({
         where: {
@@ -30,7 +30,14 @@ export async function GET(request: NextRequest) {
           email: true,
           image: true,
           onlineStatus: true,
-          lastSeenAt: true
+          lastSeenAt: true,
+          jobTitle: true,
+          location: true,
+          phone: true,
+          about: true,
+          skills: true,
+          createdAt: true,
+          role: true
         },
         orderBy: { name: 'asc' },
         take: 50
@@ -45,7 +52,16 @@ export async function GET(request: NextRequest) {
           avatar: user.image,
           isOnline: user.onlineStatus === 'ONLINE',
           status: user.onlineStatus?.toLowerCase() || 'offline',
-          lastSeen: user.lastSeenAt?.toISOString()
+          statusMessage: user.role === 'ADMIN' ? 'Administrator' : undefined,
+          lastSeen: user.lastSeenAt?.toISOString(),
+          jobTitle: user.jobTitle || (user.role === 'ADMIN' ? 'Administrator' : 'Team Member'),
+          department: user.role === 'ADMIN' ? 'Management' : 'Engineering',
+          company: 'Lift Planner Pro',
+          location: user.location,
+          phone: user.phone,
+          bio: user.about,
+          skills: user.skills || [],
+          joinedAt: user.createdAt?.toISOString()
         }))
 
         return NextResponse.json(users)

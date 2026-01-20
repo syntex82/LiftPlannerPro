@@ -19,7 +19,6 @@ import { DeviceNotification, QuickDeviceNotification } from "@/components/ui/dev
 import { useDeviceDetection, canHandleFeature } from "@/lib/deviceDetection"
 import IssueReporter from "@/components/issue-reporter"
 import TensionCalculator from "@/components/tension-calculator"
-import TeamChat from "@/components/Chat/TeamChat"
 import ProjectCreationModal from "@/components/project-creation-modal"
 import ProjectCategories from "@/components/project-categories"
 import LiftPlanningAI from "@/components/lift-planning-ai"
@@ -52,7 +51,11 @@ import {
   ArrowRight,
   Zap,
   Target,
-  LayoutDashboard
+  LayoutDashboard,
+  Hash,
+  Video,
+  Users,
+  Paperclip
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -814,17 +817,63 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Team Chat */}
+        {/* Team Chat Card */}
         <div className="mb-10">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-cyan-400" />
-            Team Chat
-          </h2>
-          <div className="overflow-hidden" data-chat-section>
-            <div className="h-[600px]">
-              <TeamChat />
+          <Link href="/chat">
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 p-6 hover:border-blue-500/50 transition-all duration-300 cursor-pointer">
+              {/* Decorative background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                    <MessageSquare className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                      Team Chat
+                      <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-medium rounded-full">Live</span>
+                    </h2>
+                    <p className="text-slate-400 text-sm">
+                      Connect with your team • Video calls • File sharing • @mentions
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {/* Online users indicator */}
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 rounded-full">
+                    <div className="flex -space-x-2">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 border-2 border-slate-800 flex items-center justify-center text-white text-xs font-bold">M</div>
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-slate-800 flex items-center justify-center text-white text-xs font-bold">J</div>
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 border-2 border-slate-800 flex items-center justify-center text-white text-xs font-bold">A</div>
+                    </div>
+                    <span className="text-xs text-slate-400">3 online</span>
+                  </div>
+
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">
+                    <ArrowRight className="w-5 h-5 text-blue-400 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Features row */}
+              <div className="relative mt-4 pt-4 border-t border-slate-700/50 flex items-center gap-4 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5">
+                  <Hash className="w-3.5 h-3.5" /> 5 Channels
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Video className="w-3.5 h-3.5" /> Video Calls
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" /> Direct Messages
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Paperclip className="w-3.5 h-3.5" /> File Sharing
+                </span>
+              </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Upgrade Banner */}
