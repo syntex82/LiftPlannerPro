@@ -58,6 +58,9 @@ export async function GET(request: NextRequest) {
 
 async function getStripeCustomers() {
   try {
+    if (!stripe) {
+      return NextResponse.json({ customers: [], total: 0, message: 'Stripe not configured' })
+    }
     // Get customers from Stripe
     const customers = await stripe.customers.list({
       limit: 100,
@@ -116,6 +119,9 @@ async function getStripeCustomers() {
 
 async function getStripeSubscriptions() {
   try {
+    if (!stripe) {
+      return NextResponse.json({ subscriptions: [], total: 0, message: 'Stripe not configured' })
+    }
     // Get active subscriptions from Stripe
     const subscriptions = await stripe.subscriptions.list({
       status: 'all',
@@ -156,9 +162,12 @@ async function getStripeSubscriptions() {
 
 async function getRevenueData() {
   try {
+    if (!stripe) {
+      return NextResponse.json({ totalRevenue: 0, monthlyRevenue: [], message: 'Stripe not configured' })
+    }
     // Get charges from last 12 months
     const twelveMonthsAgo = Math.floor(Date.now() / 1000) - (12 * 30 * 24 * 60 * 60)
-    
+
     const charges = await stripe.charges.list({
       created: { gte: twelveMonthsAgo },
       limit: 100
@@ -200,6 +209,14 @@ async function getRevenueData() {
 
 async function getStripeOverview() {
   try {
+    if (!stripe) {
+      return NextResponse.json({
+        totalCustomers: 0,
+        activeSubscriptions: 0,
+        totalRevenue: 0,
+        message: 'Stripe not configured'
+      })
+    }
     // Get basic Stripe metrics
     const [customers, subscriptions, charges] = await Promise.all([
       stripe.customers.list({ limit: 1 }),
@@ -248,12 +265,13 @@ async function getStripeOverview() {
 
 async function getTotalCount(resource: string, status?: string): Promise<number> {
   try {
+    if (!stripe) return 0
     let params: any = { limit: 1 }
     if (status && resource === 'subscriptions') {
       params.status = status
     }
 
-    const result = resource === 'customers' 
+    const result = resource === 'customers'
       ? await stripe.customers.list(params)
       : await stripe.subscriptions.list(params)
 
@@ -266,6 +284,7 @@ async function getTotalCount(resource: string, status?: string): Promise<number>
 
 async function getCustomerTotalSpent(customerId: string): Promise<number> {
   try {
+    if (!stripe) return 0
     const charges = await stripe.charges.list({
       customer: customerId,
       limit: 100
