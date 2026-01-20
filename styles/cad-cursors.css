@@ -1,0 +1,31 @@
+/* CAD-style cursors for drawing tools */
+
+.cad-cursor-crosshair {
+  cursor: crosshair;
+}
+
+.cad-cursor-line {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12" stroke="white" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="lime"/></svg>') 12 12, crosshair;
+}
+
+.cad-cursor-rect {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" fill="none" stroke="white" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="lime"/></svg>') 12 12, crosshair;
+}
+
+.cad-cursor-polyline {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><polyline points="2,12 8,4 16,8 22,2" fill="none" stroke="white" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="lime"/></svg>') 12 12, crosshair;
+}
+
+/* CAD drawing active state - professional full crosshair */
+.cad-drawing-active {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><line x1="0" y1="32" x2="64" y2="32" stroke="%233b82f6" stroke-width="1" stroke-dasharray="2,2" opacity="0.9"/><line x1="32" y1="0" x2="32" y2="64" stroke="%233b82f6" stroke-width="1" stroke-dasharray="2,2" opacity="0.9"/><circle cx="32" cy="32" r="3" fill="%23ef4444" stroke="%23ffffff" stroke-width="1"/><circle cx="32" cy="32" r="8" fill="none" stroke="%233b82f6" stroke-width="1" opacity="0.6"/></svg>') 32 32, crosshair !important;
+}
+
+.cad-drawing-active * {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><line x1="0" y1="32" x2="64" y2="32" stroke="%233b82f6" stroke-width="1" stroke-dasharray="2,2" opacity="0.9"/><line x1="32" y1="0" x2="32" y2="64" stroke="%233b82f6" stroke-width="1" stroke-dasharray="2,2" opacity="0.9"/><circle cx="32" cy="32" r="3" fill="%23ef4444" stroke="%23ffffff" stroke-width="1"/><circle cx="32" cy="32" r="8" fill="none" stroke="%233b82f6" stroke-width="1" opacity="0.6"/></svg>') 32 32, crosshair !important;
+}
+
+/* High precision mode indicator */
+.cad-precision-mode {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><line x1="0" y1="32" x2="64" y2="32" stroke="%2310b981" stroke-width="1" stroke-dasharray="1,1" opacity="0.95"/><line x1="32" y1="0" x2="32" y2="64" stroke="%2310b981" stroke-width="1" stroke-dasharray="1,1" opacity="0.95"/><circle cx="32" cy="32" r="3" fill="%23ef4444" stroke="%23ffffff" stroke-width="1"/><circle cx="32" cy="32" r="6" fill="none" stroke="%2310b981" stroke-width="1" opacity="0.8"/><circle cx="32" cy="32" r="10" fill="none" stroke="%2310b981" stroke-width="1" opacity="0.4"/></svg>') 32 32, crosshair !important;
+}

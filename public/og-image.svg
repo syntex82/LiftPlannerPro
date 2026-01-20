@@ -1,0 +1,64 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#2d3748;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4a5568;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Pattern for background -->
+    <pattern id="dots" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+      <circle cx="15" cy="15" r="2" fill="#3b82f6" opacity="0.1"/>
+      <circle cx="45" cy="45" r="2" fill="#06b6d4" opacity="0.1"/>
+    </pattern>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Pattern Overlay -->
+  <rect x="600" y="0" width="600" height="630" fill="url(#dots)"/>
+  
+  <!-- Logo Circle -->
+  <rect x="60" y="120" width="80" height="80" rx="16" fill="#3b82f6" filter="drop-shadow(0 8px 20px rgba(59, 130, 246, 0.3))"/>
+  
+  <!-- Logo Icon -->
+  <text x="100" y="175" font-family="Arial, sans-serif" font-size="36" font-weight="bold" text-anchor="middle" fill="white">🏗️</text>
+  
+  <!-- Brand Name -->
+  <text x="160" y="155" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="url(#textGradient)">Lift Planner Pro</text>
+  
+  <!-- Tagline -->
+  <text x="160" y="185" font-family="Arial, sans-serif" font-size="24" font-weight="300" fill="#94a3b8">Professional CAD Software</text>
+  
+  <!-- Main Title -->
+  <text x="60" y="280" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="white">Plan. Design. Execute.</text>
+  
+  <!-- Description Line 1 -->
+  <text x="60" y="330" font-family="Arial, sans-serif" font-size="28" fill="#cbd5e1">Advanced CAD tools for safe and efficient</text>
+  
+  <!-- Description Line 2 -->
+  <text x="60" y="365" font-family="Arial, sans-serif" font-size="28" fill="#cbd5e1">lifting operations with integrated tools.</text>
+  
+  <!-- Feature 1 -->
+  <text x="60" y="430" font-family="Arial, sans-serif" font-size="20" fill="#e2e8f0">🎨 2D CAD Editor</text>
+  
+  <!-- Feature 2 -->
+  <text x="250" y="430" font-family="Arial, sans-serif" font-size="20" fill="#e2e8f0">⚖️ Load Calculator</text>
+  
+  <!-- Feature 3 -->
+  <text x="450" y="430" font-family="Arial, sans-serif" font-size="20" fill="#e2e8f0">📋 RAMS Generator</text>
+  
+  <!-- CAD Interface Mockup -->
+  <rect x="840" y="430" width="300" height="140" rx="8" fill="rgba(59, 130, 246, 0.1)" stroke="#3b82f6" stroke-width="2"/>
+  <text x="990" y="505" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="#3b82f6">CAD Interface</text>
+  
+  <!-- Website URL -->
+  <text x="60" y="580" font-family="Arial, sans-serif" font-size="18" fill="#64748b">liftplannerpro.org</text>
+</svg>

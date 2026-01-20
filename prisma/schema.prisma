@@ -1,0 +1,646 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("user")
+  subscription  String?   @default("free")
+  isActive      Boolean   @default(true)
+  lastLogin     DateTime?
+  loginAttempts Int       @default(0)
+  lockedUntil   DateTime?
+  company       String?
+  credits       Float?    @default(0.0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts              Account[]
+  sessions              Session[]
+  projects              Project[]
+  securityLogs          SecurityLog[]
+  payPerUseTransactions PayPerUseTransaction[]
+  creditPurchases       CreditPurchase[]
+  reviews               Review[]
+  issueReports      IssueReport[]
+  lmsProgress       LMSProgress[]
+  certificates      Certificate[]
+  riggingEquipment  RiggingEquipment[]
+  equipmentMovements EquipmentMovement[]
+  userSessions      UserSession[]
+  stripeSubscriptions StripeSubscription[]
+  chatMessages      ChatMessage[]
+  expenses            Expense[]
+  expenseCategories   ExpenseCategory[]
+  lodgingBookings     LodgingBooking[]
+  loftLocations       LoftLocation[]
+  maintenanceSchedules MaintenanceSchedule[]
+  equipmentUsageLogs  EquipmentUsageLog[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Project {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  category    ProjectCategory @default(CAD)
+  type        String?     // Specific project type within category
+  data        String?     // JSON data for CAD drawings, RAMS, etc.
+  tags        String[]    // Project tags for better organization
+  status      ProjectStatus @default(ACTIVE)
+  userId      String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses        Expense[]
+  lodgingBookings LodgingBooking[]
+}
+
+enum ProjectCategory {
+  CAD
+  RAMS
+  LOFT_MANAGEMENT
+  LOAD_CALCULATION
+  TRAINING
+  INSPECTION
+  GENERAL
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+  TEMPLATE
+}
+
+// Session Management for Production
+model UserSession {
+  id           String   @id @default(cuid())
+  userId       String
+  sessionToken String   @unique
+  ipAddress    String
+  userAgent    String
+  location     String?
+  isActive     Boolean  @default(true)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastActivity DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+}
+
+// Security Logging
+model SecurityLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String
+  resource    String?
+  ipAddress   String
+  userAgent   String
+  success     Boolean
+  details     String?
+  riskLevel   String   @default("LOW")
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("security_logs")
+}
+
+// System Configuration
+model SystemConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
+}
+
+// Issue Reporting System
+model IssueReport {
+  id          String   @id @default(cuid())
+  userId      String?
+  title       String
+  description String
+  category    String
+  priority    String   @default("MEDIUM")
+  status      String   @default("OPEN")
+  browserInfo String?
+  url         String?
+  screenshot  String?
+  logs        String?
+  assignedTo  String?
+  resolution  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("issue_reports")
+}
+
+// Learning Management System
+model LMSProgress {
+  id              String   @id @default(cuid())
+  userId          String
+  courseId        String
+  progress        Int      @default(0)
+  completed       Boolean  @default(false)
+  score           Int?
+  attempts        Int      @default(0)
+  lastAttemptAt   DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("lms_progress")
+}
+
+model Certificate {
+  id          String   @id @default(cuid())
+  userId      String
+  courseId    String
+  courseName  String
+  score       Int
+  issuedAt    DateTime @default(now())
+  expiresAt   DateTime?
+  certificateNumber String @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("certificates")
+}
+
+model StripeSubscription {
+  id                    String   @id @default(cuid())
+  userId                String
+  stripeCustomerId      String
+  stripeSubscriptionId  String   @unique
+  status                String   // active, canceled, past_due, etc.
+  planId                String   // Stripe price ID
+  planName              String   // basic, pro, enterprise
+  amount                Int      // Amount in cents
+  currency              String   @default("usd")
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  canceledAt            DateTime?
+  lastPaymentDate       DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("stripe_subscriptions")
+}
+
+// Rigging Loft Management
+model RiggingEquipment {
+  id                String   @id @default(cuid())
+  equipmentNumber   String   @unique
+  type              String
+  category          String
+  manufacturer      String
+  model             String?
+  workingLoadLimit  Float
+  status            String   @default("IN_SERVICE")
+  location          String
+  condition         Int      @default(5)
+  lastInspection    DateTime?
+  nextInspection    DateTime?
+  certificationExpiry DateTime?
+  notes             String?
+  userId            String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user               User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movements          EquipmentMovement[]
+  inspections        EquipmentInspection[]
+  certifications     EquipmentCertification[]
+  maintenanceSchedules MaintenanceSchedule[]
+  usageLogs          EquipmentUsageLog[]
+
+  @@map("rigging_equipment")
+}
+
+model EquipmentMovement {
+  id                  String   @id @default(cuid())
+  equipmentId         String
+  equipmentNumber     String
+  movementType        String
+  fromLocation        String
+  toLocation          String
+  checkedOutBy        String?
+  checkedInBy         String?
+  projectReference    String
+  movementDate        DateTime
+  expectedReturnDate  DateTime?
+  actualReturnDate    DateTime?
+  status              String   @default("CHECKED_OUT")
+  notes               String?
+  userId              String
+  createdAt           DateTime @default(now())
+
+  equipment RiggingEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("equipment_movements")
+}
+
+model EquipmentInspection {
+  id              String   @id @default(cuid())
+  equipmentId     String
+  inspectionType  String
+  inspectedBy     String
+  inspectionDate  DateTime
+  nextInspectionDate DateTime?
+  condition       Int
+  defectsFound    String?
+  actionsTaken    String?
+  passed          Boolean
+  certificateNumber String?
+  createdAt       DateTime @default(now())
+
+  equipment RiggingEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@map("equipment_inspections")
+}
+
+model EquipmentCertification {
+  id                String   @id @default(cuid())
+  equipmentId       String
+  certificateNumber String   @unique
+  certificateType   String   // initial, periodic, repair, etc.
+  issuedDate        DateTime
+  expiryDate        DateTime
+  issuedBy          String
+  competentPerson   String
+  testLoad          Float?
+  testResult        String   @default("pass") // pass, fail
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  equipment RiggingEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@map("equipment_certifications")
+}
+
+// Enhanced Loft Management Models
+model LoftLocation {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  building    String?
+  floor       String?
+  section     String?
+  capacity    Int?     // Maximum number of items
+  isActive    Boolean  @default(true)
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([name, userId])
+  @@map("loft_locations")
+}
+
+model MaintenanceSchedule {
+  id              String   @id @default(cuid())
+  equipmentId     String
+  maintenanceType String   // routine, repair, calibration, etc.
+  scheduledDate   DateTime
+  completedDate   DateTime?
+  performedBy     String?
+  description     String
+  cost            Float?
+  notes           String?
+  nextScheduledDate DateTime?
+  userId          String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  equipment RiggingEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("maintenance_schedules")
+}
+
+model EquipmentUsageLog {
+  id            String   @id @default(cuid())
+  equipmentId   String
+  usedBy        String
+  projectName   String?
+  usageDate     DateTime
+  duration      Float?   // Hours of usage
+  purpose       String?
+  condition     Int?     // Condition after use (1-5)
+  notes         String?
+  userId        String
+  createdAt     DateTime @default(now())
+
+  equipment RiggingEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("equipment_usage_logs")
+}
+
+model Lead {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String
+  company         String?
+  phone           String?
+  source          String?
+  interests       String[] @default([])
+  leadMagnet      String?
+  ipAddress       String?
+  status          String   @default("NEW") // NEW, CONTACTED, QUALIFIED, CONVERTED, LOST
+  leadScore       Int      @default(20)
+  lastContactDate DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  interactions LeadInteraction[]
+
+  @@map("leads")
+}
+
+model LeadInteraction {
+  id          String   @id @default(cuid())
+  leadId      String
+  type        String   // EMAIL, CALL, MEETING, DOWNLOAD, etc.
+  description String?
+  outcome     String?
+  createdAt   DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@map("lead_interactions")
+}
+
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  company   String?
+  phone     String?
+  message   String
+  demoType  String   @default("general")
+  ipAddress String?
+  status    String   @default("NEW") // NEW, CONTACTED, RESOLVED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contact_submissions")
+}
+
+model PayPerUseTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  serviceType String
+  serviceName String
+  quantity    Int      @default(1)
+  unitPrice   Float
+  totalAmount Float
+  paymentId   String?
+  status      String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("pay_per_use_transactions")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  rating    Int      // 1-5 stars
+  title     String
+  content   String
+  approved  Boolean  @default(false)
+  helpful   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model CreditPurchase {
+  id            String   @id @default(cuid())
+  userId        String
+  packageType   String
+  packageName   String
+  creditsAmount Int
+  price         Float
+  paymentMethod String   @default("stripe")
+  paymentId     String?
+  status        String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("credit_purchases")
+}
+
+model ChatMessage {
+  id          String   @id @default(cuid())
+  content     String
+  messageType String   @default("text") // text, image, file, video_call, etc.
+  roomId      Int      @default(1) // Chat room ID (1 = general chat)
+  replyTo     String?  // ID of message being replied to
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // User relationship
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
+
+// Expense Management System
+model ExpenseCategory {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  color       String   @default("#3b82f6")
+  icon        String?
+  isDefault   Boolean  @default(false)
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@unique([name, userId])
+  @@map("expense_categories")
+}
+
+model Expense {
+  id              String          @id @default(cuid())
+  title           String
+  description     String?
+  amount          Float
+  currency        String          @default("USD")
+  categoryId      String
+  expenseDate     DateTime
+  receiptUrl      String?         // URL to uploaded receipt image
+  receiptFileName String?
+  paymentMethod   PaymentMethod   @default(CASH)
+  vendor          String?
+  projectId       String?         // Link to specific project
+  location        String?
+  tags            String[]        @default([])
+  status          ExpenseStatus   @default(PENDING)
+  isReimbursable  Boolean         @default(true)
+  reimbursedAt    DateTime?
+  reimbursedBy    String?
+  notes           String?
+  userId          String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category        ExpenseCategory  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  project         Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  lodgingBookings LodgingBooking[]
+
+  @@map("expenses")
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  CHECK
+  DIGITAL_WALLET
+  COMPANY_CARD
+  PETTY_CASH
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REIMBURSED
+  CANCELLED
+}
+
+// Lodging Management System
+model LodgingBooking {
+  id              String          @id @default(cuid())
+  bookingReference String         @unique
+  hotelName       String
+  hotelAddress    String
+  hotelPhone      String?
+  hotelEmail      String?
+  roomType        String
+  roomNumber      String?
+  checkInDate     DateTime
+  checkOutDate    DateTime
+  numberOfNights  Int
+  numberOfGuests  Int             @default(1)
+  guestNames      String[]        @default([])
+  totalCost       Float
+  currency        String          @default("USD")
+  bookingStatus   BookingStatus   @default(CONFIRMED)
+  paymentStatus   PaymentStatus   @default(PENDING)
+  paymentMethod   PaymentMethod   @default(CREDIT_CARD)
+  confirmationNumber String?
+  cancellationPolicy String?
+  specialRequests String?
+  projectId       String?         // Link to specific project
+  expenseId       String?         // Link to expense record
+  notes           String?
+  userId          String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  expense Expense? @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+
+  @@map("lodging_bookings")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIALLY_PAID
+  REFUNDED
+  FAILED
+}

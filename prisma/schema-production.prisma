@@ -1,0 +1,326 @@
+// Production Database Schema for Lift Planner Pro
+// Complete schema with security, logging, and real data support
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  password          String
+  name              String
+  company           String?
+  role              Role     @default(USER)
+  subscription      Subscription @default(FREE)
+  emailVerified     DateTime?
+  isActive          Boolean  @default(true)
+  lastLogin         DateTime?
+  loginAttempts     Int      @default(0)
+  lockedUntil       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  projects          Project[]
+  sessions          UserSession[]
+  securityLogs      SecurityLog[]
+  issueReports      IssueReport[]
+  lmsProgress       LMSProgress[]
+  certificates      Certificate[]
+  riggingEquipment  RiggingEquipment[]
+  equipmentMovements EquipmentMovement[]
+
+  @@map("users")
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum Subscription {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+// Session Management
+model UserSession {
+  id           String   @id @default(cuid())
+  userId       String
+  sessionToken String   @unique
+  ipAddress    String
+  userAgent    String
+  location     String?
+  isActive     Boolean  @default(true)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastActivity DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+}
+
+// Security Logging
+model SecurityLog {
+  id          String      @id @default(cuid())
+  userId      String?
+  action      SecurityAction
+  resource    String?
+  ipAddress   String
+  userAgent   String
+  success     Boolean
+  details     Json?
+  riskLevel   RiskLevel   @default(LOW)
+  createdAt   DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("security_logs")
+}
+
+enum SecurityAction {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  PASSWORD_CHANGE
+  EMAIL_CHANGE
+  ACCOUNT_LOCKED
+  ACCOUNT_UNLOCKED
+  PERMISSION_DENIED
+  DATA_ACCESS
+  DATA_MODIFICATION
+  SUSPICIOUS_ACTIVITY
+  API_ACCESS
+  FILE_UPLOAD
+  FILE_DOWNLOAD
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// Issue Reporting System
+model IssueReport {
+  id          String      @id @default(cuid())
+  userId      String?
+  title       String
+  description String
+  category    IssueCategory
+  priority    IssuePriority @default(MEDIUM)
+  status      IssueStatus   @default(OPEN)
+  browserInfo String?
+  url         String?
+  screenshot  String?
+  logs        Json?
+  assignedTo  String?
+  resolution  String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  resolvedAt  DateTime?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("issue_reports")
+}
+
+enum IssueCategory {
+  BUG
+  FEATURE_REQUEST
+  PERFORMANCE
+  SECURITY
+  UI_UX
+  DATA_ISSUE
+  AUTHENTICATION
+  OTHER
+}
+
+enum IssuePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IssueStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  DUPLICATE
+}
+
+// Project Management
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  data        Json
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("projects")
+}
+
+// Learning Management System
+model LMSProgress {
+  id              String   @id @default(cuid())
+  userId          String
+  courseId        String
+  progress        Int      @default(0)
+  completed       Boolean  @default(false)
+  score           Int?
+  attempts        Int      @default(0)
+  lastAttemptAt   DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("lms_progress")
+}
+
+model Certificate {
+  id          String   @id @default(cuid())
+  userId      String
+  courseId    String
+  courseName  String
+  score       Int
+  issuedAt    DateTime @default(now())
+  expiresAt   DateTime?
+  certificateNumber String @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("certificates")
+}
+
+// Rigging Loft Management
+model RiggingEquipment {
+  id                String            @id @default(cuid())
+  equipmentNumber   String            @unique
+  type              String
+  category          String
+  manufacturer      String
+  model             String?
+  workingLoadLimit  Float
+  status            EquipmentStatus   @default(IN_SERVICE)
+  location          String
+  condition         Int               @default(5)
+  lastInspection    DateTime?
+  nextInspection    DateTime?
+  certificationExpiry DateTime?
+  notes             String?
+  userId            String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movements EquipmentMovement[]
+  inspections EquipmentInspection[]
+
+  @@map("rigging_equipment")
+}
+
+enum EquipmentStatus {
+  IN_SERVICE
+  OUT_OF_SERVICE
+  UNDER_INSPECTION
+  CONDEMNED
+  LOST
+  STOLEN
+}
+
+model EquipmentMovement {
+  id                  String   @id @default(cuid())
+  equipmentId         String
+  equipmentNumber     String
+  movementType        String
+  fromLocation        String
+  toLocation          String
+  checkedOutBy        String?
+  checkedInBy         String?
+  projectReference    String
+  movementDate        DateTime
+  expectedReturnDate  DateTime?
+  actualReturnDate    DateTime?
+  status              MovementStatus @default(CHECKED_OUT)
+  notes               String?
+  userId              String
+  createdAt           DateTime @default(now())
+
+  equipment RiggingEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("equipment_movements")
+}
+
+enum MovementStatus {
+  CHECKED_OUT
+  CHECKED_IN
+  OVERDUE
+}
+
+model EquipmentInspection {
+  id              String   @id @default(cuid())
+  equipmentId     String
+  inspectionType  String
+  inspectedBy     String
+  inspectionDate  DateTime
+  nextInspectionDate DateTime?
+  condition       Int
+  defectsFound    String?
+  actionsTaken    String?
+  passed          Boolean
+  certificateNumber String?
+  createdAt       DateTime @default(now())
+
+  equipment RiggingEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@map("equipment_inspections")
+}
+
+// System Configuration
+model SystemConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  description String?
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
+}
+
+// Audit Trail
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  resource  String
+  resourceId String?
+  oldValues Json?
+  newValues Json?
+  ipAddress String
+  userAgent String
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}

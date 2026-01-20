@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Analytics Test - Lift Planner Pro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            background-color: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #3a3a3a;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        .info { color: #2196F3; }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .code {
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .instructions {
+            background-color: #2c3e50;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Google Analytics Test Page</h1>
+        <p class="info">This page tests if Google Analytics is properly installed on Lift Planner Pro.</p>
+        
+        <div class="test-section">
+            <h3>📊 Analytics Status</h3>
+            <div id="analytics-status" class="status">Checking...</div>
+            <div id="gtag-status" class="status">Checking gtag function...</div>
+            <div id="dataLayer-status" class="status">Checking dataLayer...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Test Analytics Events</h3>
+            <p>Click these buttons to test custom event tracking:</p>
+            <button onclick="testPageView()">Test Page View</button>
+            <button onclick="testCustomEvent()">Test Custom Event</button>
+            <button onclick="testUserInteraction()">Test User Interaction</button>
+            <button onclick="testCADOperation()">Test CAD Operation</button>
+            <button onclick="testLMSActivity()">Test LMS Activity</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Verification Steps</h3>
+            <div class="instructions">
+                <h4>To verify Google Analytics is working:</h4>
+                <ol>
+                    <li>Open your browser's Developer Tools (F12)</li>
+                    <li>Go to the <strong>Network</strong> tab</li>
+                    <li>Filter by "gtag" or "google-analytics"</li>
+                    <li>Refresh this page or click test buttons</li>
+                    <li>Look for requests to <code>www.google-analytics.com</code></li>
+                </ol>
+                
+                <h4>In Google Analytics Dashboard:</h4>
+                <ol>
+                    <li>Go to your Google Analytics account</li>
+                    <li>Navigate to <strong>Reports → Real-time → Overview</strong></li>
+                    <li>Visit pages on liftplannerpro.org</li>
+                    <li>Check if page views appear in real-time</li>
+                    <li>Test custom events by clicking buttons above</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Implementation Details</h3>
+            <div class="code">
+                Tracking ID: G-2RB6SYH1GV<br>
+                Implementation: Next.js Script component<br>
+                Strategy: afterInteractive<br>
+                Location: app/layout.tsx
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Console Output</h3>
+            <div id="console-output" class="code" style="max-height: 200px; overflow-y: auto;">
+                Console messages will appear here...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Console logging function
+        function logToConsole(message, type = 'info') {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            output.textContent += logEntry;
+            output.scrollTop = output.scrollHeight;
+            
+            // Also log to browser console
+            console.log(`[Analytics Test] ${message}`);
+        }
+
+        // Check if Google Analytics is loaded
+        function checkAnalytics() {
+            const analyticsStatus = document.getElementById('analytics-status');
+            const gtagStatus = document.getElementById('gtag-status');
+            const dataLayerStatus = document.getElementById('dataLayer-status');
+
+            // Check if gtag function exists
+            if (typeof gtag !== 'undefined') {
+                gtagStatus.textContent = '✅ gtag function is available';
+                gtagStatus.className = 'status success';
+                logToConsole('gtag function is available', 'success');
+            } else {
+                gtagStatus.textContent = '❌ gtag function not found';
+                gtagStatus.className = 'status error';
+                logToConsole('gtag function not found', 'error');
+            }
+
+            // Check if dataLayer exists
+            if (typeof dataLayer !== 'undefined' && Array.isArray(dataLayer)) {
+                dataLayerStatus.textContent = `✅ dataLayer is available (${dataLayer.length} items)`;
+                dataLayerStatus.className = 'status success';
+                logToConsole(`dataLayer is available with ${dataLayer.length} items`, 'success');
+            } else {
+                dataLayerStatus.textContent = '❌ dataLayer not found';
+                dataLayerStatus.className = 'status error';
+                logToConsole('dataLayer not found', 'error');
+            }
+
+            // Overall status
+            if (typeof gtag !== 'undefined' && typeof dataLayer !== 'undefined') {
+                analyticsStatus.textContent = '✅ Google Analytics is properly loaded';
+                analyticsStatus.className = 'status success';
+                logToConsole('Google Analytics is properly loaded', 'success');
+            } else {
+                analyticsStatus.textContent = '❌ Google Analytics not properly loaded';
+                analyticsStatus.className = 'status error';
+                logToConsole('Google Analytics not properly loaded', 'error');
+            }
+        }
+
+        // Test functions
+        function testPageView() {
+            if (typeof gtag !== 'undefined') {
+                gtag('config', 'G-2RB6SYH1GV', {
+                    page_title: 'Analytics Test Page',
+                    page_location: window.location.href,
+                });
+                logToConsole('Page view event sent', 'success');
+            } else {
+                logToConsole('Cannot send page view - gtag not available', 'error');
+            }
+        }
+
+        function testCustomEvent() {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'test_custom_event', {
+                    event_category: 'Test',
+                    event_label: 'Analytics Test Page',
+                    value: 1
+                });
+                logToConsole('Custom event sent', 'success');
+            } else {
+                logToConsole('Cannot send custom event - gtag not available', 'error');
+            }
+        }
+
+        function testUserInteraction() {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'button_click', {
+                    event_category: 'User Interaction',
+                    event_label: 'Test Button',
+                });
+                logToConsole('User interaction event sent', 'success');
+            } else {
+                logToConsole('Cannot send user interaction - gtag not available', 'error');
+            }
+        }
+
+        function testCADOperation() {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'test_cad_operation', {
+                    event_category: 'CAD Operations',
+                    event_label: 'Test Operation',
+                });
+                logToConsole('CAD operation event sent', 'success');
+            } else {
+                logToConsole('Cannot send CAD operation - gtag not available', 'error');
+            }
+        }
+
+        function testLMSActivity() {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'test_lms_activity', {
+                    event_category: 'LMS Activities',
+                    event_label: 'Test Course',
+                });
+                logToConsole('LMS activity event sent', 'success');
+            } else {
+                logToConsole('Cannot send LMS activity - gtag not available', 'error');
+            }
+        }
+
+        // Check analytics on page load
+        window.addEventListener('load', function() {
+            logToConsole('Page loaded, checking analytics...', 'info');
+            setTimeout(checkAnalytics, 1000); // Wait a bit for scripts to load
+        });
+
+        // Check again after a delay to ensure scripts have loaded
+        setTimeout(function() {
+            logToConsole('Rechecking analytics after delay...', 'info');
+            checkAnalytics();
+        }, 3000);
+    </script>
+</body>
+</html>

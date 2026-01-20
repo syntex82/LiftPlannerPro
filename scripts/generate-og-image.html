@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate OG Image - Lift Planner Pro</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        
+        .og-image {
+            width: 1200px;
+            height: 630px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d3748 50%, #4a5568 100%);
+            position: relative;
+            overflow: hidden;
+            margin: 0 auto;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .og-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            color: white;
+            z-index: 2;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: #3b82f6;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            margin-right: 24px;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .brand-text {
+            flex: 1;
+        }
+        
+        .brand-name {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 0;
+            background: linear-gradient(45deg, #3b82f6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .brand-tagline {
+            font-size: 24px;
+            color: #94a3b8;
+            margin: 8px 0 0 0;
+            font-weight: 300;
+        }
+        
+        .main-title {
+            font-size: 56px;
+            font-weight: bold;
+            margin: 0 0 24px 0;
+            line-height: 1.1;
+            color: white;
+        }
+        
+        .description {
+            font-size: 28px;
+            color: #cbd5e1;
+            margin: 0 0 40px 0;
+            line-height: 1.4;
+            max-width: 800px;
+        }
+        
+        .features {
+            display: flex;
+            gap: 40px;
+            margin-top: 20px;
+        }
+        
+        .feature {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            color: #e2e8f0;
+        }
+        
+        .feature-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+        
+        .background-pattern {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 600px;
+            height: 100%;
+            opacity: 0.1;
+            background-image: 
+                radial-gradient(circle at 25% 25%, #3b82f6 2px, transparent 2px),
+                radial-gradient(circle at 75% 75%, #06b6d4 2px, transparent 2px);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+        }
+        
+        .cad-illustration {
+            position: absolute;
+            bottom: 40px;
+            right: 60px;
+            width: 300px;
+            height: 200px;
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            background: rgba(59, 130, 246, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #3b82f6;
+            backdrop-filter: blur(10px);
+        }
+        
+        .download-btn {
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: inline-block;
+        }
+        
+        .download-btn:hover {
+            background: #2563eb;
+        }
+        
+        .instructions {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h2>🎨 Open Graph Image Generator for Lift Planner Pro</h2>
+        <p>This page generates a professional Open Graph image for social media previews. Right-click on the image below and save it as <strong>og-image.png</strong> in your public folder.</p>
+        <p><strong>Recommended:</strong> Use a screenshot tool to capture the exact 1200x630 dimensions for best quality.</p>
+    </div>
+
+    <div class="og-image" id="ogImage">
+        <div class="background-pattern"></div>
+        
+        <div class="og-content">
+            <div class="logo-section">
+                <div class="logo">🏗️</div>
+                <div class="brand-text">
+                    <h1 class="brand-name">Lift Planner Pro</h1>
+                    <p class="brand-tagline">Professional CAD Software</p>
+                </div>
+            </div>
+            
+            <h2 class="main-title">Plan. Design. Execute.</h2>
+            <p class="description">
+                Advanced CAD tools for safe and efficient lifting operations with integrated load calculator and RAMS generator.
+            </p>
+            
+            <div class="features">
+                <div class="feature">
+                    <span class="feature-icon">🎨</span>
+                    <span>2D CAD Editor</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">⚖️</span>
+                    <span>Load Calculator</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">📋</span>
+                    <span>RAMS Generator</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="cad-illustration">
+            CAD Interface Preview
+        </div>
+    </div>
+
+    <div class="instructions">
+        <h3>📋 How to Use This Image:</h3>
+        <ol>
+            <li><strong>Screenshot:</strong> Use a screenshot tool to capture the blue image above at exactly 1200x630 pixels</li>
+            <li><strong>Save:</strong> Save the image as <code>og-image.png</code></li>
+            <li><strong>Upload:</strong> Place the file in your <code>public/</code> folder</li>
+            <li><strong>Test:</strong> Use LinkedIn's Post Inspector or Facebook's Sharing Debugger to test</li>
+        </ol>
+        
+        <h3>🔧 Alternative Method:</h3>
+        <p>You can also use online tools like Canva, Figma, or Adobe Express to create a custom 1200x630 image with your branding.</p>
+        
+        <button class="download-btn" onclick="downloadAsImage()">📸 Generate Screenshot Instructions</button>
+    </div>
+
+    <script>
+        function downloadAsImage() {
+            alert('📸 Screenshot Instructions:\n\n1. Use your system screenshot tool (Windows: Snipping Tool, Mac: Cmd+Shift+4)\n2. Capture ONLY the blue gradient image above\n3. Ensure dimensions are 1200x630 pixels\n4. Save as og-image.png\n5. Upload to your public/ folder\n\nFor best results, use a browser at 100% zoom level.');
+        }
+        
+        // Add some dynamic elements
+        document.addEventListener('DOMContentLoaded', function() {
+            const ogImage = document.getElementById('ogImage');
+            ogImage.style.transform = 'scale(1)';
+            ogImage.style.transition = 'transform 0.3s ease';
+            
+            ogImage.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.02)';
+            });
+            
+            ogImage.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>
