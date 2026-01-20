@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
         email: true,
         role: true,
         subscription: true,
+        trialEndsAt: true,
         isActive: true,
         lastLogin: true,
         loginAttempts: true,
@@ -122,20 +123,22 @@ export async function GET(request: NextRequest) {
 
       return {
         id: user.id,
-        name: user.name || 'Unknown',
+        name: user.name || null,
         email: user.email,
         role: user.role || 'user',
         status: user.isActive && !user.lockedUntil ? 'active' : 'inactive',
-        lastLogin: user.lastLogin?.toISOString() || 'Never',
+        lastLogin: user.lastLogin?.toISOString() || null,
         createdAt: user.createdAt.toISOString(),
-        company: user.company || 'Not specified',
+        company: user.company || null,
         projects: user._count.projects,
         issueReports: user._count.issueReports,
         securityLogs: user._count.securityLogs,
         isActive: user.isActive,
         loginAttempts: user.loginAttempts,
         isLocked: user.lockedUntil ? new Date(user.lockedUntil) > new Date() : false,
-        subscription: getSubscriptionData(user.subscription || 'free'),
+        subscription: user.subscription || 'free',
+        trialEndsAt: user.trialEndsAt?.toISOString() || null,
+        subscriptionDetails: getSubscriptionData(user.subscription || 'free'),
         billing: getBillingData(user.subscription || 'free', user.createdAt)
       }
     })

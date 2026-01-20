@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Users, Shield, AlertTriangle, Settings, BarChart3, Activity, Lock, FileText, Wrench, DollarSign, Globe, CreditCard, Eye } from "lucide-react"
 import VisitorAnalytics from '@/components/admin/visitor-analytics'
+import UserManagement from '@/components/admin/UserManagement'
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
@@ -529,32 +530,11 @@ ${result.findings?.map((f: any) => `${f.severity}: ${f.description}`).join('\n')
           </TabsContent>
 
           <TabsContent value="users">
-            <Card className="bg-slate-800 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white">User Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8">Loading users...</div>
-                ) : users.length === 0 ? (
-                  <div className="text-center py-8">No users found</div>
-                ) : (
-                  <div className="space-y-4">
-                    {users.slice(0, 5).map((user: any, index) => (
-                      <div key={index} className="flex justify-between items-center p-4 bg-slate-700 rounded">
-                        <div>
-                          <p className="font-medium">{user.name || 'Unknown'}</p>
-                          <p className="text-sm text-slate-400">{user.email}</p>
-                        </div>
-                        <Badge className={user.role === 'admin' ? 'bg-purple-600' : 'bg-blue-600'}>
-                          {user.role || 'user'}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <UserManagement
+              users={users}
+              onRefresh={loadData}
+              isLoading={isLoading}
+            />
           </TabsContent>
 
           <TabsContent value="customers">
