@@ -1,0 +1,57 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Lift Planner Pro - Development Docker Compose
+# Runs only PostgreSQL and Redis for local development
+# The app runs directly on your machine for hot-reload
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Usage:
+#   docker-compose -f docker-compose.dev.yml up -d
+#   npm run dev
+#
+# Stop:
+#   docker-compose -f docker-compose.dev.yml down
+#
+# Reset database:
+#   docker-compose -f docker-compose.dev.yml down -v
+#   docker-compose -f docker-compose.dev.yml up -d
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: liftplanner-dev-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: liftplanner
+      POSTGRES_PASSWORD: liftplanner123
+      POSTGRES_DB: liftplannerpro
+    ports:
+      - "5432:5432"
+    volumes:
+      - liftplanner_postgres_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U liftplanner"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and sessions (optional but recommended)
+  redis:
+    image: redis:7-alpine
+    container_name: liftplanner-dev-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - liftplanner_redis_dev:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  liftplanner_postgres_dev:
+  liftplanner_redis_dev:
+
