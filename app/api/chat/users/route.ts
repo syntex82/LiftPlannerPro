@@ -45,7 +45,8 @@ export async function GET(request: NextRequest) {
       // WHERE p.room_id = ?
     }
 
-    return NextResponse.json({ users })
+    // Return array directly for compatibility
+    return NextResponse.json(users)
 
   } catch (error) {
     console.error('Get users error:', error)

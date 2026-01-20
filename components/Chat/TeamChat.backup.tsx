@@ -128,14 +128,33 @@ interface ChatRoom {
   lastMessageTime?: string
 }
 
+// Default demo data
+const defaultRooms: ChatRoom[] = [
+  { id: 1, name: 'general', type: 'channel', unread_count: 0, icon: '#', lastMessage: 'Welcome to the team!', lastMessageTime: 'Just now' },
+  { id: 2, name: 'projects', type: 'channel', unread_count: 2, icon: '#', lastMessage: 'New lift plan uploaded', lastMessageTime: '5m' },
+  { id: 3, name: 'support', type: 'channel', unread_count: 0, icon: '#', lastMessage: 'Issue resolved', lastMessageTime: '1h' },
+]
+
+const defaultUsers: User[] = [
+  { id: 1, name: 'John Smith', email: 'john@example.com', isOnline: true, status: 'online' },
+  { id: 2, name: 'Sarah Jones', email: 'sarah@example.com', isOnline: true, status: 'away' },
+  { id: 3, name: 'Mike Chen', email: 'mike@example.com', isOnline: false, status: 'offline' },
+]
+
+const defaultMessages: Message[] = [
+  { id: 1, content: 'Welcome to the team chat! 🎉', username: 'System', messageType: 'text', created_at: new Date().toISOString(), isRead: true },
+  { id: 2, content: 'Hey everyone, the new lift plan is ready for review.', username: 'John Smith', messageType: 'text', created_at: new Date(Date.now() - 300000).toISOString(), isRead: true },
+  { id: 3, content: 'Great work! I will take a look at it now.', username: 'Sarah Jones', messageType: 'text', created_at: new Date(Date.now() - 120000).toISOString(), isRead: true },
+]
+
 function TeamChatContent({ projectId }: { projectId?: number }) {
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<Message[]>(defaultMessages)
   const [newMessage, setNewMessage] = useState('')
-  const [rooms, setRooms] = useState<ChatRoom[]>([])
-  const [currentRoom, setCurrentRoom] = useState<number | null>(null)
-  const [isConnected, setIsConnected] = useState(false)
+  const [rooms, setRooms] = useState<ChatRoom[]>(defaultRooms)
+  const [currentRoom, setCurrentRoom] = useState<number | null>(1)
+  const [isConnected, setIsConnected] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<User[]>(defaultUsers)
   const [isUploading, setIsUploading] = useState(false)
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [showUserList, setShowUserList] = useState(true)
@@ -207,10 +226,9 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
       const response = await fetch('/api/chat/rooms')
       if (response.ok) {
         const data = await response.json()
-        const roomsList = data.rooms || data || []
-        setRooms(roomsList)
-        if (roomsList.length > 0 && !currentRoom) {
-          setCurrentRoom(roomsList[0].id)
+        setRooms(data)
+        if (data.length > 0 && !currentRoom) {
+          setCurrentRoom(data[0].id)
         }
       }
     } catch (error) {

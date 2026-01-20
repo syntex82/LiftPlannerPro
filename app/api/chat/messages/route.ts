@@ -156,8 +156,9 @@ export async function GET(request: NextRequest) {
 
     // Regular message fetch
     const messages = await getMessagesFromDB(parseInt(roomId))
-    
-    return NextResponse.json({ messages })
+
+    // Return array directly for compatibility
+    return NextResponse.json(messages)
 
   } catch (error) {
     console.error('Chat messages error:', error)

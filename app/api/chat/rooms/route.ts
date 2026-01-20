@@ -49,14 +49,15 @@ export async function GET(request: NextRequest) {
     // Get user from session
     const userId = await getUserFromSession(request)
     if (!userId) {
-      // Return default rooms for anonymous users
-      return NextResponse.json({ rooms: roomsStore })
+      // Return default rooms for anonymous users (array directly)
+      return NextResponse.json(roomsStore)
     }
 
     // Get user's chat rooms
     const rooms = await getUserChatRooms(userId)
 
-    return NextResponse.json({ rooms })
+    // Return array directly for compatibility
+    return NextResponse.json(rooms)
 
   } catch (error) {
     console.error('Get chat rooms error:', error)

@@ -78,19 +78,7 @@ export class ChatErrorBoundary extends React.Component<
 // Functional component wrapper for easier use
 export default function ChatErrorWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <ChatErrorBoundary
-      fallback={
-        <div className="p-4 bg-slate-800/50 border border-slate-700 rounded-lg">
-          <div className="flex items-center gap-3">
-            <MessageSquare className="w-5 h-5 text-slate-400" />
-            <div>
-              <p className="text-white text-sm font-medium">Chat Unavailable</p>
-              <p className="text-slate-400 text-xs">Please refresh to try again</p>
-            </div>
-          </div>
-        </div>
-      }
-    >
+    <ChatErrorBoundary>
       {children}
     </ChatErrorBoundary>
   )
