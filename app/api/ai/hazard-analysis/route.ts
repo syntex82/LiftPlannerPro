@@ -3,14 +3,15 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Only initialize OpenAI if API key is available
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null
 
 export async function POST(req: NextRequest) {
   try {
     // Check for OpenAI API key first
-    if (!process.env.OPENAI_API_KEY) {
+    if (!openai) {
       console.error('OPENAI_API_KEY not configured')
       return NextResponse.json(
         { error: 'AI service not configured. Please add OPENAI_API_KEY to .env' },
