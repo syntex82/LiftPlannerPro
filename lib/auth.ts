@@ -229,6 +229,28 @@ export const authOptions: NextAuthOptions = {
   events: {
     async signIn({ user, account, profile, isNewUser }) {
       console.log('User signed in:', user.email)
+
+      // Set trial period for new users
+      if (isNewUser && user.email) {
+        try {
+          const { prisma } = await import('@/lib/prisma')
+          const { getTrialEndDate, isAdmin } = await import('@/lib/subscription')
+
+          // Don't set trial for admins
+          if (!isAdmin(user.email)) {
+            await prisma.user.update({
+              where: { email: user.email },
+              data: {
+                subscription: 'trial',
+                trialEndsAt: getTrialEndDate(),
+              }
+            })
+            console.log('Trial period set for new user:', user.email)
+          }
+        } catch (error) {
+          console.error('Error setting trial period:', error)
+        }
+      }
     },
     async signOut({ session, token }) {
       console.log('User signed out:', session?.user?.email)

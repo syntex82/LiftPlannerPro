@@ -45,7 +45,8 @@ model User {
   image         String?
   password      String?
   role          String    @default("user")
-  subscription  String?   @default("free")
+  subscription  String?   @default("trial")
+  trialEndsAt   DateTime?
   isActive      Boolean   @default(true)
   lastLogin     DateTime?
   loginAttempts Int       @default(0)

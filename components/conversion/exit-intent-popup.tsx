@@ -47,7 +47,7 @@ export default function ExitIntentPopup({ isVisible, onClose, onCapture }: ExitI
       id: 'free_trial',
       title: '7-Day Free Trial',
       description: 'Full access to all professional features',
-      value: '£29 Value',
+      value: '£19/month after trial',
       cta: 'Start Free Trial',
       popular: true
     },
@@ -62,8 +62,8 @@ export default function ExitIntentPopup({ isVisible, onClose, onCapture }: ExitI
     {
       id: 'discount',
       title: '50% Off First Month',
-      description: 'Professional plan for just £14.50',
-      value: 'Save £14.50',
+      description: 'Professional plan for just £9.50',
+      value: 'Save £9.50',
       cta: 'Claim Discount',
       popular: false
     }

@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { isAdmin, SUBSCRIPTION_CONFIG } from '@/lib/subscription'
 
 export async function POST(req: NextRequest) {
   try {
+    // Check if user is authenticated
+    const session = await getServerSession(authOptions)
+
     // Check if Stripe is properly configured
     if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test_your_secret_key_here') {
       return NextResponse.json(
@@ -24,8 +30,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create Checkout Sessions from body params.
-    const session = await stripe.checkout.sessions.create({
+    // Create Checkout Session with 7-day trial
+    const checkoutConfig: Stripe.Checkout.SessionCreateParams = {
       line_items: [
         {
           price: priceId,
@@ -38,9 +44,20 @@ export async function POST(req: NextRequest) {
       metadata: {
         planName: planName,
       },
-    })
+      // Add 7-day free trial for new subscribers
+      subscription_data: {
+        trial_period_days: SUBSCRIPTION_CONFIG.trialDays,
+      },
+    }
 
-    return NextResponse.json({ url: session.url })
+    // Add customer email if logged in
+    if (session?.user?.email) {
+      checkoutConfig.customer_email = session.user.email
+    }
+
+    const checkoutSession = await stripe.checkout.sessions.create(checkoutConfig)
+
+    return NextResponse.json({ url: checkoutSession.url })
   } catch (err: any) {
     console.error('Stripe checkout error:', err)
     return NextResponse.json(

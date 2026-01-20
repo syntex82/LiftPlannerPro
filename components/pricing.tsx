@@ -8,11 +8,13 @@ import { Check, Star, Loader2 } from "lucide-react"
 const plans = [
   {
     name: "Professional",
-    price: "£29",
+    price: "£19",
     period: "/month",
-    priceId: "price_1RrBNCFzzHwoqssW6DtAPF2N", // Professional Plan Price ID
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID || "price_1RrBNCFzzHwoqssW6DtAPF2N", // Professional Plan Price ID
     description: "Complete professional CAD software for lifting and rigging",
+    trialDays: 7,
     features: [
+      "7-Day Free Trial",
       "Full 2D CAD Drawing Suite",
       "Advanced RAMS Generator",
       "Load & Tension Calculators",
@@ -23,6 +25,7 @@ const plans = [
       "Professional Title Blocks",
       "Unlimited Projects",
       "Cloud Storage",
+      "Team Chat & Video Calling",
       "Priority Email Support",
       "Regular Updates",
     ],
