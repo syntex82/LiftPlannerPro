@@ -5,10 +5,14 @@ import { useSession } from 'next-auth/react'
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { useVideoChat } from '@/hooks/use-video-chat'
+import PermissionRequestModal from '@/components/video-chat/permission-request-modal'
+import IncomingCallModal from '@/components/video-chat/incoming-call-modal'
+import VideoCallWindow from '@/components/video-chat/video-call-window'
 import {
-  Hash, Users, Video, Phone, Monitor, Settings, Plus, Search, MessageSquare, Send, Smile, 
+  Hash, Users, Video, Phone, Monitor, Settings, Plus, Search, MessageSquare, Send, Smile,
   Paperclip, Image, MoreHorizontal, Reply, X, PhoneOff, Mic, MicOff, VideoOff,
-  ChevronDown, CheckCheck, Bell, BellOff, Pin, Star, AtSign, Command, Bold, Italic, 
+  ChevronDown, CheckCheck, Bell, BellOff, Pin, Star, AtSign, Command, Bold, Italic,
   Code, Link2, ListOrdered, List, Quote, FileText, Download, Eye, Clock, UserPlus,
   MessageCircle, Mail, Briefcase, MapPin, Globe, Calendar, Award, Zap, Coffee
 } from "lucide-react"
@@ -192,15 +196,52 @@ export default function ProfessionalTeamChat() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [activeTab, setActiveTab] = useState<'channels' | 'dms' | 'threads'>('channels')
 
+  // Video call state
+  const [showPermissionModal, setShowPermissionModal] = useState(false)
+  const [targetCallUser, setTargetCallUser] = useState<ChatUser | null>(null)
+
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messageInputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const eventSourceRef = useRef<EventSource | null>(null)
 
   // Current user
   const currentUserName = session?.user?.name || 'User'
   const currentUserEmail = session?.user?.email || ''
+
+  // Video signal handler for sending via API
+  const handleVideoMessage = useCallback(async (message: any) => {
+    if (!currentRoom) return
+    console.log('📹 handleVideoMessage called with:', message.type)
+
+    try {
+      const response = await fetch('/api/chat/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId: currentRoom,
+          content: JSON.stringify(message),
+          messageType: 'video_call_signal'
+        })
+      })
+
+      if (response.ok) {
+        console.log('📹✅ Video signal sent successfully')
+      } else {
+        console.error('📹❌ Failed to send video signal:', response.status)
+      }
+    } catch (error) {
+      console.error('📹💥 Error sending video signal:', error)
+    }
+  }, [currentRoom])
+
+  // Video chat hook
+  const videoChat = useVideoChat({
+    currentUserName,
+    onSendMessage: handleVideoMessage
+  })
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -306,26 +347,73 @@ export default function ProfessionalTeamChat() {
     fetchMessages()
 
     // Set up SSE for real-time updates
-    const eventSource = new EventSource(`/api/chat/messages?roomId=${currentRoom}&subscribe=true`)
+    console.log(`🔌 Connecting to room ${currentRoom}...`)
+    const eventSource = new EventSource(`/api/chat/messages?roomId=${currentRoom}&stream=true`)
+    eventSourceRef.current = eventSource
+
+    eventSource.onopen = () => {
+      console.log('✅ SSE connected')
+      setIsConnected(true)
+    }
 
     eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      if (data.type === 'message') {
-        setMessages(prev => [...prev, data.message])
-      } else if (data.type === 'typing') {
-        setTypingUsers(data.users)
+      try {
+        const data = JSON.parse(event.data)
+        console.log('📨 SSE message received:', data.type)
+
+        if (data.type === 'new_message') {
+          const message = data.message
+          console.log('📨 Message type:', message.messageType, 'from:', message.username)
+
+          // Handle video call signals
+          if (message.messageType === 'video_call_signal') {
+            try {
+              const parsedContent = JSON.parse(message.content)
+              console.log('📹⬅️ Raw video signal content:', parsedContent)
+
+              let signalData = parsedContent
+
+              // Unwrap if it's the wrapper format
+              if (parsedContent.type === 'video_call_signal' && parsedContent.data) {
+                signalData = parsedContent.data
+                console.log('📹 Unwrapped signal data:', signalData.type, 'from:', signalData.from)
+              }
+
+              videoChat.handleWebSocketMessage({
+                type: 'video_call_signal',
+                data: signalData
+              })
+            } catch (error) {
+              console.error('📹❌ Error parsing video signal:', error)
+            }
+          } else {
+            // Regular message
+            console.log('💬 Adding message to chat:', message.content?.substring(0, 30))
+            setMessages(prev => [...prev, message])
+          }
+        } else if (data.type === 'connected') {
+          console.log('✅ SSE connection confirmed for room')
+        } else if (data.type === 'typing') {
+          setTypingUsers(data.users)
+        }
+      } catch (e) {
+        console.error('❌ Error parsing SSE message:', e)
       }
     }
 
-    eventSource.onerror = () => {
+    eventSource.onerror = (error) => {
+      console.log('⚠️ SSE error, will reconnect...', error)
       setIsConnected(false)
       eventSource.close()
+      eventSourceRef.current = null
     }
 
     return () => {
+      console.log('🔌 Closing SSE connection')
       eventSource.close()
+      eventSourceRef.current = null
     }
-  }, [currentRoom])
+  }, [currentRoom, videoChat])
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -410,11 +498,80 @@ export default function ProfessionalTeamChat() {
     setShowUserProfile(true)
   }
 
-  // Start direct message
+  // Start direct message - send a message mentioning the user
   const startDirectMessage = async (user: ChatUser) => {
     setShowUserProfile(false)
-    // TODO: Create or open DM conversation with user
-    console.log('Starting DM with:', user.name)
+    // For now, insert their name in the message box to start a conversation
+    setNewMessage(`@${user.name} `)
+    messageInputRef.current?.focus()
+  }
+
+  // Start a video call to the current room
+  const handleStartVideoCall = async () => {
+    console.log('📹🚀 Starting video call...')
+
+    if (!currentRoom) {
+      alert('Please select a chat room first')
+      return
+    }
+
+    if (!isConnected) {
+      alert('Chat is not connected. Please wait for the connection to be established.')
+      return
+    }
+
+    const support = await (await import('@/components/video-chat/webrtc-manager')).WebRTCManager.checkSupport()
+    console.log('📹 WebRTC support check:', support)
+
+    if (!support.supported) {
+      alert(`Video calling not available: ${support.error}`)
+      return
+    }
+    if (support.needsPermission) {
+      console.log('📹 Showing permission modal')
+      setShowPermissionModal(true)
+      return
+    }
+    const room = rooms.find(r => r.id === currentRoom)
+    console.log('📹 Starting call to room:', room?.name || 'Team')
+    videoChat.startCall(room?.name || 'Team')
+  }
+
+  // Start a video call to a specific user
+  const handleStartVideoCallToUser = async (user: ChatUser) => {
+    console.log('📹🚀 Starting video call to user:', user.name)
+
+    if (!user.isOnline) {
+      alert(`${user.name} is currently offline and cannot receive calls.`)
+      return
+    }
+
+    if (!currentRoom) {
+      alert('Please select a chat room first')
+      return
+    }
+
+    if (!isConnected) {
+      alert('Chat is not connected. Please wait for the connection to be established.')
+      return
+    }
+
+    const support = await (await import('@/components/video-chat/webrtc-manager')).WebRTCManager.checkSupport()
+    console.log('📹 WebRTC support check:', support)
+
+    if (!support.supported) {
+      alert(`Video calling not available: ${support.error}`)
+      return
+    }
+    if (support.needsPermission) {
+      setTargetCallUser(user)
+      console.log('📹 Showing permission modal for user call')
+      setShowPermissionModal(true)
+      return
+    }
+
+    console.log('📹 Starting call to user:', user.name)
+    videoChat.startCall(user.name)
   }
 
   // Filter users for search
@@ -736,14 +893,29 @@ export default function ProfessionalTeamChat() {
 
                   <Button
                     size="sm"
-                    className="bg-slate-700/50 hover:bg-slate-700 text-white rounded-xl gap-2"
+                    onClick={handleStartVideoCall}
+                    className={`rounded-xl gap-2 ${
+                      videoChat.callState.isInCall
+                        ? 'bg-red-500 hover:bg-red-600 text-white'
+                        : 'bg-slate-700/50 hover:bg-slate-700 text-white'
+                    }`}
                   >
-                    <Video className="w-4 h-4" />
-                    <span className="hidden sm:inline">Video</span>
+                    {videoChat.callState.isInCall ? (
+                      <>
+                        <PhoneOff className="w-4 h-4" />
+                        <span className="hidden sm:inline">End</span>
+                      </>
+                    ) : (
+                      <>
+                        <Video className="w-4 h-4" />
+                        <span className="hidden sm:inline">Video</span>
+                      </>
+                    )}
                   </Button>
 
                   <Button
                     size="sm"
+                    onClick={handleStartVideoCall}
                     className="bg-slate-700/50 hover:bg-slate-700 text-white rounded-xl gap-2"
                   >
                     <Phone className="w-4 h-4" />
@@ -1249,23 +1421,46 @@ export default function ProfessionalTeamChat() {
             </h4>
             <div className="space-y-1 mb-6">
               {filteredUsers.filter(u => u.isOnline).map((user) => (
-                <button
+                <div
                   key={user.id}
-                  onClick={() => openUserProfile(user)}
                   className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800/50 transition-colors cursor-pointer group"
                 >
-                  <div className="relative">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
-                      {user.name[0]?.toUpperCase()}
+                  <button onClick={() => openUserProfile(user)} className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="relative">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
+                        {user.name[0]?.toUpperCase()}
+                      </div>
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${getStatusColor(user.status)}`} />
                     </div>
-                    <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${getStatusColor(user.status)}`} />
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="text-sm font-medium text-white truncate group-hover:text-blue-400 transition-colors">{user.name}</p>
-                    <p className="text-xs text-slate-500 truncate">{user.statusMessage || user.jobTitle || getStatusLabel(user.status)}</p>
-                  </div>
-                  <MessageCircle className="w-4 h-4 text-slate-600 group-hover:text-blue-400 transition-colors" />
-                </button>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-sm font-medium text-white truncate group-hover:text-blue-400 transition-colors">{user.name}</p>
+                      <p className="text-xs text-slate-500 truncate">{user.statusMessage || user.jobTitle || getStatusLabel(user.status)}</p>
+                    </div>
+                  </button>
+                  {/* Call buttons - show on hover */}
+                  {user.name !== currentUserName && (
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleStartVideoCallToUser(user)}
+                        className="h-7 w-7 p-0 text-green-400 hover:text-green-300 hover:bg-green-500/20"
+                        title={`Video call ${user.name}`}
+                      >
+                        <Video className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleStartVideoCallToUser(user)}
+                        className="h-7 w-7 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20"
+                        title={`Voice call ${user.name}`}
+                      >
+                        <Phone className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
 
@@ -1404,7 +1599,7 @@ export default function ProfessionalTeamChat() {
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   <Button
                     onClick={() => startDirectMessage(selectedUser)}
                     className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white"
@@ -1412,10 +1607,15 @@ export default function ProfessionalTeamChat() {
                     <MessageCircle className="w-4 h-4 mr-2" />
                     Message
                   </Button>
-                  <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Follow
-                  </Button>
+                  {selectedUser.isOnline && selectedUser.name !== currentUserName && (
+                    <Button
+                      onClick={() => { setShowUserProfile(false); handleStartVideoCallToUser(selectedUser); }}
+                      className="bg-green-600 hover:bg-green-500 text-white"
+                    >
+                      <Video className="w-4 h-4 mr-2" />
+                      Call
+                    </Button>
+                  )}
                 </div>
               </div>
             </>
@@ -1446,6 +1646,46 @@ export default function ProfessionalTeamChat() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Video Call Window */}
+      <VideoCallWindow
+        callState={videoChat.callState}
+        onEndCall={videoChat.endCall}
+        onToggleAudio={videoChat.toggleAudio}
+        onToggleVideo={videoChat.toggleVideo}
+        isAudioEnabled={videoChat.isAudioEnabled}
+        isVideoEnabled={videoChat.isVideoEnabled}
+      />
+
+      {/* Incoming Call Modal */}
+      <IncomingCallModal
+        isVisible={videoChat.incomingCall.isVisible}
+        callerName={videoChat.incomingCall.callerName}
+        callId={videoChat.incomingCall.callId}
+        onAccept={videoChat.acceptCall}
+        onReject={videoChat.rejectCall}
+      />
+
+      {/* Permission Request Modal */}
+      <PermissionRequestModal
+        isVisible={showPermissionModal}
+        onClose={() => { setShowPermissionModal(false); setTargetCallUser(null); }}
+        onRequestPermissions={async () => {
+          try {
+            await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            setShowPermissionModal(false)
+            if (targetCallUser) {
+              videoChat.startCall(targetCallUser.name)
+              setTargetCallUser(null)
+            } else {
+              handleStartVideoCall()
+            }
+          } catch (e) {
+            console.error('Permission denied:', e)
+            setTargetCallUser(null)
+          }
+        }}
+      />
     </div>
   )
 }
