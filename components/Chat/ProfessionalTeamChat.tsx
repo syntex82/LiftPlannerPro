@@ -200,6 +200,12 @@ export default function ProfessionalTeamChat() {
   const [showPermissionModal, setShowPermissionModal] = useState(false)
   const [targetCallUser, setTargetCallUser] = useState<ChatUser | null>(null)
 
+  // Create channel state
+  const [showCreateChannel, setShowCreateChannel] = useState(false)
+  const [newChannelName, setNewChannelName] = useState('')
+  const [newChannelDescription, setNewChannelDescription] = useState('')
+  const [isCreatingChannel, setIsCreatingChannel] = useState(false)
+
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messageInputRef = useRef<HTMLTextAreaElement>(null)
@@ -586,6 +592,61 @@ export default function ProfessionalTeamChat() {
     videoChat.startCall(user.name)
   }
 
+  // Create new channel
+  const handleCreateChannel = async () => {
+    if (!newChannelName.trim()) {
+      alert('Please enter a channel name')
+      return
+    }
+
+    setIsCreatingChannel(true)
+    try {
+      const slug = newChannelName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
+      const response = await fetch('/api/chat/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newChannelName.trim(),
+          slug: slug,
+          description: newChannelDescription.trim() || `Channel for ${newChannelName}`,
+          type: 'channel'
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Channel created:', data)
+
+        // Add to rooms list
+        const newRoom: ChatRoom = {
+          id: data.id || Date.now(),
+          name: newChannelName.trim(),
+          type: 'channel',
+          unread_count: 0,
+          is_private: false
+        }
+        setRooms(prev => [...prev, newRoom])
+
+        // Close modal and reset
+        setShowCreateChannel(false)
+        setNewChannelName('')
+        setNewChannelDescription('')
+
+        // Switch to the new channel
+        setCurrentRoom(newRoom.id)
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Failed to create channel')
+      }
+    } catch (error) {
+      console.error('Error creating channel:', error)
+      alert('Failed to create channel. Please try again.')
+    } finally {
+      setIsCreatingChannel(false)
+    }
+  }
+
   // Filter users for search
   const filteredUsers = useMemo(() => {
     if (!userSearchQuery) return users
@@ -669,7 +730,12 @@ export default function ProfessionalTeamChat() {
                 <ChevronDown className={`w-4 h-4 transition-transform ${sidebarCollapsed ? '-rotate-90' : 'rotate-90'}`} />
               </Button>
               {!sidebarCollapsed && (
-                <Button size="sm" variant="ghost" className="text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowCreateChannel(true)}
+                  className="text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg"
+                >
                   <Plus className="w-4 h-4" />
                 </Button>
               )}
@@ -1698,6 +1764,64 @@ export default function ProfessionalTeamChat() {
           }
         }}
       />
+
+      {/* Create Channel Dialog */}
+      <Dialog open={showCreateChannel} onOpenChange={setShowCreateChannel}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white">Create New Channel</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Create a new channel for your team to collaborate
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">
+                Channel Name
+              </label>
+              <input
+                type="text"
+                value={newChannelName}
+                onChange={(e) => setNewChannelName(e.target.value)}
+                placeholder="e.g., general, announcements"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">
+                Description (Optional)
+              </label>
+              <textarea
+                value={newChannelDescription}
+                onChange={(e) => setNewChannelDescription(e.target.value)}
+                placeholder="What's this channel about?"
+                rows={3}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCreateChannel(false)
+                setNewChannelName('')
+                setNewChannelDescription('')
+              }}
+              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateChannel}
+              disabled={isCreatingChannel || !newChannelName.trim()}
+              className="bg-blue-600 hover:bg-blue-500 text-white"
+            >
+              {isCreatingChannel ? 'Creating...' : 'Create Channel'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
