@@ -148,10 +148,10 @@ export function middleware(request: NextRequest) {
 
   // Apply stricter rate limiting to auth routes for remote IPs
   if (pathname.startsWith('/api/auth/')) {
-    if (!rateLimit(clientIP, 50, 15 * 60 * 1000)) { // 50 requests per 15 minutes
+    if (!rateLimit(clientIP, 200, 15 * 60 * 1000)) { // 200 requests per 15 minutes (was 50)
       console.log(`🚫 Rate limit exceeded for remote IP: ${clientIP}`)
       return new NextResponse(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Authentication rate limit exceeded',
           message: 'Too many authentication attempts from your IP address'
         }),
@@ -165,10 +165,10 @@ export function middleware(request: NextRequest) {
       )
     }
   }
-  
+
   // Apply general rate limiting to API routes for remote IPs
   if (pathname.startsWith('/api/')) {
-    if (!rateLimit(clientIP, 100, 15 * 60 * 1000)) { // 100 requests per 15 minutes
+    if (!rateLimit(clientIP, 500, 15 * 60 * 1000)) { // 500 requests per 15 minutes (was 100)
       console.log(`🚫 API rate limit exceeded for remote IP: ${clientIP}`)
       return new NextResponse(
         JSON.stringify({ 

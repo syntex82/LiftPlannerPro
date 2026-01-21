@@ -111,13 +111,15 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
-          // Successful login - reset login attempts and update last login
+          // Successful login - reset login attempts, update last login, and set online status
           await prisma.user.update({
             where: { id: user.id },
             data: {
               loginAttempts: 0,
               lockedUntil: null,
-              lastLogin: new Date()
+              lastLogin: new Date(),
+              onlineStatus: 'ONLINE',
+              lastSeenAt: new Date()
             }
           })
 
