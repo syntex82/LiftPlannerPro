@@ -273,8 +273,11 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { planId, updates } = body
 
+    // Validate planId to prevent log injection
+    const safePlanId = typeof planId === 'string' ? planId.replace(/[^\w-]/g, '') : 'unknown'
+
     // Update subscription plan
-    console.log(`Updating plan ${planId} with:`, updates)
+    console.log('Updating plan:', safePlanId, 'with:', JSON.stringify(updates))
 
     return NextResponse.json({ 
       success: true, 

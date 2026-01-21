@@ -3,6 +3,17 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+
+// HTML escape function to prevent XSS in generated HTML
+const escapeHtml = (str: string): string => {
+  if (!str) return ''
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -252,6 +263,8 @@ export default function StepPlanPage() {
     const timeline = calculateProjectTimeline()
     const currentDate = new Date().toLocaleDateString()
     const currentTime = new Date().toLocaleTimeString()
+    // Escape user-provided content to prevent XSS
+    const safeProjectName = escapeHtml(projectName)
 
     return `
 <!DOCTYPE html>
@@ -259,7 +272,7 @@ export default function StepPlanPage() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lift Plan - Step Sequence | ${projectName}</title>
+    <title>Lift Plan - Step Sequence | ${safeProjectName}</title>
     <style>
         @page {
             size: A4;

@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Escape special characters to prevent XSS in SVG
+function escapeSvg(str: string): string {
+  if (!str) return ''
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const title = searchParams.get('title') || 'Lift Planner Pro'
-    const description = searchParams.get('description') || 'Professional CAD Software for Lift Planning'
-    
+    // Escape user input to prevent XSS
+    const rawTitle = searchParams.get('title') || 'Lift Planner Pro'
+    const rawDescription = searchParams.get('description') || 'Professional CAD Software for Lift Planning'
+    const title = escapeSvg(rawTitle)
+    const description = escapeSvg(rawDescription)
+
     // Create SVG content dynamically
     const svg = `
       <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
