@@ -4,6 +4,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { isAdmin, SUBSCRIPTION_CONFIG } from '@/lib/subscription'
 
+// Get base URL with fallback
+function getBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'https://liftplannerpro.org'
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Check if user is authenticated
@@ -30,6 +35,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const baseUrl = getBaseUrl()
+    console.log('🛒 Checkout using base URL:', baseUrl)
+
     // Create Checkout Session with 7-day trial
     const checkoutConfig: Stripe.Checkout.SessionCreateParams = {
       line_items: [
@@ -39,8 +47,8 @@ export async function POST(req: NextRequest) {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/#pricing`,
+      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/#pricing`,
       metadata: {
         planName: planName,
       },

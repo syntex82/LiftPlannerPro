@@ -4,6 +4,11 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Stripe from 'stripe'
 
+// Get base URL with fallback
+function getBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'https://liftplannerpro.org'
+}
+
 // Only initialize Stripe if API key is available
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -170,12 +175,16 @@ export async function POST(request: NextRequest) {
     if (!stripe) {
       return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 })
     }
+
+    const baseUrl = getBaseUrl()
+    console.log('💳 Monetization checkout using base URL:', baseUrl)
+
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}&type=${type}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/monetization?cancelled=true`,
+      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}&type=${type}`,
+      cancel_url: `${baseUrl}/monetization?cancelled=true`,
       metadata,
       customer_email: user.email,
       billing_address_collection: 'auto',
