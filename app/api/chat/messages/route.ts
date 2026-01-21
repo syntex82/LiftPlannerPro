@@ -377,21 +377,30 @@ export async function POST(request: NextRequest) {
     // Broadcast to all subscribers in this room
     const roomKey = `room-${roomId}`
     const subscribers = messageSubscribers.get(roomKey)
-    console.log(`📡 Broadcasting to ${subscribers?.size || 0} subscribers`)
+    console.log(`📡 Broadcasting to room ${roomKey}`)
+    console.log(`📡 Total rooms with subscribers: ${messageSubscribers.size}`)
+    console.log(`📡 All room keys:`, Array.from(messageSubscribers.keys()))
+    console.log(`📡 Subscribers in this room: ${subscribers?.size || 0}`)
 
-    if (subscribers) {
+    if (subscribers && subscribers.size > 0) {
       const messageData = {
         type: 'new_message',
         message: newMessage
       }
+      console.log(`📡 Broadcasting message type: ${newMessage.messageType}`)
 
+      let broadcastCount = 0
       subscribers.forEach(subscriber => {
         try {
           subscriber(messageData)
+          broadcastCount++
         } catch (error) {
           console.error('Error broadcasting message:', error)
         }
       })
+      console.log(`📡✅ Broadcast complete to ${broadcastCount} subscribers`)
+    } else {
+      console.log(`📡⚠️ NO SUBSCRIBERS to broadcast to for room ${roomKey}!`)
     }
 
     return NextResponse.json({ message: newMessage })
