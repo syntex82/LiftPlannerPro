@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// In-memory store for real-time updates
+// In-memory store for real-time updates (SSE subscribers)
+// Note: This is per-server-instance, won't work across multiple instances
 const messageSubscribers = new Map<string, Set<(data: any) => void>>()
 
 // Map room IDs to group slugs
@@ -13,6 +14,45 @@ const roomIdToSlug: Record<number, string> = {
   3: 'technical-support',
   4: 'live-video',
   5: 'announcements'
+}
+
+// Default groups for auto-creation
+const defaultGroups = [
+  { name: 'General', slug: 'general', description: 'General discussion', icon: 'hash', type: 'PUBLIC', category: 'TEAM' },
+  { name: 'Project Discussion', slug: 'project-discussion', description: 'Discuss projects', icon: 'folder', type: 'PUBLIC', category: 'PROJECT' },
+  { name: 'Technical Support', slug: 'technical-support', description: 'Get help', icon: 'help-circle', type: 'PUBLIC', category: 'SUPPORT' },
+  { name: 'Live Video', slug: 'live-video', description: 'Video calls', icon: 'video', type: 'PUBLIC', category: 'VIDEO' },
+  { name: 'Announcements', slug: 'announcements', description: 'Announcements', icon: 'megaphone', type: 'SYSTEM', category: 'ANNOUNCEMENT' }
+]
+
+// Auto-create a group if it doesn't exist
+async function ensureGroupExists(slug: string, ownerId: string): Promise<string | null> {
+  const groupDef = defaultGroups.find(g => g.slug === slug)
+  if (!groupDef) return null
+
+  try {
+    const existing = await prisma.group.findUnique({ where: { slug } })
+    if (existing) return existing.id
+
+    console.log(`🆕 Auto-creating missing group: ${slug}`)
+    const group = await prisma.group.create({
+      data: {
+        name: groupDef.name,
+        slug: groupDef.slug,
+        description: groupDef.description,
+        icon: groupDef.icon,
+        type: groupDef.type as any,
+        category: groupDef.category as any,
+        ownerId: ownerId,
+        members: { create: { userId: ownerId, role: 'OWNER' } }
+      }
+    })
+    console.log(`✅ Auto-created group: ${slug} with id ${group.id}`)
+    return group.id
+  } catch (e: any) {
+    console.error(`❌ Failed to auto-create group ${slug}:`, e.message)
+    return null
+  }
 }
 
 async function getMessagesFromDB(roomId: number) {
@@ -111,10 +151,22 @@ async function insertMessageToDB({ roomId, userId, content, messageType, replyTo
 
     if (slug) {
       try {
-        const group = await prisma.group.findUnique({
+        let group = await prisma.group.findUnique({
           where: { slug },
           select: { id: true, name: true }
         })
+
+        // Auto-create group if it doesn't exist
+        if (!group) {
+          console.log(`⚠️ Group "${slug}" not found, attempting auto-create...`)
+          const groupId = await ensureGroupExists(slug, user.id)
+          if (groupId) {
+            group = await prisma.group.findUnique({
+              where: { id: groupId },
+              select: { id: true, name: true }
+            })
+          }
+        }
 
         if (group) {
           console.log(`✅ Found group: ${group.name} (${group.id})`)
@@ -144,7 +196,7 @@ async function insertMessageToDB({ roomId, userId, content, messageType, replyTo
             avatar: message.sender?.image
           }
         } else {
-          console.log(`⚠️ Group with slug "${slug}" not found, falling back to ChatMessage`)
+          console.log(`⚠️ Group with slug "${slug}" still not found after auto-create attempt, falling back to ChatMessage`)
         }
       } catch (e: any) {
         console.log(`⚠️ Group table error: ${e.message}, falling back to ChatMessage`)
@@ -211,26 +263,44 @@ export async function GET(request: NextRequest) {
 
     // For SSE streaming
     if (isSSE) {
+      console.log(`📡 SSE connection requested for room ${roomId}`)
+
       const stream = new ReadableStream({
         start(controller) {
           const roomKey = `room-${roomId}`
-          
+
           if (!messageSubscribers.has(roomKey)) {
             messageSubscribers.set(roomKey, new Set())
           }
 
           const subscriber = (data: any) => {
-            const sseData = `data: ${JSON.stringify(data)}\n\n`
-            controller.enqueue(new TextEncoder().encode(sseData))
+            try {
+              const sseData = `data: ${JSON.stringify(data)}\n\n`
+              controller.enqueue(new TextEncoder().encode(sseData))
+            } catch (e) {
+              console.error('SSE encoding error:', e)
+            }
           }
 
           messageSubscribers.get(roomKey)?.add(subscriber)
+          console.log(`📡 SSE subscriber added for room ${roomId}. Total subscribers: ${messageSubscribers.get(roomKey)?.size}`)
 
           // Send initial connection message
           subscriber({ type: 'connected', roomId })
 
+          // Send periodic heartbeat to keep connection alive
+          const heartbeat = setInterval(() => {
+            try {
+              controller.enqueue(new TextEncoder().encode(': heartbeat\n\n'))
+            } catch (e) {
+              clearInterval(heartbeat)
+            }
+          }, 30000) // Every 30 seconds
+
           // Cleanup on close
           request.signal.addEventListener('abort', () => {
+            console.log(`📡 SSE connection closed for room ${roomId}`)
+            clearInterval(heartbeat)
             messageSubscribers.get(roomKey)?.delete(subscriber)
             if (messageSubscribers.get(roomKey)?.size === 0) {
               messageSubscribers.delete(roomKey)
@@ -243,8 +313,9 @@ export async function GET(request: NextRequest) {
       return new Response(stream, {
         headers: {
           'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-cache, no-transform',
           'Connection': 'keep-alive',
+          'X-Accel-Buffering': 'no', // Disable nginx buffering
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Headers': 'Cache-Control'
         }

@@ -161,9 +161,13 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
 
   // Video chat hook
   const sendVideoSignal = useCallback(async (signalData: any) => {
-    if (!currentRoom) return
+    if (!currentRoom) {
+      console.error('📹❌ Cannot send video signal: no room selected')
+      return
+    }
     try {
-      await fetch('/api/chat/messages', {
+      console.log('📹➡️ Sending video signal:', signalData.type || signalData.data?.type, 'to room', currentRoom)
+      const response = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -172,12 +176,19 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
           messageType: 'video_call_signal'
         })
       })
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('📹❌ Video signal failed:', response.status, error)
+      } else {
+        console.log('📹✅ Video signal sent successfully')
+      }
     } catch (error) {
-      console.error('Error sending video signal:', error)
+      console.error('📹💥 Error sending video signal:', error)
     }
   }, [currentRoom])
 
   const handleVideoMessage = useCallback((message: any) => {
+    console.log('📹 handleVideoMessage called with:', message.type || message.data?.type)
     sendVideoSignal(message)
   }, [sendVideoSignal])
 
@@ -337,32 +348,46 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
+          console.log('📨 SSE message received:', data.type)
 
           if (data.type === 'new_message') {
             const message = data.message
+            console.log('📨 Message type:', message.messageType, 'from:', message.username)
 
             // Handle video call signals
             if (message.messageType === 'video_call_signal') {
               try {
-                const signalData = JSON.parse(message.content)
-                console.log('📹 Received video signal:', signalData)
-                // Wrap in the expected format for handleWebSocketMessage
+                const parsedContent = JSON.parse(message.content)
+                console.log('📹⬅️ Raw video signal content:', parsedContent)
+
+                // The content structure is: { type: 'video_call_signal', data: <WebRTCMessage>, timestamp }
+                // We need to extract the actual signal data
+                let signalData = parsedContent
+
+                // Unwrap if it's the wrapper format
+                if (parsedContent.type === 'video_call_signal' && parsedContent.data) {
+                  signalData = parsedContent.data
+                  console.log('📹 Unwrapped signal data:', signalData.type, 'from:', signalData.from)
+                }
+
+                // Now pass to the handler with correct structure
                 videoChat.handleWebSocketMessage({
                   type: 'video_call_signal',
                   data: signalData
                 })
               } catch (error) {
-                console.error('Error parsing video signal:', error)
+                console.error('📹❌ Error parsing video signal:', error)
               }
             } else {
               // Regular message
+              console.log('💬 Adding message to chat:', message.content?.substring(0, 30))
               setMessages(prev => [...prev, message])
             }
           } else if (data.type === 'connected') {
-            console.log('SSE connection established')
+            console.log('✅ SSE connection confirmed for room')
           }
         } catch (e) {
-          console.error('Error parsing message:', e)
+          console.error('❌ Error parsing SSE message:', e)
         }
       }
 
@@ -514,33 +539,64 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
   }
 
   const handleStartVideoCall = async () => {
+    console.log('📹🚀 Starting video call...')
+
+    if (!currentRoom) {
+      alert('Please select a chat room first')
+      return
+    }
+
+    if (!isConnected) {
+      alert('Chat is not connected. Please wait for the connection to be established.')
+      return
+    }
+
     const support = await (await import('@/components/video-chat/webrtc-manager')).WebRTCManager.checkSupport()
+    console.log('📹 WebRTC support check:', support)
+
     if (!support.supported) {
       alert(`Video calling not available: ${support.error}`)
       return
     }
     if (support.needsPermission) {
+      console.log('📹 Showing permission modal')
       setShowPermissionModal(true)
       return
     }
     const room = rooms.find(r => r.id === currentRoom)
+    console.log('📹 Starting call to room:', room?.name || 'Team')
     videoChat.startCall(room?.name || 'Team')
   }
 
   // Start a video call to a specific user
   const handleStartVideoCallToUser = async (user: User) => {
+    console.log('📹🚀 Starting video call to user:', user.name)
+
     if (!user.isOnline) {
       alert(`${user.name} is currently offline and cannot receive calls.`)
       return
     }
 
+    if (!currentRoom) {
+      alert('Please select a chat room first')
+      return
+    }
+
+    if (!isConnected) {
+      alert('Chat is not connected. Please wait for the connection to be established.')
+      return
+    }
+
     const support = await (await import('@/components/video-chat/webrtc-manager')).WebRTCManager.checkSupport()
+    console.log('📹 WebRTC support check:', support)
+
     if (!support.supported) {
       alert(`Video calling not available: ${support.error}`)
       return
     }
     if (support.needsPermission) {
       setTargetCallUser(user)
+      console.log('📹 Showing permission modal for user call')
       setShowPermissionModal(true)
       return
     }
