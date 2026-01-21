@@ -367,6 +367,12 @@ export default function ProfessionalTeamChat() {
 
           // Handle video call signals
           if (message.messageType === 'video_call_signal') {
+            // Skip our own messages - we sent them, don't process them
+            if (message.username === currentUserName) {
+              console.log('📹 Skipping own video signal')
+              return
+            }
+
             try {
               const parsedContent = JSON.parse(message.content)
               console.log('📹⬅️ Raw video signal content:', parsedContent)
@@ -376,8 +382,14 @@ export default function ProfessionalTeamChat() {
               // Unwrap if it's the wrapper format
               if (parsedContent.type === 'video_call_signal' && parsedContent.data) {
                 signalData = parsedContent.data
-                console.log('📹 Unwrapped signal data:', signalData.type, 'from:', signalData.from)
               }
+
+              // Replace 'local' with actual sender username from the SSE message
+              if (signalData.from === 'local' || !signalData.from) {
+                signalData.from = message.username
+              }
+
+              console.log('📹 Processing signal:', signalData.type, 'from:', signalData.from)
 
               videoChat.handleWebSocketMessage({
                 type: 'video_call_signal',
