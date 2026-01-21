@@ -97,24 +97,66 @@ function rateLimit(ip: string, limit: number = 1000, windowMs: number = 15 * 60 
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+
+  // ============================================
+  // RATE LIMITING DISABLED - User request
+  // ============================================
+  // Just add basic security headers and pass through
+  const response = NextResponse.next()
+
+  // Basic security headers
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+
+  // Check for obvious attack patterns (still block these)
+  const suspiciousPatterns = [
+    /\/cgi-bin\//i,            // CGI exploitation attempts
+    /luci/i,                   // OpenWrt router attacks
+    /;stok=/i,                 // Router token exploitation
+    /\.\./,                    // Path traversal
+    /\/etc\/passwd/,           // System file access
+    /\/wp-admin/i,             // WordPress admin attempts
+    /\/phpmyadmin/i,           // Database admin attempts
+    /\.php$/i,                 // PHP file access on non-PHP site
+    /\/shell/i,                // Shell access attempts
+    /<script/i,                // XSS attempts
+  ]
+
+  const isSuspicious = suspiciousPatterns.some(pattern =>
+    pattern.test(pathname) || pattern.test(request.url)
+  )
+
+  if (isSuspicious) {
+    // Return 404 for suspicious requests to not reveal information
+    return new NextResponse('Not Found', { status: 404 })
+  }
+
+  return response
+}
+
+// Old rate limiting code - DISABLED
+function _oldMiddleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
   const clientIP = getClientIP(request)
   const isLocal = isLocalIP(clientIP)
-  
+
   // Skip security scanning for local IPs
   if (isLocal) {
     console.log(`🏠 Local IP detected (${clientIP}), skipping security scan`)
-    
+
     // Still add basic security headers but no rate limiting
     const response = NextResponse.next()
-    
+
     // Basic security headers (safe for local development)
     response.headers.set('X-Content-Type-Options', 'nosniff')
     response.headers.set('X-Frame-Options', 'DENY')
     response.headers.set('X-XSS-Protection', '1; mode=block')
-    
+
     return response
   }
-  
+
   // Apply full security scanning for remote IPs only
   console.log(`🌐 Remote IP detected (${clientIP}), applying security scan`)
 
