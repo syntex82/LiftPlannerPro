@@ -14,7 +14,7 @@ import {
   Paperclip, Image, MoreHorizontal, Reply, X, PhoneOff, Mic, MicOff, VideoOff,
   ChevronDown, CheckCheck, Bell, BellOff, Pin, Star, AtSign, Command, Bold, Italic,
   Code, Link2, ListOrdered, List, Quote, FileText, Download, Eye, Clock, UserPlus,
-  MessageCircle, Mail, Briefcase, MapPin, Globe, Calendar, Award, Zap, Coffee
+  MessageCircle, Mail, Briefcase, MapPin, Globe, Calendar, Award, Zap, Coffee, Trash2
 } from "lucide-react"
 import {
   Dialog,
@@ -206,6 +206,10 @@ export default function ProfessionalTeamChat() {
   const [newChannelDescription, setNewChannelDescription] = useState('')
   const [isCreatingChannel, setIsCreatingChannel] = useState(false)
 
+  // Delete channel state
+  const [channelToDelete, setChannelToDelete] = useState<ChatRoom | null>(null)
+  const [isDeletingChannel, setIsDeletingChannel] = useState(false)
+
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messageInputRef = useRef<HTMLTextAreaElement>(null)
@@ -373,6 +377,8 @@ export default function ProfessionalTeamChat() {
 
           // Handle video call signals
           if (message.messageType === 'video_call_signal') {
+            console.log('📹📨 Video signal received! From:', message.username, 'Current user:', currentUserName)
+
             // Skip our own messages - we sent them, don't process them
             if (message.username === currentUserName) {
               console.log('📹 Skipping own video signal')
@@ -381,26 +387,30 @@ export default function ProfessionalTeamChat() {
 
             try {
               const parsedContent = JSON.parse(message.content)
-              console.log('📹⬅️ Raw video signal content:', parsedContent)
+              console.log('📹⬅️ Raw video signal content:', JSON.stringify(parsedContent, null, 2))
 
               let signalData = parsedContent
 
               // Unwrap if it's the wrapper format
               if (parsedContent.type === 'video_call_signal' && parsedContent.data) {
                 signalData = parsedContent.data
+                console.log('📹 Unwrapped inner data:', JSON.stringify(signalData, null, 2))
               }
 
               // Replace 'local' with actual sender username from the SSE message
               if (signalData.from === 'local' || !signalData.from) {
                 signalData.from = message.username
+                console.log('📹 Replaced from field with:', message.username)
               }
 
-              console.log('📹 Processing signal:', signalData.type, 'from:', signalData.from)
+              console.log('📹🔔 CALLING handleWebSocketMessage with signal type:', signalData.type, 'from:', signalData.from)
 
               videoChat.handleWebSocketMessage({
                 type: 'video_call_signal',
                 data: signalData
               })
+
+              console.log('📹✅ handleWebSocketMessage called successfully')
             } catch (error) {
               console.error('📹❌ Error parsing video signal:', error)
             }
@@ -647,6 +657,43 @@ export default function ProfessionalTeamChat() {
     }
   }
 
+  // Delete channel
+  const handleDeleteChannel = async () => {
+    if (!channelToDelete) return
+
+    setIsDeletingChannel(true)
+    try {
+      const response = await fetch(`/api/chat/rooms/${channelToDelete.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        console.log('✅ Channel deleted:', channelToDelete.name)
+
+        // Remove from rooms list
+        setRooms(prev => prev.filter(r => r.id !== channelToDelete.id))
+
+        // If we're in the deleted channel, switch to first available
+        if (currentRoom === channelToDelete.id) {
+          const remainingRooms = rooms.filter(r => r.id !== channelToDelete.id)
+          if (remainingRooms.length > 0) {
+            setCurrentRoom(remainingRooms[0].id)
+          }
+        }
+
+        setChannelToDelete(null)
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Failed to delete channel')
+      }
+    } catch (error) {
+      console.error('Error deleting channel:', error)
+      alert('Failed to delete channel. Please try again.')
+    } finally {
+      setIsDeletingChannel(false)
+    }
+  }
+
   // Filter users for search
   const filteredUsers = useMemo(() => {
     if (!userSearchQuery) return users
@@ -804,18 +851,24 @@ export default function ProfessionalTeamChat() {
                 <TooltipProvider key={room.id}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button
-                        onClick={() => { setCurrentRoom(room.id); setCurrentDM(null) }}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                      <div
+                        className={`group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
                           currentRoom === room.id
                             ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 text-white'
                             : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
                         }`}
                       >
-                        <Hash className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                        {!sidebarCollapsed && (
-                          <>
+                        <button
+                          onClick={() => { setCurrentRoom(room.id); setCurrentDM(null) }}
+                          className="flex-1 flex items-center gap-3"
+                        >
+                          <Hash className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                          {!sidebarCollapsed && (
                             <span className="flex-1 text-left text-sm font-medium truncate">{room.name}</span>
+                          )}
+                        </button>
+                        {!sidebarCollapsed && (
+                          <div className="flex items-center gap-1">
                             {room.unread_count > 0 && (
                               <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                                 {room.unread_count}
@@ -823,9 +876,16 @@ export default function ProfessionalTeamChat() {
                             )}
                             {room.isPinned && <Pin className="w-3 h-3 text-yellow-400" />}
                             {room.isMuted && <BellOff className="w-3 h-3 text-slate-500" />}
-                          </>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setChannelToDelete(room) }}
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all"
+                              title="Delete channel"
+                            >
+                              <Trash2 className="w-3 h-3 text-red-400 hover:text-red-300" />
+                            </button>
+                          </div>
                         )}
-                      </button>
+                      </div>
                     </TooltipTrigger>
                     {sidebarCollapsed && (
                       <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
@@ -1818,6 +1878,35 @@ export default function ProfessionalTeamChat() {
               className="bg-blue-600 hover:bg-blue-500 text-white"
             >
               {isCreatingChannel ? 'Creating...' : 'Create Channel'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Channel Confirmation Dialog */}
+      <Dialog open={!!channelToDelete} onOpenChange={(open) => !open && setChannelToDelete(null)}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white">Delete Channel</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Are you sure you want to delete <span className="text-white font-semibold">#{channelToDelete?.name}</span>?
+              This action cannot be undone and all messages in this channel will be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setChannelToDelete(null)}
+              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteChannel}
+              disabled={isDeletingChannel}
+              className="bg-red-600 hover:bg-red-500 text-white"
+            >
+              {isDeletingChannel ? 'Deleting...' : 'Delete Channel'}
             </Button>
           </DialogFooter>
         </DialogContent>
