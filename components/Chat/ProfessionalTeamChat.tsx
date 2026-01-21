@@ -216,6 +216,7 @@ export default function ProfessionalTeamChat() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
+  const videoChatRef = useRef<{ handleWebSocketMessage: (msg: any) => void } | null>(null)
 
   // Current user
   const currentUserName = session?.user?.name || 'User'
@@ -252,6 +253,13 @@ export default function ProfessionalTeamChat() {
     currentUserName,
     onSendMessage: handleVideoMessage
   })
+
+  // Keep videoChatRef updated (so SSE handler can access latest without causing re-renders)
+  useEffect(() => {
+    videoChatRef.current = {
+      handleWebSocketMessage: videoChat.handleWebSocketMessage
+    }
+  }, [videoChat.handleWebSocketMessage])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -405,7 +413,8 @@ export default function ProfessionalTeamChat() {
 
               console.log('📹🔔 CALLING handleWebSocketMessage with signal type:', signalData.type, 'from:', signalData.from)
 
-              videoChat.handleWebSocketMessage({
+              // Use ref to avoid videoChat in dependency array (causes infinite loop)
+              videoChatRef.current?.handleWebSocketMessage({
                 type: 'video_call_signal',
                 data: signalData
               })
@@ -441,7 +450,7 @@ export default function ProfessionalTeamChat() {
       eventSource.close()
       eventSourceRef.current = null
     }
-  }, [currentRoom, videoChat])
+  }, [currentRoom, currentUserName]) // Removed videoChat - use videoChatRef instead to avoid infinite loop
 
   // Auto-scroll to bottom
   useEffect(() => {
