@@ -59,6 +59,76 @@ async function ensureGroupExists(slug: string, ownerId: string): Promise<string 
   }
 }
 
+// Get messages since a specific timestamp (for polling video signals)
+async function getMessagesSince(roomId: number, sinceTimestamp: number) {
+  // sinceTimestamp is milliseconds since epoch
+  const sinceDate = new Date(sinceTimestamp)
+  console.log(`📬 Getting messages since ${sinceDate.toISOString()} for room ${roomId}`)
+
+  try {
+    const slug = roomIdToSlug[roomId]
+    if (slug) {
+      try {
+        const group = await prisma.group.findUnique({
+          where: { slug },
+          select: { id: true }
+        })
+
+        if (group) {
+          const messages = await prisma.groupMessage.findMany({
+            where: {
+              groupId: group.id,
+              isDeleted: false,
+              createdAt: { gt: sinceDate }
+            },
+            orderBy: { createdAt: 'asc' },
+            take: 20,
+            include: {
+              sender: { select: { id: true, name: true, email: true, image: true } }
+            }
+          })
+
+          return messages.map(msg => ({
+            id: msg.id,
+            content: msg.content,
+            username: msg.sender?.name || msg.sender?.email || 'Unknown',
+            messageType: msg.messageType,
+            created_at: msg.createdAt.toISOString(),
+            timestamp: msg.createdAt.getTime()
+          }))
+        }
+      } catch (e: any) {
+        console.log(`⚠️ Group table error: ${e.message}`)
+      }
+    }
+
+    // Fallback to ChatMessage
+    const messages = await prisma.chatMessage.findMany({
+      where: {
+        roomId: roomId,
+        createdAt: { gt: sinceDate }
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 20,
+      include: {
+        user: { select: { id: true, name: true, email: true } }
+      }
+    })
+
+    return messages.map(msg => ({
+      id: msg.id,
+      content: msg.content,
+      username: msg.user?.name || msg.user?.email || 'Unknown',
+      messageType: msg.messageType,
+      created_at: msg.createdAt.toISOString(),
+      timestamp: msg.createdAt.getTime()
+    }))
+  } catch (error: any) {
+    console.error('💥 Error getting messages since:', error.message)
+    return []
+  }
+}
+
 async function getMessagesFromDB(roomId: number) {
   console.log(`📬 Getting messages for room ${roomId}`)
 
@@ -259,10 +329,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const roomId = searchParams.get('roomId')
     const lastMessageId = searchParams.get('lastMessageId')
+    const sinceId = searchParams.get('since')
     const isSSE = searchParams.get('stream') === 'true'
 
     if (!roomId) {
       return NextResponse.json({ error: 'Room ID required' }, { status: 400 })
+    }
+
+    // Polling for new messages since a specific ID (for video signals)
+    if (sinceId) {
+      const messages = await getMessagesSince(parseInt(roomId), parseInt(sinceId))
+      return NextResponse.json(messages)
     }
 
     // For SSE streaming

@@ -455,7 +455,77 @@ export default function ProfessionalTeamChat() {
       eventSource.close()
       eventSourceRef.current = null
     }
-  }, [currentRoom, currentUserName]) // Removed videoChat - use videoChatRef instead to avoid infinite loop
+  }, [currentRoom, currentUserName])
+
+  // Poll for video signals (SSE broadcast doesn't work reliably in serverless)
+  useEffect(() => {
+    if (!currentRoom || !currentUserName) return
+
+    // Start polling from now
+    let lastCheckedTimestamp = Date.now()
+    // Track processed message IDs to avoid duplicates
+    const processedIds = new Set<string>()
+
+    const pollForVideoSignals = async () => {
+      try {
+        const res = await fetch(`/api/chat/messages?roomId=${currentRoom}&since=${lastCheckedTimestamp}`)
+        if (res.ok) {
+          const messages = await res.json()
+          for (const message of messages) {
+            // Skip if already processed
+            if (processedIds.has(message.id)) continue
+            processedIds.add(message.id)
+
+            // Update timestamp for next poll
+            if (message.timestamp && message.timestamp > lastCheckedTimestamp) {
+              lastCheckedTimestamp = message.timestamp
+            }
+
+            // Only process video signals from others
+            if (message.messageType === 'video_call_signal' && message.username !== currentUserName) {
+              console.log('📹🔄 POLL: Found video signal from:', message.username)
+
+              try {
+                const parsedContent = JSON.parse(message.content)
+                let signalData = parsedContent
+
+                // Unwrap if needed
+                if (parsedContent.type === 'video_call_signal' && parsedContent.data) {
+                  signalData = parsedContent.data
+                }
+
+                // Fix the from field
+                if (signalData.from === 'local' || !signalData.from) {
+                  signalData.from = message.username
+                }
+
+                console.log('📹🔄 POLL: Processing signal type:', signalData.type, 'from:', signalData.from)
+
+                if (videoChatRef.current?.handleWebSocketMessage) {
+                  videoChatRef.current.handleWebSocketMessage({
+                    type: 'video_call_signal',
+                    data: signalData
+                  })
+                  console.log('📹✅ POLL: handleWebSocketMessage called!')
+                }
+              } catch (e) {
+                console.error('📹❌ POLL: Error parsing video signal:', e)
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('📹 POLL error:', error)
+      }
+    }
+
+    // Poll every 500ms for video signals (needs to be fast for calls)
+    const pollInterval = setInterval(pollForVideoSignals, 500)
+
+    return () => {
+      clearInterval(pollInterval)
+    }
+  }, [currentRoom, currentUserName])
 
   // Auto-scroll to bottom
   useEffect(() => {
