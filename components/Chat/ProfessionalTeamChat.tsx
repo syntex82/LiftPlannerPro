@@ -876,13 +876,16 @@ export default function ProfessionalTeamChat() {
                             )}
                             {room.isPinned && <Pin className="w-3 h-3 text-yellow-400" />}
                             {room.isMuted && <BellOff className="w-3 h-3 text-slate-500" />}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setChannelToDelete(room) }}
-                              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all"
-                              title="Delete channel"
-                            >
-                              <Trash2 className="w-3 h-3 text-red-400 hover:text-red-300" />
-                            </button>
+                            {/* Only show delete for non-default channels (ID > 5) */}
+                            {room.id > 5 && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setChannelToDelete(room) }}
+                                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition-all"
+                                title="Delete channel"
+                              >
+                                <Trash2 className="w-3 h-3 text-red-400 hover:text-red-300" />
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
