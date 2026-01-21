@@ -412,14 +412,19 @@ export default function ProfessionalTeamChat() {
               }
 
               console.log('📹🔔 CALLING handleWebSocketMessage with signal type:', signalData.type, 'from:', signalData.from)
+              console.log('📹🔍 videoChatRef.current exists:', !!videoChatRef.current)
 
               // Use ref to avoid videoChat in dependency array (causes infinite loop)
-              videoChatRef.current?.handleWebSocketMessage({
-                type: 'video_call_signal',
-                data: signalData
-              })
-
-              console.log('📹✅ handleWebSocketMessage called successfully')
+              if (videoChatRef.current?.handleWebSocketMessage) {
+                console.log('📹▶️ Calling handleWebSocketMessage NOW')
+                videoChatRef.current.handleWebSocketMessage({
+                  type: 'video_call_signal',
+                  data: signalData
+                })
+                console.log('📹✅ handleWebSocketMessage called successfully')
+              } else {
+                console.error('📹💀 videoChatRef.current or handleWebSocketMessage is NULL!')
+              }
             } catch (error) {
               console.error('📹❌ Error parsing video signal:', error)
             }

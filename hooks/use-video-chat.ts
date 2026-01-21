@@ -244,11 +244,16 @@ export function useVideoChat({
 
   // Handle incoming WebSocket messages
   const handleWebSocketMessage = useCallback((message: any) => {
-    if (message.type !== 'video_call_signal' || !message.data) return
+    console.log('📹🎯 handleWebSocketMessage CALLED with:', JSON.stringify(message, null, 2))
+
+    if (message.type !== 'video_call_signal' || !message.data) {
+      console.log('📹❌ Message rejected - type:', message.type, 'has data:', !!message.data)
+      return
+    }
 
     const signalData: WebRTCMessage = message.data
 
-    console.log('📹 Processing video signal:', signalData.type, 'from:', signalData.from, 'to:', signalData.to)
+    console.log('📹 Processing video signal:', signalData.type, 'from:', signalData.from, 'currentUser:', currentUserName)
 
     // For room-based calls, accept signals meant for anyone (broadcast)
     // or specifically for this user
@@ -262,12 +267,13 @@ export function useVideoChat({
       case 'call-request':
         // Accept call requests from anyone in the room (not just targeted to our username)
         // This enables room-based calling where the caller doesn't know exact usernames
-        console.log('📹 Incoming call request from:', signalData.from)
+        console.log('📹📞 SHOWING INCOMING CALL MODAL - caller:', signalData.from, 'callId:', signalData.callId)
         setIncomingCall({
           isVisible: true,
           callerName: signalData.from,
           callId: signalData.callId
         })
+        console.log('📹✅ setIncomingCall called - modal should appear now!')
         break
 
       case 'call-accept':
