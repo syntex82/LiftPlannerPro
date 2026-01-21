@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
           name: user.name || 'Unknown User',
           email: user.email,
           avatar: user.image,
-          isOnline: user.onlineStatus === 'ONLINE',
+          isOnline: user.onlineStatus?.toLowerCase() === 'online',
           status: user.onlineStatus?.toLowerCase() || 'offline',
           statusMessage: user.role === 'ADMIN' ? 'Administrator' : undefined,
           lastSeen: user.lastSeenAt?.toISOString(),
@@ -98,15 +98,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { status } = body
 
-    // Update user online status in database
+    // Update user online status in database (use lowercase to match schema default)
     try {
       await prisma.user.update({
         where: { email: session.user.email },
         data: {
-          onlineStatus: status === 'online' ? 'ONLINE' : 'OFFLINE',
+          onlineStatus: status === 'online' ? 'online' : 'offline',
           lastSeenAt: new Date()
         }
       })
+      console.log('📡 Updated user status:', session.user.email, '->', status)
     } catch (dbError) {
       console.error('Failed to update status in database:', dbError)
     }

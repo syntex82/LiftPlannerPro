@@ -382,11 +382,16 @@ export class WebRTCManager {
 
   // Create and send offer
   async createOffer(): Promise<void> {
-    if (!this.peerConnection || !this.currentCallId) return
+    if (!this.peerConnection || !this.currentCallId) {
+      console.log('📹 Cannot create offer - no peer connection or callId')
+      return
+    }
 
     try {
+      console.log('📹 Creating WebRTC offer...')
       const offer = await this.peerConnection.createOffer()
       await this.peerConnection.setLocalDescription(offer)
+      console.log('📹 Offer created and local description set')
 
       this.onMessage({
         type: 'offer',
@@ -395,6 +400,7 @@ export class WebRTCManager {
         from: 'local',
         to: 'remote'
       })
+      console.log('📹 Offer sent via signaling')
     } catch (error) {
       console.error('Error creating offer:', error)
     }
@@ -402,12 +408,18 @@ export class WebRTCManager {
 
   // Handle incoming offer
   async handleOffer(offer: RTCSessionDescriptionInit): Promise<void> {
-    if (!this.peerConnection) return
+    if (!this.peerConnection) {
+      console.log('📹 Cannot handle offer - no peer connection')
+      return
+    }
 
     try {
+      console.log('📹 Handling incoming offer...')
       await this.peerConnection.setRemoteDescription(offer)
+      console.log('📹 Remote description set, creating answer...')
       const answer = await this.peerConnection.createAnswer()
       await this.peerConnection.setLocalDescription(answer)
+      console.log('📹 Answer created and local description set')
 
       if (this.currentCallId) {
         this.onMessage({
@@ -417,6 +429,7 @@ export class WebRTCManager {
           from: 'local',
           to: 'remote'
         })
+        console.log('📹 Answer sent via signaling')
       }
     } catch (error) {
       console.error('Error handling offer:', error)
@@ -425,10 +438,15 @@ export class WebRTCManager {
 
   // Handle incoming answer
   async handleAnswer(answer: RTCSessionDescriptionInit): Promise<void> {
-    if (!this.peerConnection) return
+    if (!this.peerConnection) {
+      console.log('📹 Cannot handle answer - no peer connection')
+      return
+    }
 
     try {
+      console.log('📹 Handling incoming answer...')
       await this.peerConnection.setRemoteDescription(answer)
+      console.log('📹 Remote description set - connection should be establishing')
     } catch (error) {
       console.error('Error handling answer:', error)
     }

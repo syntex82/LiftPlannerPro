@@ -87,9 +87,38 @@ function ChatWindowContent({ projectId }: { projectId?: number }) {
     onSendMessage: handleVideoMessage
   })
 
-  // Load chat rooms on mount
+  // Set user online status
+  const setOnlineStatus = async (status: 'online' | 'offline') => {
+    try {
+      await fetch('/api/chat/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+      console.log('📡 User status set to:', status)
+    } catch (error) {
+      console.error('Error setting online status:', error)
+    }
+  }
+
+  // Load chat rooms on mount and set online status
   useEffect(() => {
     loadChatRooms()
+
+    // Set user online when component mounts
+    setOnlineStatus('online')
+
+    // Set user offline when component unmounts or page closes
+    const handleBeforeUnload = () => {
+      navigator.sendBeacon('/api/chat/users', JSON.stringify({ status: 'offline' }))
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      setOnlineStatus('offline')
+    }
   }, [])
 
   // Connect to SSE when room changes
@@ -114,15 +143,31 @@ function ChatWindowContent({ projectId }: { projectId?: number }) {
 
   const loadChatRooms = async () => {
     try {
+      // First, check and initialize chat groups if needed
+      try {
+        const initCheck = await fetch('/api/chat/init')
+        const initStatus = await initCheck.json()
+
+        if (!initStatus.initialized) {
+          console.log('🏗️ Initializing chat groups...')
+          await fetch('/api/chat/init', { method: 'POST' })
+          console.log('✅ Chat groups initialized')
+        }
+      } catch (initError) {
+        console.log('ℹ️ Chat init check skipped:', initError)
+      }
+
       const response = await fetch('/api/chat/rooms')
       const data = await response.json()
-      
-      if (data.rooms) {
-        setRooms(data.rooms)
-        // Auto-select first room or project-specific room
-        if (data.rooms.length > 0) {
-          setCurrentRoom(data.rooms[0].id)
-        }
+
+      // Handle both array response and { rooms: [] } response
+      const roomsList = data.rooms || data || []
+      console.log('📋 Loaded rooms:', roomsList)
+
+      if (roomsList.length > 0) {
+        setRooms(roomsList)
+        // Auto-select first room
+        setCurrentRoom(roomsList[0].id)
       }
     } catch (error) {
       console.error('Failed to load chat rooms:', error)
@@ -132,12 +177,16 @@ function ChatWindowContent({ projectId }: { projectId?: number }) {
   const loadMessages = async (roomId: number) => {
     try {
       setIsLoading(true)
+      console.log(`📬 Loading messages for room ${roomId}...`)
       const response = await fetch(`/api/chat/messages?roomId=${roomId}`)
       const data = await response.json()
-      
-      if (data.messages) {
-        setMessages(data.messages.reverse()) // Reverse to show oldest first
-      }
+
+      console.log(`📨 Received messages data:`, data)
+
+      // Handle both array response and { messages: [] } response
+      const messagesList = Array.isArray(data) ? data : (data.messages || [])
+      setMessages(messagesList)
+      console.log(`✅ Loaded ${messagesList.length} messages`)
     } catch (error) {
       console.error('Failed to load messages:', error)
     } finally {
@@ -171,7 +220,12 @@ function ChatWindowContent({ projectId }: { projectId?: number }) {
           if (message.messageType === 'video_call_signal') {
             try {
               const signalData = JSON.parse(message.content)
-              videoChat.handleWebSocketMessage(signalData)
+              console.log('📹 Received video signal:', signalData)
+              // Wrap in the expected format for handleWebSocketMessage
+              videoChat.handleWebSocketMessage({
+                type: 'video_call_signal',
+                data: signalData
+              })
             } catch (error) {
               console.error('Error parsing video signal:', error)
             }
@@ -324,9 +378,14 @@ Or go to your browser settings and allow camera/microphone for ${location.hostna
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file || !currentRoom) return
+    if (!file || !currentRoom) {
+      console.log('❌ Cannot upload: no file or no room selected')
+      return
+    }
 
+    console.log('📤 Uploading file:', { name: file.name, size: file.size, type: file.type })
     setIsUploading(true)
+
     try {
       // Create FormData for file upload
       const formData = new FormData()
@@ -339,24 +398,34 @@ Or go to your browser settings and allow camera/microphone for ${location.hostna
         body: formData
       })
 
+      console.log('📡 Upload response status:', uploadResponse.status)
+
       if (uploadResponse.ok) {
         const { fileUrl, fileName } = await uploadResponse.json()
+        console.log('✅ File uploaded:', { fileUrl, fileName })
 
-        // Send file message
-        await fetch('/api/chat/messages', {
+        // Send file message with URL included in content
+        const messageContent = file.type.startsWith('image/')
+          ? `[Image: ${fileName}](${fileUrl})`
+          : `[File: ${fileName}](${fileUrl})`
+
+        const messageResponse = await fetch('/api/chat/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             roomId: currentRoom,
-            content: `Shared file: ${fileName}`,
-            messageType: file.type.startsWith('image/') ? 'image' : 'file',
-            fileUrl,
-            fileName
+            content: messageContent,
+            messageType: file.type.startsWith('image/') ? 'image' : 'file'
           })
         })
+
+        console.log('📡 Message response status:', messageResponse.status)
+      } else {
+        const errorData = await uploadResponse.json()
+        console.error('❌ Upload failed:', errorData)
       }
     } catch (error) {
-      console.error('File upload error:', error)
+      console.error('💥 File upload error:', error)
     } finally {
       setIsUploading(false)
       event.target.value = '' // Reset input

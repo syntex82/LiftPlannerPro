@@ -98,6 +98,8 @@ export function useVideoChat({
     if (!webrtcManagerRef.current) return
 
     try {
+      console.log('📹 Starting video call to:', participantName)
+
       // Check WebRTC support and permissions first
       const support = await WebRTCManager.checkSupport()
       if (!support.supported) {
@@ -112,25 +114,28 @@ export function useVideoChat({
       }
 
       const callId = await webrtcManagerRef.current.startCall(participantName)
+      console.log('📹 Call started with ID:', callId)
 
-      // Send call request through WebSocket
+      // Send call request through WebSocket - broadcast to room (anyone can accept)
       if (onSendMessageRef.current) {
+        const callRequest = {
+          type: 'call-request',
+          callId,
+          from: currentUserName,
+          to: participantName  // This is informational - all room members will see it
+        }
+        console.log('📹 Sending call request:', callRequest)
         onSendMessageRef.current({
           type: 'video_call_signal',
-          data: {
-            type: 'call-request',
-            callId,
-            from: currentUserName,
-            to: participantName
-          },
+          data: callRequest,
           timestamp: new Date().toISOString()
         })
       }
 
-      // Create and send offer after a short delay
-      setTimeout(() => {
-        webrtcManagerRef.current?.createOffer()
-      }, 1000)
+      // Don't create offer yet - wait for call-accept signal
+      // The offer will be created when we receive call-accept in handleWebSocketMessage
+      console.log('📹 Waiting for call to be accepted...')
+
     } catch (error) {
       console.error('Failed to start call:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to start video call. Please check your camera and microphone permissions.'
@@ -159,9 +164,14 @@ export function useVideoChat({
 
   // Accept incoming call
   const acceptCall = useCallback(async () => {
-    if (!webrtcManagerRef.current || !incomingCall.callId) return
+    if (!webrtcManagerRef.current || !incomingCall.callId) {
+      console.log('📹 Cannot accept call - no manager or callId')
+      return
+    }
 
     try {
+      console.log('📹 Accepting call from:', incomingCall.callerName, 'callId:', incomingCall.callId)
+
       // Check WebRTC support and permissions first
       const { supported, error } = await WebRTCManager.checkSupport()
       if (!supported) {
@@ -171,25 +181,31 @@ export function useVideoChat({
       }
 
       await webrtcManagerRef.current.acceptCall(incomingCall.callId, incomingCall.callerName)
+      console.log('📹 Call accepted, media ready')
 
-      // Send call accept message
+      // Send call accept message to notify the caller
       if (onSendMessageRef.current) {
+        const acceptMessage = {
+          type: 'call-accept',
+          callId: incomingCall.callId,
+          from: currentUserName,
+          to: incomingCall.callerName
+        }
+        console.log('📹 Sending call-accept:', acceptMessage)
         onSendMessageRef.current({
           type: 'video_call_signal',
-          data: {
-            type: 'call-accept',
-            callId: incomingCall.callId,
-            from: currentUserName,
-            to: incomingCall.callerName
-          },
+          data: acceptMessage,
           timestamp: new Date().toISOString()
         })
       }
 
-      // Handle pending offer if any
+      // Handle pending offer if any (the caller may have already sent it)
       if (pendingOfferRef.current) {
+        console.log('📹 Processing pending offer')
         await webrtcManagerRef.current.handleOffer(pendingOfferRef.current)
         pendingOfferRef.current = null
+      } else {
+        console.log('📹 No pending offer - waiting for offer from caller')
       }
 
       setIncomingCall({ isVisible: false, callerName: '', callId: '' })
@@ -232,55 +248,75 @@ export function useVideoChat({
 
     const signalData: WebRTCMessage = message.data
 
+    console.log('📹 Processing video signal:', signalData.type, 'from:', signalData.from, 'to:', signalData.to)
+
+    // For room-based calls, accept signals meant for anyone (broadcast)
+    // or specifically for this user
+    // Don't process signals from ourselves
+    if (signalData.from === currentUserName) {
+      console.log('📹 Ignoring own signal')
+      return
+    }
+
     switch (signalData.type) {
       case 'call-request':
-        if (signalData.to === currentUserName) {
-          setIncomingCall({
-            isVisible: true,
-            callerName: signalData.from,
-            callId: signalData.callId
-          })
-        }
+        // Accept call requests from anyone in the room (not just targeted to our username)
+        // This enables room-based calling where the caller doesn't know exact usernames
+        console.log('📹 Incoming call request from:', signalData.from)
+        setIncomingCall({
+          isVisible: true,
+          callerName: signalData.from,
+          callId: signalData.callId
+        })
         break
 
       case 'call-accept':
-        if (signalData.to === currentUserName && webrtcManagerRef.current) {
-          console.log('Call accepted by', signalData.from)
+        // Only process if we're the initiator waiting for acceptance
+        if (callState.isInCall && callState.isInitiator && webrtcManagerRef.current) {
+          console.log('📹 Call accepted by', signalData.from)
+          // Create and send offer now that call is accepted
+          webrtcManagerRef.current.createOffer()
         }
         break
 
       case 'call-reject':
-        if (signalData.to === currentUserName) {
-          console.log('Call rejected by', signalData.from)
+        if (callState.isInCall && callState.isInitiator) {
+          console.log('📹 Call rejected by', signalData.from)
           endCall()
           alert(`${signalData.from} declined the video call.`)
         }
         break
 
       case 'call-end':
-        if (signalData.to === currentUserName || callState.callId === signalData.callId) {
+        if (callState.isInCall && callState.callId === signalData.callId) {
+          console.log('📹 Call ended by', signalData.from)
           endCall()
         }
         break
 
       case 'offer':
+        console.log('📹 Received offer, isInCall:', callState.isInCall, 'isInitiator:', callState.isInitiator)
         if (webrtcManagerRef.current) {
           if (callState.isInCall && !callState.isInitiator) {
+            console.log('📹 Handling offer immediately')
             webrtcManagerRef.current.handleOffer(signalData.data)
           } else {
             // Store offer for when call is accepted
+            console.log('📹 Storing offer for later')
             pendingOfferRef.current = signalData.data
           }
         }
         break
 
       case 'answer':
+        console.log('📹 Received answer, isInitiator:', callState.isInitiator)
         if (webrtcManagerRef.current && callState.isInitiator) {
           webrtcManagerRef.current.handleAnswer(signalData.data)
         }
         break
 
       case 'ice-candidate':
+        console.log('📹 Received ICE candidate, isInCall:', callState.isInCall)
         if (webrtcManagerRef.current && callState.isInCall) {
           webrtcManagerRef.current.handleIceCandidate(signalData.data)
         }

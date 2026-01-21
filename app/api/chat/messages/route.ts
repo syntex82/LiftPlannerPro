@@ -16,17 +16,23 @@ const roomIdToSlug: Record<number, string> = {
 }
 
 async function getMessagesFromDB(roomId: number) {
+  console.log(`📬 Getting messages for room ${roomId}`)
+
   try {
     // Try to get messages from GroupMessage first (new system)
     const slug = roomIdToSlug[roomId]
+    console.log(`🔍 Room ${roomId} maps to slug: ${slug}`)
+
     if (slug) {
       try {
         const group = await prisma.group.findUnique({
           where: { slug },
-          select: { id: true }
+          select: { id: true, name: true }
         })
 
         if (group) {
+          console.log(`✅ Found group: ${group.name} (${group.id})`)
+
           const messages = await prisma.groupMessage.findMany({
             where: { groupId: group.id, isDeleted: false },
             orderBy: { createdAt: 'asc' },
@@ -35,6 +41,8 @@ async function getMessagesFromDB(roomId: number) {
               sender: { select: { id: true, name: true, email: true, image: true } }
             }
           })
+
+          console.log(`📨 Found ${messages.length} messages in GroupMessage table`)
 
           return messages.map(msg => ({
             id: msg.id,
@@ -45,13 +53,16 @@ async function getMessagesFromDB(roomId: number) {
             replyTo: msg.replyToId,
             avatar: msg.sender?.image
           }))
+        } else {
+          console.log(`⚠️ Group with slug "${slug}" not found, falling back to ChatMessage`)
         }
-      } catch (e) {
-        // Group table might not exist yet
+      } catch (e: any) {
+        console.log(`⚠️ Group table error: ${e.message}, falling back to ChatMessage`)
       }
     }
 
     // Fallback to old ChatMessage system
+    console.log(`📦 Using fallback ChatMessage table for room ${roomId}`)
     const messages = await prisma.chatMessage.findMany({
       where: { roomId },
       orderBy: { createdAt: 'asc' },
@@ -61,6 +72,8 @@ async function getMessagesFromDB(roomId: number) {
       }
     })
 
+    console.log(`📨 Found ${messages.length} messages in ChatMessage table`)
+
     return messages.map(message => ({
       id: message.id,
       content: message.content,
@@ -69,13 +82,15 @@ async function getMessagesFromDB(roomId: number) {
       created_at: message.createdAt.toISOString(),
       replyTo: message.replyTo
     }))
-  } catch (error) {
-    console.error('Database error getting messages:', error)
+  } catch (error: any) {
+    console.error('💥 Database error getting messages:', error.message)
     return []
   }
 }
 
 async function insertMessageToDB({ roomId, userId, content, messageType, replyTo }: any) {
+  console.log(`📝 Inserting message to room ${roomId} from user ${userId}`)
+
   try {
     // Get user by email
     const user = await prisma.user.findUnique({
@@ -84,19 +99,26 @@ async function insertMessageToDB({ roomId, userId, content, messageType, replyTo
     })
 
     if (!user) {
-      throw new Error('User not found')
+      console.error(`❌ User not found: ${userId}`)
+      throw new Error(`User not found: ${userId}`)
     }
+
+    console.log(`👤 Found user: ${user.name || user.email} (${user.id})`)
 
     // Try to insert into GroupMessage first (new system)
     const slug = roomIdToSlug[roomId]
+    console.log(`🔍 Room ${roomId} maps to slug: ${slug}`)
+
     if (slug) {
       try {
         const group = await prisma.group.findUnique({
           where: { slug },
-          select: { id: true }
+          select: { id: true, name: true }
         })
 
         if (group) {
+          console.log(`✅ Found group: ${group.name} (${group.id})`)
+
           const message = await prisma.groupMessage.create({
             data: {
               groupId: group.id,
@@ -110,6 +132,8 @@ async function insertMessageToDB({ roomId, userId, content, messageType, replyTo
             }
           })
 
+          console.log(`✅ Message inserted to GroupMessage: ${message.id}`)
+
           return {
             id: message.id,
             content: message.content,
@@ -119,13 +143,16 @@ async function insertMessageToDB({ roomId, userId, content, messageType, replyTo
             replyTo: message.replyToId,
             avatar: message.sender?.image
           }
+        } else {
+          console.log(`⚠️ Group with slug "${slug}" not found, falling back to ChatMessage`)
         }
-      } catch (e) {
-        // Group table might not exist yet
+      } catch (e: any) {
+        console.log(`⚠️ Group table error: ${e.message}, falling back to ChatMessage`)
       }
     }
 
     // Fallback to old ChatMessage system
+    console.log(`📦 Using fallback ChatMessage table for room ${roomId}`)
     const message = await prisma.chatMessage.create({
       data: {
         content,
@@ -139,6 +166,8 @@ async function insertMessageToDB({ roomId, userId, content, messageType, replyTo
       }
     })
 
+    console.log(`✅ Message inserted to ChatMessage: ${message.id}`)
+
     return {
       id: message.id,
       content: message.content,
@@ -147,8 +176,8 @@ async function insertMessageToDB({ roomId, userId, content, messageType, replyTo
       created_at: message.createdAt.toISOString(),
       replyTo: message.replyTo
     }
-  } catch (error) {
-    console.error('Database error inserting message:', error)
+  } catch (error: any) {
+    console.error('💥 Database error inserting message:', error.message)
     throw error
   }
 }

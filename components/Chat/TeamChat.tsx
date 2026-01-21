@@ -183,10 +183,40 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
     onSendMessage: handleVideoMessage
   })
 
-  // Load rooms and users
+  // Set user online status
+  const setOnlineStatus = async (status: 'online' | 'offline') => {
+    try {
+      await fetch('/api/chat/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+      console.log('📡 User status set to:', status)
+    } catch (error) {
+      console.error('Error setting online status:', error)
+    }
+  }
+
+  // Load rooms and users, and set online status
   useEffect(() => {
     loadChatRooms()
     loadUsers()
+
+    // Set user online when component mounts
+    setOnlineStatus('online')
+
+    // Set user offline when component unmounts or page closes
+    const handleBeforeUnload = () => {
+      // Use sendBeacon for reliable unload
+      navigator.sendBeacon('/api/chat/users', JSON.stringify({ status: 'offline' }))
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      setOnlineStatus('offline')
+    }
   }, [])
 
   useEffect(() => {
@@ -202,16 +232,40 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
     }
   }, [currentRoom])
 
+  // Periodically refresh users list to see online status changes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadUsers()
+    }, 10000) // Refresh every 10 seconds
+
+    return () => clearInterval(interval)
+  }, [])
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
   const loadChatRooms = async () => {
     try {
+      // First, check and initialize chat groups if needed
+      try {
+        const initCheck = await fetch('/api/chat/init')
+        const initStatus = await initCheck.json()
+
+        if (!initStatus.initialized) {
+          console.log('🏗️ Initializing chat groups...')
+          await fetch('/api/chat/init', { method: 'POST' })
+          console.log('✅ Chat groups initialized')
+        }
+      } catch (initError) {
+        console.log('ℹ️ Chat init check skipped:', initError)
+      }
+
       const response = await fetch('/api/chat/rooms')
       if (response.ok) {
         const data = await response.json()
         const roomsList = data.rooms || data || []
+        console.log('📋 Loaded rooms:', roomsList)
         setRooms(roomsList)
         if (roomsList.length > 0 && !currentRoom) {
           setCurrentRoom(roomsList[0].id)
@@ -243,9 +297,30 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
       eventSource.onopen = () => setIsConnected(true)
       eventSource.onmessage = (event) => {
         try {
-          const newMsg = JSON.parse(event.data)
-          if (newMsg.messageType !== 'video_call_signal') {
-            setMessages(prev => [...prev, newMsg])
+          const data = JSON.parse(event.data)
+
+          if (data.type === 'new_message') {
+            const message = data.message
+
+            // Handle video call signals
+            if (message.messageType === 'video_call_signal') {
+              try {
+                const signalData = JSON.parse(message.content)
+                console.log('📹 Received video signal:', signalData)
+                // Wrap in the expected format for handleWebSocketMessage
+                videoChat.handleWebSocketMessage({
+                  type: 'video_call_signal',
+                  data: signalData
+                })
+              } catch (error) {
+                console.error('Error parsing video signal:', error)
+              }
+            } else {
+              // Regular message
+              setMessages(prev => [...prev, message])
+            }
+          } else if (data.type === 'connected') {
+            console.log('SSE connection established')
           }
         } catch (e) {
           console.error('Error parsing message:', e)
@@ -261,11 +336,21 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
   const loadMessages = async (roomId: number) => {
     setIsLoading(true)
     try {
+      console.log(`📬 Loading messages for room ${roomId}...`)
       const response = await fetch(`/api/chat/messages?roomId=${roomId}`)
       if (response.ok) {
         const data = await response.json()
+        console.log(`📨 Received messages data:`, data)
+
+        // Handle both array response and { messages: [] } response
+        const messagesList = Array.isArray(data) ? data : (data.messages || [])
+
         // Filter out video call signals (they have a different messageType from the API)
-        setMessages(data.filter((m: any) => m.messageType !== 'video_call_signal'))
+        const filteredMessages = messagesList.filter((m: any) => m.messageType !== 'video_call_signal')
+        setMessages(filteredMessages)
+        console.log(`✅ Loaded ${filteredMessages.length} messages`)
+      } else {
+        console.error(`❌ Failed to load messages: ${response.status} ${response.statusText}`)
       }
     } catch (error) {
       console.error('Error loading messages:', error)
@@ -276,7 +361,12 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
 
   const sendMessage = async (content?: string, messageType: string = 'text') => {
     const messageContent = content || newMessage.trim()
-    if (!messageContent || !currentRoom) return
+    if (!messageContent || !currentRoom) {
+      console.log('❌ Cannot send: no content or no room selected')
+      return
+    }
+
+    console.log('🚀 Sending message:', { roomId: currentRoom, content: messageContent, messageType })
 
     try {
       const response = await fetch('/api/chat/messages', {
@@ -290,12 +380,19 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
         })
       })
 
+      console.log('📡 Response status:', response.status)
+
       if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Message sent:', result)
         if (!content) setNewMessage('')
         setReplyTo(null)
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Failed to send message:', errorData)
       }
     } catch (error) {
-      console.error('Error sending message:', error)
+      console.error('💥 Error sending message:', error)
     }
   }
 
@@ -308,9 +405,14 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'file' | 'image') => {
     const file = e.target.files?.[0]
-    if (!file || !currentRoom) return
+    if (!file || !currentRoom) {
+      console.log('❌ Cannot upload: no file or no room selected')
+      return
+    }
 
+    console.log('📤 Uploading file:', { name: file.name, size: file.size, type: file.type })
     setIsUploading(true)
+
     try {
       const formData = new FormData()
       formData.append('file', file)
@@ -321,12 +423,24 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
         body: formData
       })
 
+      console.log('📡 Upload response status:', response.status)
+
       if (response.ok) {
         const data = await response.json()
-        await sendMessage(file.name, type === 'image' ? 'image' : 'file')
+        console.log('✅ File uploaded:', data)
+
+        // Include the file URL in the message content
+        const messageContent = type === 'image'
+          ? `[Image: ${file.name}](${data.fileUrl})`
+          : `[File: ${file.name}](${data.fileUrl})`
+
+        await sendMessage(messageContent, type === 'image' ? 'image' : 'file')
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Upload failed:', errorData)
       }
     } catch (error) {
-      console.error('Error uploading file:', error)
+      console.error('💥 Error uploading file:', error)
     } finally {
       setIsUploading(false)
     }
