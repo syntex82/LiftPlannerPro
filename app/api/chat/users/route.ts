@@ -44,25 +44,31 @@ export async function GET(request: NextRequest) {
       })
 
       if (dbUsers.length > 0) {
-        const users = dbUsers.map((user, index) => ({
-          id: index + 1,
-          dbId: user.id,
-          name: user.name || 'Unknown User',
-          email: user.email,
-          avatar: user.image,
-          isOnline: user.onlineStatus?.toLowerCase() === 'online',
-          status: user.onlineStatus?.toLowerCase() || 'offline',
-          statusMessage: user.role === 'ADMIN' ? 'Administrator' : undefined,
-          lastSeen: user.lastSeenAt?.toISOString(),
-          jobTitle: user.jobTitle || (user.role === 'ADMIN' ? 'Administrator' : 'Team Member'),
-          department: user.role === 'ADMIN' ? 'Management' : 'Engineering',
-          company: 'Lift Planner Pro',
-          location: user.location,
-          phone: user.phone,
-          bio: user.about,
-          skills: user.skills || [],
-          joinedAt: user.createdAt?.toISOString()
-        }))
+        const users = dbUsers.map((user, index) => {
+          const statusValue = user.onlineStatus?.toLowerCase() || 'offline'
+          // Consider user online if status is online, away, busy, or dnd (all are "active" states)
+          const isOnlineState = ['online', 'away', 'busy', 'dnd'].includes(statusValue)
+
+          return {
+            id: index + 1,
+            dbId: user.id,
+            name: user.name || 'Unknown User',
+            email: user.email,
+            avatar: user.image,
+            isOnline: isOnlineState,
+            status: statusValue,
+            statusMessage: user.role === 'ADMIN' ? 'Administrator' : undefined,
+            lastSeen: user.lastSeenAt?.toISOString(),
+            jobTitle: user.jobTitle || (user.role === 'ADMIN' ? 'Administrator' : 'Team Member'),
+            department: user.role === 'ADMIN' ? 'Management' : 'Engineering',
+            company: 'Lift Planner Pro',
+            location: user.location,
+            phone: user.phone,
+            bio: user.about,
+            skills: user.skills || [],
+            joinedAt: user.createdAt?.toISOString()
+          }
+        })
 
         return NextResponse.json(users)
       }
@@ -98,16 +104,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { status } = body
 
-    // Update user online status in database (use lowercase to match schema default)
+    // Validate status - support all status types
+    const validStatuses = ['online', 'offline', 'away', 'busy', 'dnd']
+    const normalizedStatus = validStatuses.includes(status?.toLowerCase()) ? status.toLowerCase() : 'offline'
+
+    // Update user online status in database
     try {
       await prisma.user.update({
         where: { email: session.user.email },
         data: {
-          onlineStatus: status === 'online' ? 'online' : 'offline',
+          onlineStatus: normalizedStatus,
           lastSeenAt: new Date()
         }
       })
-      console.log('📡 Updated user status:', session.user.email, '->', status)
+      console.log('📡 Updated user status:', session.user.email, '->', normalizedStatus)
     } catch (dbError) {
       console.error('Failed to update status in database:', dbError)
     }

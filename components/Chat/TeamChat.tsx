@@ -115,7 +115,7 @@ interface User {
   email: string
   isOnline: boolean
   avatar?: string
-  status?: 'online' | 'away' | 'busy' | 'offline'
+  status?: 'online' | 'away' | 'busy' | 'dnd' | 'offline'
   lastSeen?: string
 }
 
@@ -147,6 +147,9 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [isScreenSharing, setIsScreenSharing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [myStatus, setMyStatus] = useState<'online' | 'away' | 'busy' | 'dnd'>('online')
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false)
+  const [targetCallUser, setTargetCallUser] = useState<User | null>(null)
 
   // Get current user name from session
   const currentUserName = session?.user?.name || 'User'
@@ -183,17 +186,35 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
     onSendMessage: handleVideoMessage
   })
 
-  // Set user online status
-  const setOnlineStatus = async (status: 'online' | 'offline') => {
+  // Set user online status - supports all status types
+  const setOnlineStatus = async (status: 'online' | 'offline' | 'away' | 'busy' | 'dnd') => {
     try {
-      await fetch('/api/chat/users', {
+      const response = await fetch('/api/chat/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
       })
-      console.log('📡 User status set to:', status)
+      if (response.ok) {
+        console.log('📡 User status set to:', status)
+        if (status !== 'offline') {
+          setMyStatus(status as 'online' | 'away' | 'busy' | 'dnd')
+        }
+      } else {
+        console.error('Failed to set status:', response.status)
+      }
     } catch (error) {
       console.error('Error setting online status:', error)
+    }
+  }
+
+  // Get status display info
+  const getStatusInfo = (status: string) => {
+    switch (status) {
+      case 'online': return { label: 'Available', color: 'bg-green-500', textColor: 'text-green-400' }
+      case 'away': return { label: 'Away', color: 'bg-yellow-500', textColor: 'text-yellow-400' }
+      case 'busy': return { label: 'Busy', color: 'bg-red-500', textColor: 'text-red-400' }
+      case 'dnd': return { label: 'Do Not Disturb', color: 'bg-red-600', textColor: 'text-red-400' }
+      default: return { label: 'Offline', color: 'bg-slate-500', textColor: 'text-slate-400' }
     }
   }
 
@@ -228,6 +249,10 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
         eventSourceRef.current = null
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+        reconnectTimeoutRef.current = null
       }
     }
   }, [currentRoom])
@@ -288,13 +313,27 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
     }
   }
 
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   const connectToRoom = async (roomId: number) => {
+    // Clear any pending reconnect
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = null
+    }
+
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
     }
     try {
+      console.log(`🔌 Connecting to room ${roomId}...`)
       const eventSource = new EventSource(`/api/chat/messages?roomId=${roomId}&stream=true`)
-      eventSource.onopen = () => setIsConnected(true)
+
+      eventSource.onopen = () => {
+        console.log('✅ SSE connected')
+        setIsConnected(true)
+      }
+
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
@@ -326,10 +365,26 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
           console.error('Error parsing message:', e)
         }
       }
-      eventSource.onerror = () => setIsConnected(false)
+
+      eventSource.onerror = (error) => {
+        console.log('⚠️ SSE error, will reconnect...', error)
+        setIsConnected(false)
+        eventSource.close()
+        eventSourceRef.current = null
+
+        // Auto-reconnect after 3 seconds
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (roomId === currentRoom) {
+            console.log('🔄 Attempting to reconnect...')
+            connectToRoom(roomId)
+          }
+        }, 3000)
+      }
+
       eventSourceRef.current = eventSource
     } catch (error) {
       console.error('Error connecting to room:', error)
+      setIsConnected(false)
     }
   }
 
@@ -472,6 +527,28 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
     videoChat.startCall(room?.name || 'Team')
   }
 
+  // Start a video call to a specific user
+  const handleStartVideoCallToUser = async (user: User) => {
+    if (!user.isOnline) {
+      alert(`${user.name} is currently offline and cannot receive calls.`)
+      return
+    }
+
+    const support = await (await import('@/components/video-chat/webrtc-manager')).WebRTCManager.checkSupport()
+    if (!support.supported) {
+      alert(`Video calling not available: ${support.error}`)
+      return
+    }
+    if (support.needsPermission) {
+      setTargetCallUser(user)
+      setShowPermissionModal(true)
+      return
+    }
+
+    console.log('📹 Starting call to specific user:', user.name, user.email)
+    videoChat.startCall(user.name)
+  }
+
   const startScreenShare = async () => {
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
@@ -488,6 +565,7 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
       case 'online': return 'bg-green-500'
       case 'away': return 'bg-yellow-500'
       case 'busy': return 'bg-red-500'
+      case 'dnd': return 'bg-red-600'
       default: return 'bg-slate-500'
     }
   }
@@ -575,22 +653,63 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
           ))}
         </div>
 
-        {/* User Profile */}
+        {/* User Profile with Status Dropdown */}
         <div className="p-3 border-t border-slate-700/50">
-          <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-800/50">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold">
-                {currentUserName[0]?.toUpperCase()}
+          <div className="relative">
+            <div
+              className="flex items-center gap-3 p-2 rounded-xl bg-slate-800/50 cursor-pointer hover:bg-slate-800 transition-colors"
+              onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+            >
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold">
+                  {currentUserName[0]?.toUpperCase()}
+                </div>
+                <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-slate-800 ${getStatusInfo(myStatus).color}`} />
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-slate-800 bg-green-500" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-white">{currentUserName}</p>
+                <p className={`text-xs ${getStatusInfo(myStatus).textColor}`}>{getStatusInfo(myStatus).label}</p>
+              </div>
+              <Button size="sm" variant="ghost" className="text-slate-400 hover:text-white" onClick={(e) => { e.stopPropagation(); }}>
+                <Settings className="w-4 h-4" />
+              </Button>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-white">{currentUserName}</p>
-              <p className="text-xs text-green-400">Online</p>
-            </div>
-            <Button size="sm" variant="ghost" className="text-slate-400 hover:text-white">
-              <Settings className="w-4 h-4" />
-            </Button>
+
+            {/* Status Dropdown */}
+            {showStatusDropdown && (
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-slate-800 rounded-xl border border-slate-700 shadow-xl z-50 overflow-hidden">
+                <div className="p-2 space-y-1">
+                  <button
+                    onClick={() => { setOnlineStatus('online'); setShowStatusDropdown(false); }}
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 transition-colors ${myStatus === 'online' ? 'bg-slate-700/50' : ''}`}
+                  >
+                    <div className="w-3 h-3 rounded-full bg-green-500" />
+                    <span className="text-sm text-white">Available</span>
+                  </button>
+                  <button
+                    onClick={() => { setOnlineStatus('away'); setShowStatusDropdown(false); }}
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 transition-colors ${myStatus === 'away' ? 'bg-slate-700/50' : ''}`}
+                  >
+                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <span className="text-sm text-white">Away</span>
+                  </button>
+                  <button
+                    onClick={() => { setOnlineStatus('busy'); setShowStatusDropdown(false); }}
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 transition-colors ${myStatus === 'busy' ? 'bg-slate-700/50' : ''}`}
+                  >
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <span className="text-sm text-white">Busy</span>
+                  </button>
+                  <button
+                    onClick={() => { setOnlineStatus('dnd'); setShowStatusDropdown(false); }}
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 transition-colors ${myStatus === 'dnd' ? 'bg-slate-700/50' : ''}`}
+                  >
+                    <div className="w-3 h-3 rounded-full bg-red-600" />
+                    <span className="text-sm text-white">Do Not Disturb</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -944,13 +1063,18 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
         )}
       </div>
 
-      {/* Users Sidebar */}
+      {/* Users Sidebar with Call Buttons */}
       {showUserList && currentRoom && (
-        <div className="w-64 bg-slate-900/80 backdrop-blur-xl border-l border-slate-700/50 p-4">
-          <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Members</h4>
+        <div className="w-72 bg-slate-900/80 backdrop-blur-xl border-l border-slate-700/50 p-4">
+          <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
+            Members ({users.filter(u => u.isOnline).length} online)
+          </h4>
           <div className="space-y-2">
             {users.map((user) => (
-              <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-800/50 transition-colors cursor-pointer">
+              <div
+                key={user.id}
+                className="group flex items-center gap-3 p-2 rounded-xl hover:bg-slate-800/50 transition-colors"
+              >
                 <div className="relative">
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
                     {user.name[0]?.toUpperCase()}
@@ -959,10 +1083,42 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white truncate">{user.name}</p>
-                  <p className="text-xs text-slate-500">{user.isOnline ? 'Active now' : user.lastSeen || 'Offline'}</p>
+                  <p className={`text-xs ${user.isOnline ? getStatusInfo(user.status || 'online').textColor : 'text-slate-500'}`}>
+                    {user.isOnline ? getStatusInfo(user.status || 'online').label : user.lastSeen || 'Offline'}
+                  </p>
                 </div>
+                {/* Call buttons - show on hover if user is online and not yourself */}
+                {user.isOnline && user.name !== currentUserName && (
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleStartVideoCallToUser(user)}
+                      className="h-7 w-7 p-0 text-green-400 hover:text-green-300 hover:bg-green-500/20"
+                      title={`Video call ${user.name}`}
+                    >
+                      <Video className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleStartVideoCallToUser(user)}
+                      className="h-7 w-7 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20"
+                      title={`Voice call ${user.name}`}
+                    >
+                      <Phone className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
+          </div>
+
+          {/* Hint for calling */}
+          <div className="mt-4 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+            <p className="text-xs text-slate-400">
+              💡 Hover over an online user to see call options
+            </p>
           </div>
         </div>
       )}
@@ -987,14 +1143,21 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
 
       <PermissionRequestModal
         isVisible={showPermissionModal}
-        onClose={() => setShowPermissionModal(false)}
+        onClose={() => { setShowPermissionModal(false); setTargetCallUser(null); }}
         onRequestPermissions={async () => {
           try {
             await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             setShowPermissionModal(false)
-            handleStartVideoCall()
+            // If there was a targeted user, call them; otherwise call the room
+            if (targetCallUser) {
+              videoChat.startCall(targetCallUser.name)
+              setTargetCallUser(null)
+            } else {
+              handleStartVideoCall()
+            }
           } catch (e) {
             console.error('Permission denied:', e)
+            setTargetCallUser(null)
           }
         }}
       />
