@@ -41,6 +41,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [profile, setProfile] = useState<UserProfile>({
     id: '',
     name: '',
@@ -62,6 +63,53 @@ export default function ProfilePage() {
   })
   const [newSkill, setNewSkill] = useState('')
   const [newCert, setNewCert] = useState('')
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB')
+      return
+    }
+
+    setIsUploadingAvatar(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'avatar')
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setProfile(prev => ({ ...prev, avatar: data.path }))
+        // Save the avatar path to database
+        await fetch('/api/user/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...profile, avatar: data.path })
+        })
+      } else {
+        alert('Failed to upload avatar')
+      }
+    } catch (error) {
+      console.error('Avatar upload error:', error)
+      alert('Failed to upload avatar')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
 
   useEffect(() => {
     if (session?.user) {
@@ -183,9 +231,22 @@ export default function ProfilePage() {
                   </AvatarFallback>
                 </Avatar>
                 {isEditing && (
-                  <Button size="sm" className="absolute bottom-0 right-0 rounded-full w-8 h-8 p-0 bg-blue-600">
-                    <Camera className="w-4 h-4" />
-                  </Button>
+                  <label className="absolute bottom-0 right-0 cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                      disabled={isUploadingAvatar}
+                    />
+                    <div className={`rounded-full w-8 h-8 p-0 bg-blue-600 flex items-center justify-center hover:bg-blue-700 transition-colors ${isUploadingAvatar ? 'opacity-50' : ''}`}>
+                      {isUploadingAvatar ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Camera className="w-4 h-4 text-white" />
+                      )}
+                    </div>
+                  </label>
                 )}
               </div>
               <div className="flex-1">

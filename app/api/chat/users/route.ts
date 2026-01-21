@@ -90,51 +90,34 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { status, roomId } = body
-
-    const userId = await getUserFromSession(request)
-    if (!userId) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Update user status
-    const currentStatus = userStatus.get(userId) || {
-      isOnline: false,
-      lastSeen: new Date(),
-      username: 'Current User',
-      email: 'user@company.com'
+    const body = await request.json()
+    const { status } = body
+
+    // Update user online status in database
+    try {
+      await prisma.user.update({
+        where: { email: session.user.email },
+        data: {
+          onlineStatus: status === 'online' ? 'ONLINE' : 'OFFLINE',
+          lastSeenAt: new Date()
+        }
+      })
+    } catch (dbError) {
+      console.error('Failed to update status in database:', dbError)
     }
 
-    userStatus.set(userId, {
-      ...currentStatus,
-      isOnline: status === 'online',
-      lastSeen: new Date(),
-      currentRoom: roomId
-    })
-
-    // TODO: Update database
-    // UPDATE user_status SET 
-    //   is_online = ?, 
-    //   last_seen = CURRENT_TIMESTAMP, 
-    //   current_room_id = ?
-    // WHERE user_id = ?
-
-    // Broadcast status update to all connected users
-    // TODO: Implement SSE broadcast for user status
-
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      status: userStatus.get(userId)
+      status: status
     })
 
   } catch (error) {
     console.error('Update user status error:', error)
     return NextResponse.json({ error: 'Failed to update status' }, { status: 500 })
   }
-}
-
-async function getUserFromSession(request: NextRequest) {
-  // TODO: Implement with your auth system
-  return 1 // placeholder
 }
