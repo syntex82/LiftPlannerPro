@@ -3,6 +3,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic route - prevents Next.js from caching the SSE response
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // In-memory store for real-time updates (SSE subscribers)
 // Note: This is per-server-instance, won't work across multiple instances
 const messageSubscribers = new Map<string, Set<(data: any) => void>>()
