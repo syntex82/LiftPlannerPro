@@ -746,6 +746,9 @@ Or go to your browser settings and allow camera/microphone for ${location.hostna
         onToggleVideo={videoChat.toggleVideo}
         isAudioEnabled={videoChat.isAudioEnabled}
         isVideoEnabled={videoChat.isVideoEnabled}
+        onStartScreenShare={videoChat.startScreenShare}
+        onStopScreenShare={videoChat.stopScreenShare}
+        isScreenSharing={videoChat.isScreenSharing}
       />
 
       <IncomingCallModal

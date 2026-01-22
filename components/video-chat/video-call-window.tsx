@@ -30,8 +30,9 @@ interface VideoCallWindowProps {
   onToggleVideo: () => void
   isAudioEnabled: boolean
   isVideoEnabled: boolean
-  onScreenShare?: () => void
-  isScreenSharing?: boolean
+  onStartScreenShare: () => Promise<MediaStream | null>
+  onStopScreenShare: () => Promise<void>
+  isScreenSharing: boolean
 }
 
 export default function VideoCallWindow({
@@ -41,8 +42,9 @@ export default function VideoCallWindow({
   onToggleVideo,
   isAudioEnabled,
   isVideoEnabled,
-  onScreenShare,
-  isScreenSharing = false
+  onStartScreenShare,
+  onStopScreenShare,
+  isScreenSharing
 }: VideoCallWindowProps) {
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
@@ -89,28 +91,35 @@ export default function VideoCallWindow({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  // Screen share handler
+  // Screen share handler - uses WebRTC manager to properly replace tracks
   const handleScreenShare = async () => {
-    if (screenStream) {
-      screenStream.getTracks().forEach(track => track.stop())
-      setScreenStream(null)
+    if (isScreenSharing || screenStream) {
+      // Stop screen sharing
+      if (screenStream) {
+        screenStream.getTracks().forEach(track => track.stop())
+        setScreenStream(null)
+      }
+      await onStopScreenShare()
       return
     }
 
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { cursor: 'always' } as any,
-        audio: true
-      })
-      setScreenStream(stream)
+      // Start screen sharing through WebRTC manager (replaces track in peer connection)
+      const stream = await onStartScreenShare()
 
-      // Stop sharing when user clicks "Stop sharing" in browser
-      stream.getVideoTracks()[0].onended = () => {
-        setScreenStream(null)
-      }
+      if (stream) {
+        setScreenStream(stream)
 
-      if (screenShareRef.current) {
-        screenShareRef.current.srcObject = stream
+        // Display the screen share locally
+        if (screenShareRef.current) {
+          screenShareRef.current.srcObject = stream
+        }
+
+        // Handle when user stops sharing via browser UI
+        stream.getVideoTracks()[0].onended = () => {
+          setScreenStream(null)
+          onStopScreenShare()
+        }
       }
     } catch (error) {
       console.error('Error starting screen share:', error)

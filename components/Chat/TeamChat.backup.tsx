@@ -875,6 +875,9 @@ function TeamChatContent({ projectId }: { projectId?: number }) {
         onToggleVideo={videoChat.toggleVideo}
         isAudioEnabled={videoChat.isAudioEnabled}
         isVideoEnabled={videoChat.isVideoEnabled}
+        onStartScreenShare={videoChat.startScreenShare}
+        onStopScreenShare={videoChat.stopScreenShare}
+        isScreenSharing={videoChat.isScreenSharing}
       />
 
       <IncomingCallModal

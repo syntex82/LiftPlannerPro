@@ -526,6 +526,83 @@ export class WebRTCManager {
     return false
   }
 
+  // Start screen sharing - replaces video track with screen share
+  async startScreenShare(): Promise<MediaStream | null> {
+    if (!this.peerConnection) {
+      console.error('📹 Cannot start screen share - no peer connection')
+      return null
+    }
+
+    try {
+      console.log('📹 Starting screen share...')
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { cursor: 'always' } as any,
+        audio: true
+      })
+
+      const screenTrack = screenStream.getVideoTracks()[0]
+
+      // Find the video sender and replace the track
+      const videoSender = this.peerConnection.getSenders().find(
+        sender => sender.track?.kind === 'video'
+      )
+
+      if (videoSender) {
+        await videoSender.replaceTrack(screenTrack)
+        console.log('📹 Screen share track replaced in peer connection')
+      } else {
+        // No video sender found, add the track
+        this.peerConnection.addTrack(screenTrack, screenStream)
+        console.log('📹 Screen share track added to peer connection')
+      }
+
+      // Handle when user stops sharing via browser UI
+      screenTrack.onended = () => {
+        console.log('📹 Screen share ended by user')
+        this.stopScreenShare()
+      }
+
+      return screenStream
+    } catch (error) {
+      console.error('📹 Error starting screen share:', error)
+      return null
+    }
+  }
+
+  // Stop screen sharing - restore camera video
+  async stopScreenShare(): Promise<void> {
+    if (!this.peerConnection || !this.localStream) {
+      console.log('📹 Cannot stop screen share - no connection or stream')
+      return
+    }
+
+    try {
+      console.log('📹 Stopping screen share, restoring camera...')
+
+      // Get the original camera video track
+      const cameraTrack = this.localStream.getVideoTracks()[0]
+
+      if (cameraTrack) {
+        // Find the video sender and replace with camera track
+        const videoSender = this.peerConnection.getSenders().find(
+          sender => sender.track?.kind === 'video'
+        )
+
+        if (videoSender) {
+          await videoSender.replaceTrack(cameraTrack)
+          console.log('📹 Camera track restored in peer connection')
+        }
+      }
+    } catch (error) {
+      console.error('📹 Error stopping screen share:', error)
+    }
+  }
+
+  // Get peer connection (for external access if needed)
+  getPeerConnection(): RTCPeerConnection | null {
+    return this.peerConnection
+  }
+
   // Get current state
   getState(): VideoCallState {
     return {

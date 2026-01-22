@@ -13,7 +13,8 @@ interface VideoChatHook {
   }
   isAudioEnabled: boolean
   isVideoEnabled: boolean
-  
+  isScreenSharing: boolean
+
   // Actions
   startCall: (participantName: string) => Promise<void>
   acceptCall: () => Promise<void>
@@ -21,7 +22,9 @@ interface VideoChatHook {
   endCall: () => void
   toggleAudio: () => void
   toggleVideo: () => void
-  
+  startScreenShare: () => Promise<MediaStream | null>
+  stopScreenShare: () => Promise<void>
+
   // WebSocket integration
   handleWebSocketMessage: (message: any) => void
   sendWebSocketMessage: (message: WebRTCMessage) => void
@@ -53,7 +56,9 @@ export function useVideoChat({
   
   const [isAudioEnabled, setIsAudioEnabled] = useState(true)
   const [isVideoEnabled, setIsVideoEnabled] = useState(true)
-  
+  const [isScreenSharing, setIsScreenSharing] = useState(false)
+  const screenStreamRef = useRef<MediaStream | null>(null)
+
   const webrtcManagerRef = useRef<WebRTCManager | null>(null)
   const pendingOfferRef = useRef<RTCSessionDescriptionInit | null>(null)
   const onSendMessageRef = useRef(onSendMessage)
@@ -341,17 +346,67 @@ export function useVideoChat({
     }
   }, [])
 
+  // Start screen sharing - uses WebRTC manager to replace video track
+  const startScreenShare = useCallback(async (): Promise<MediaStream | null> => {
+    if (!webrtcManagerRef.current) {
+      console.error('📹 Cannot start screen share - no WebRTC manager')
+      return null
+    }
+
+    try {
+      console.log('📹 Starting screen share...')
+      const stream = await webrtcManagerRef.current.startScreenShare()
+
+      if (stream) {
+        screenStreamRef.current = stream
+        setIsScreenSharing(true)
+
+        // Handle when user stops sharing via browser UI
+        stream.getVideoTracks()[0].onended = () => {
+          console.log('📹 Screen share ended by browser UI')
+          stopScreenShare()
+        }
+      }
+
+      return stream
+    } catch (error) {
+      console.error('📹 Error starting screen share:', error)
+      return null
+    }
+  }, [])
+
+  // Stop screen sharing - restore camera video
+  const stopScreenShare = useCallback(async (): Promise<void> => {
+    console.log('📹 Stopping screen share...')
+
+    // Stop the screen stream tracks
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(track => track.stop())
+      screenStreamRef.current = null
+    }
+
+    // Restore camera track in WebRTC
+    if (webrtcManagerRef.current) {
+      await webrtcManagerRef.current.stopScreenShare()
+    }
+
+    setIsScreenSharing(false)
+  }, [])
+
   return {
     callState,
     incomingCall,
     isAudioEnabled,
     isVideoEnabled,
+    isScreenSharing,
     startCall,
     acceptCall,
     rejectCall,
     endCall,
     toggleAudio,
     toggleVideo,
+    startScreenShare,
+    stopScreenShare,
     handleWebSocketMessage,
     sendWebSocketMessage
   }

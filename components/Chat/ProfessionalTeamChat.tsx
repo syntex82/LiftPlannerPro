@@ -1880,6 +1880,9 @@ export default function ProfessionalTeamChat() {
         onToggleVideo={videoChat.toggleVideo}
         isAudioEnabled={videoChat.isAudioEnabled}
         isVideoEnabled={videoChat.isVideoEnabled}
+        onStartScreenShare={videoChat.startScreenShare}
+        onStopScreenShare={videoChat.stopScreenShare}
+        isScreenSharing={videoChat.isScreenSharing}
       />
 
       {/* Incoming Call Modal */}
