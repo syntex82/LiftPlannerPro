@@ -6475,42 +6475,52 @@ function CADEditorContent() {
         }
         setLayers(prev => [newLayer, ...prev])
 
-        // Create an image element for the satellite imagery
-        const canvas = canvasRef.current
-        if (canvas) {
-          const rect = canvas.getBoundingClientRect()
-          // Position at center of current view
-          const centerX = (-pan.x + rect.width / 2) / zoom
-          const centerY = (-pan.y + rect.height / 2) / zoom
+        // Preload the satellite image first
+        preloadImage(locationData.satelliteImageDataUrl).then((img) => {
+          // Add to loadedImages map
+          setLoadedImages(prev => new Map(prev).set(locationData.satelliteImageDataUrl!, img))
 
-          // Calculate size based on actual meters (scale to fit reasonably on canvas)
-          // Using 1 pixel = 1 meter as base scale, but capped at reasonable size
-          const maxSize = 800 // Max size in canvas units
-          const scaleFactor = Math.min(maxSize / locationData.widthMeters, maxSize / locationData.heightMeters, 1)
-          const imageWidth = locationData.widthMeters * scaleFactor
-          const imageHeight = locationData.heightMeters * scaleFactor
+          // Create an image element for the satellite imagery
+          const canvas = canvasRef.current
+          if (canvas) {
+            const rect = canvas.getBoundingClientRect()
+            // Position at center of current view
+            const centerX = (-pan.x + rect.width / 2) / zoom
+            const centerY = (-pan.y + rect.height / 2) / zoom
 
-          const satelliteElement: DrawingElement = {
-            id: `satellite-${Date.now()}`,
-            type: 'image',
-            points: [{ x: centerX - imageWidth / 2, y: centerY - imageHeight / 2 }],
-            style: {
-              stroke: 'transparent',
-              strokeWidth: 0,
-              fillOpacity: satelliteLayer.opacity
-            },
-            layer: newLayerId,
-            imageUrl: locationData.satelliteImageDataUrl,
-            imageWidth,
-            imageHeight,
-            imageOpacity: satelliteLayer.opacity,
-            locked: true
+            // Calculate size based on actual meters (scale to fit reasonably on canvas)
+            // Using 1 pixel = 1 meter as base scale, but capped at reasonable size
+            const maxSize = 800 // Max size in canvas units
+            const scaleFactor = Math.min(maxSize / locationData.widthMeters, maxSize / locationData.heightMeters, 1)
+            const imageWidth = locationData.widthMeters * scaleFactor
+            const imageHeight = locationData.heightMeters * scaleFactor
+
+            const satelliteElement: DrawingElement = {
+              id: `satellite-${Date.now()}`,
+              type: 'image',
+              points: [{ x: centerX - imageWidth / 2, y: centerY - imageHeight / 2 }],
+              style: {
+                stroke: 'transparent',
+                strokeWidth: 0,
+                fillOpacity: satelliteLayer.opacity
+              },
+              layer: newLayerId,
+              imageUrl: locationData.satelliteImageDataUrl,
+              imageWidth,
+              imageHeight,
+              imageOpacity: satelliteLayer.opacity,
+              locked: true
+            }
+
+            const newElements = [satelliteElement, ...elements]
+            setElements(newElements)
+            addToHistory(newElements)
+
+            addDebugLog(`✅ Satellite image loaded and added to canvas`, 'success')
           }
-
-          const newElements = [satelliteElement, ...elements]
-          setElements(newElements)
-          addToHistory(newElements)
-        }
+        }).catch(() => {
+          addDebugLog(`❌ Failed to load satellite image`, 'error')
+        })
       }
 
       // Add terrain layer if terrain data is included
