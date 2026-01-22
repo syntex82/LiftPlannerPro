@@ -31,6 +31,8 @@ import { RecoveryDialog } from "@/components/cad/RecoveryDialog"
 import { TemplateLibrary } from "@/components/cad/TemplateLibrary"
 import { DrawingTemplate } from "@/lib/drawing-templates"
 import { GroundBearingCalculator } from "@/components/cad/GroundBearingCalculator"
+import LeafletMapImportDialog from "@/components/cad/LeafletMapImportDialog"
+import { MapLocationData, MapLayer } from "@/lib/google-maps-cad"
 
 import { CraneSpecifications } from "@/lib/crane-models"
 import { exportDrawing } from "@/lib/cad-2d-export"
@@ -305,6 +307,9 @@ function CADEditorContent() {
   const [showScenarioLibrary, setShowScenarioLibrary] = useState(false)
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false)
   const [showGroundBearingCalc, setShowGroundBearingCalc] = useState(false)
+  const [showGoogleMapsImport, setShowGoogleMapsImport] = useState(false)
+  const [mapLocationData, setMapLocationData] = useState<MapLocationData | null>(null)
+  const [mapLayers, setMapLayers] = useState<MapLayer[]>([])
   const [selectedCrane, setSelectedCrane] = useState<CraneSpecifications | null>(null)
   const [showCraneConfig, setShowCraneConfig] = useState(false)
   const [configuringCrane, setConfiguringCrane] = useState<DrawingElement | null>(null)
@@ -6442,6 +6447,100 @@ function CADEditorContent() {
     }
   }
 
+  // Handle Google Maps location import
+  const handleGoogleMapsImport = (locationData: MapLocationData, importedMapLayers: MapLayer[]) => {
+    try {
+      addDebugLog(`Importing location: ${locationData.address || 'Unknown'}`, 'info')
+
+      // Store the map location data
+      setMapLocationData(locationData)
+      setMapLayers(importedMapLayers)
+
+      // Create a special "Map Satellite" layer if satellite imagery is included
+      const satelliteLayer = importedMapLayers.find(l => l.type === 'satellite')
+      if (satelliteLayer && locationData.satelliteImageDataUrl) {
+        // Add satellite image as a background layer
+        const newLayerId = `map-satellite-${Date.now()}`
+
+        // Add the layer to the layers list
+        const newLayer: Layer = {
+          id: newLayerId,
+          name: 'Map Satellite',
+          visible: true,
+          locked: true,
+          color: '#4a5568',
+          opacity: 0.8,
+          lineWeight: 1,
+          description: `Satellite imagery from ${locationData.address || 'imported location'}`
+        }
+        setLayers(prev => [newLayer, ...prev])
+
+        // Create an image element for the satellite imagery
+        const canvas = canvasRef.current
+        if (canvas) {
+          const rect = canvas.getBoundingClientRect()
+          // Position at center of current view
+          const centerX = (-pan.x + rect.width / 2) / zoom
+          const centerY = (-pan.y + rect.height / 2) / zoom
+
+          // Calculate size based on actual meters (scale to fit reasonably on canvas)
+          // Using 1 pixel = 1 meter as base scale, but capped at reasonable size
+          const maxSize = 800 // Max size in canvas units
+          const scaleFactor = Math.min(maxSize / locationData.widthMeters, maxSize / locationData.heightMeters, 1)
+          const imageWidth = locationData.widthMeters * scaleFactor
+          const imageHeight = locationData.heightMeters * scaleFactor
+
+          const satelliteElement: DrawingElement = {
+            id: `satellite-${Date.now()}`,
+            type: 'image',
+            points: [{ x: centerX - imageWidth / 2, y: centerY - imageHeight / 2 }],
+            style: {
+              stroke: 'transparent',
+              strokeWidth: 0,
+              fillOpacity: satelliteLayer.opacity
+            },
+            layer: newLayerId,
+            imageUrl: locationData.satelliteImageDataUrl,
+            imageWidth,
+            imageHeight,
+            imageOpacity: satelliteLayer.opacity,
+            locked: true
+          }
+
+          const newElements = [satelliteElement, ...elements]
+          setElements(newElements)
+          addToHistory(newElements)
+        }
+      }
+
+      // Add terrain layer if terrain data is included
+      const terrainLayer = importedMapLayers.find(l => l.type === 'terrain')
+      if (terrainLayer && locationData.elevationGrid) {
+        const terrainLayerId = `map-terrain-${Date.now()}`
+        const newTerrainLayer: Layer = {
+          id: terrainLayerId,
+          name: 'Map Terrain',
+          visible: true,
+          locked: false,
+          color: '#48bb78',
+          opacity: 0.6,
+          lineWeight: 1,
+          description: `Terrain elevation data (${locationData.minElevation?.toFixed(1)}m - ${locationData.maxElevation?.toFixed(1)}m)`
+        }
+        setLayers(prev => [newTerrainLayer, ...prev])
+
+        addDebugLog(`✅ Terrain data imported: elevation range ${locationData.minElevation?.toFixed(1)}m - ${locationData.maxElevation?.toFixed(1)}m`, 'success')
+      }
+
+      addDebugLog(`✅ Successfully imported location: ${locationData.address || 'Unknown location'}`, 'success')
+      addDebugLog(`   Area: ${locationData.widthMeters.toFixed(0)}m × ${locationData.heightMeters.toFixed(0)}m`, 'info')
+
+    } catch (error) {
+      console.error('Google Maps import error:', error)
+      addDebugLog(`❌ Failed to import location: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
+    }
+  }
+
   const handleExport = async (format: 'pdf' | 'png' | 'svg') => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -6884,6 +6983,7 @@ function CADEditorContent() {
         onFillet={() => setShowTransformationPanel(true)}
         onChamfer={() => setShowTransformationPanel(true)}
         onArray={startArrayCommand}
+        onImportLocation={() => setShowGoogleMapsImport(true)}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -10766,6 +10866,13 @@ function CADEditorContent() {
       <GroundBearingCalculator
         open={showGroundBearingCalc}
         onClose={() => setShowGroundBearingCalc(false)}
+      />
+
+      {/* OpenStreetMap Location Import Dialog (100% FREE) */}
+      <LeafletMapImportDialog
+        isOpen={showGoogleMapsImport}
+        onClose={() => setShowGoogleMapsImport(false)}
+        onImport={handleGoogleMapsImport}
       />
     </div>
   )

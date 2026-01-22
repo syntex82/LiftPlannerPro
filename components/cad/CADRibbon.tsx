@@ -10,7 +10,7 @@ import {
   ChevronDown, Upload, Image, X, Library, Truck, ChevronRight, Zap, Magnet,
   Terminal, FileText, Scissors, Repeat2, Link, ArrowRight, Radius, Zap as ZapIcon,
   Hexagon, Droplet, Slash, Expand, AlignLeft, Pipette, Download as DownloadIcon,
-  Network
+  Network, MapPin
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -58,6 +58,8 @@ interface CADRibbonProps {
   onLoadLibrary?: () => void
   onNetToProjects?: () => void
   onShowScenarioLibrary?: () => void
+  // Google Maps integration
+  onImportLocation?: () => void
 }
 
 type TabType = 'file' | 'draw' | 'modify' | 'annotate' | 'view' | 'insert' | 'tools' | 'professional'
@@ -100,6 +102,7 @@ export default function CADRibbon({
   onArray,
   onImport,
   onShowScenarioLibrary,
+  onImportLocation,
 }: CADRibbonProps) {
   const [activeTab, setActiveTab] = useState<TabType>('draw')
 
@@ -469,6 +472,13 @@ export default function CADRibbon({
                 onShowScenarioLibrary?.()
               }}
               title="Insert scenario objects (buildings, vessels, etc)"
+            />
+            <div className="border-r border-slate-700 h-12 mx-1"></div>
+            <RibbonButton
+              icon={<MapPin className="w-5 h-5" />}
+              label="Location"
+              onClick={onImportLocation}
+              title="Import location from Google Maps (satellite imagery, terrain, buildings)"
             />
           </>
         )}

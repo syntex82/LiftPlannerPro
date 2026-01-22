@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type ModelerObjectType = "box" | "cylinder" | "sphere" | "tube" | "lathe" | "sweep" | "union" | "pipe" | "ibeam" | "hbeam" | "cchannel" | "tank" | "vessel" | "column" | "exchanger" | "crane" | "crane-plan" | "window" | "hook-block" | "scaffolding" | "single-pole" | "unit-beam" | "gltf" | "editable-mesh"
+export type ModelerObjectType = "box" | "cylinder" | "sphere" | "tube" | "lathe" | "sweep" | "union" | "pipe" | "ibeam" | "hbeam" | "cchannel" | "tank" | "vessel" | "column" | "exchanger" | "crane" | "crane-plan" | "window" | "hook-block" | "scaffolding" | "single-pole" | "unit-beam" | "gltf" | "editable-mesh" | "terrain"
 
 export interface ModelerObject {
   id: string
@@ -78,6 +78,15 @@ export interface ModelerObject {
   edges?: [number, number][]
   // gltf
   url?: string
+  // terrain params (optional)
+  terrainWidth?: number // width in meters
+  terrainHeight?: number // height/depth in meters (x-z plane)
+  terrainGridX?: number // number of grid cells in X
+  terrainGridZ?: number // number of grid cells in Z
+  elevationData?: number[][] // 2D array of elevation values
+  minElevation?: number
+  maxElevation?: number
+  satelliteTextureUrl?: string // satellite image texture
 }
 
 type SelectLevel = 'object' | 'face' | 'vertex' | 'edge'
