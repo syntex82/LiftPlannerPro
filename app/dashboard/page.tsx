@@ -55,7 +55,9 @@ import {
   Hash,
   Video,
   Users,
-  Paperclip
+  Paperclip,
+  Route,
+  Truck
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -697,6 +699,18 @@ export default function DashboardPage() {
                 </div>
                 <h3 className="text-white font-semibold mb-1">Step Plan</h3>
                 <p className="text-slate-400 text-xs">Sequences</p>
+              </div>
+            </Link>
+
+            {/* Route Planner */}
+            <Link prefetch={false} href="/route-planner" className="group">
+              <div className="dashboard-card p-5 h-full">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Route className="w-6 h-6 text-blue-400" />
+                </div>
+                <h3 className="text-white font-semibold mb-1">Route Plan</h3>
+                <p className="text-slate-400 text-xs">Heavy transport</p>
+                <Badge className="mt-2 bg-green-500/20 text-green-400 border-green-500/30 text-xs">New</Badge>
               </div>
             </Link>
 
