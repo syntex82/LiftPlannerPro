@@ -212,6 +212,76 @@ export default function LeafletMapImportDialog({
     }
   }
 
+  // Convert lat/lng to tile coordinates
+  const latLngToTile = (lat: number, lng: number, zoom: number) => {
+    const x = Math.floor((lng + 180) / 360 * Math.pow(2, zoom))
+    const latRad = lat * Math.PI / 180
+    const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, zoom))
+    return { x, y }
+  }
+
+  // Fetch satellite imagery and convert to data URL
+  const fetchSatelliteImage = async (bounds: GeoBounds, zoomLevel: number): Promise<string | null> => {
+    try {
+      // Calculate which tiles we need to cover the bounds
+      const tileZ = Math.min(zoomLevel, 18) // Max zoom for Esri
+      const nwTile = latLngToTile(bounds.north, bounds.west, tileZ)
+      const seTile = latLngToTile(bounds.south, bounds.east, tileZ)
+
+      const tilesX = Math.abs(seTile.x - nwTile.x) + 1
+      const tilesY = Math.abs(seTile.y - nwTile.y) + 1
+
+      // Limit to reasonable number of tiles (max 3x3 = 9 tiles)
+      const maxTiles = 3
+      const actualTilesX = Math.min(tilesX, maxTiles)
+      const actualTilesY = Math.min(tilesY, maxTiles)
+
+      // Create canvas to composite tiles
+      const tileSize = 256
+      const canvas = document.createElement('canvas')
+      canvas.width = actualTilesX * tileSize
+      canvas.height = actualTilesY * tileSize
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return null
+
+      // Fetch and draw each tile
+      const tilePromises: Promise<void>[] = []
+
+      for (let dy = 0; dy < actualTilesY; dy++) {
+        for (let dx = 0; dx < actualTilesX; dx++) {
+          const tileX = nwTile.x + dx
+          const tileY = nwTile.y + dy
+          const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${tileZ}/${tileY}/${tileX}`
+
+          const promise = new Promise<void>((resolve) => {
+            const img = new Image()
+            img.crossOrigin = 'anonymous'
+            img.onload = () => {
+              ctx.drawImage(img, dx * tileSize, dy * tileSize)
+              resolve()
+            }
+            img.onerror = () => {
+              // Fill with gray if tile fails to load
+              ctx.fillStyle = '#666'
+              ctx.fillRect(dx * tileSize, dy * tileSize, tileSize, tileSize)
+              resolve()
+            }
+            img.src = url
+          })
+          tilePromises.push(promise)
+        }
+      }
+
+      await Promise.all(tilePromises)
+
+      // Convert canvas to data URL
+      return canvas.toDataURL('image/jpeg', 0.85)
+    } catch (err) {
+      console.warn('Failed to fetch satellite imagery:', err)
+      return null
+    }
+  }
+
   // Handle import
   const handleImport = async () => {
     if (!bounds) {
@@ -235,15 +305,13 @@ export default function LeafletMapImportDialog({
         heightMeters: dimensions.height
       }
 
-      // Generate satellite image URL from Esri (FREE)
+      // Fetch and convert satellite imagery to data URL
       if (importSatellite) {
-        // Use static tile URL for the center point
-        const tileZ = zoom
-        const tileX = Math.floor((center.lng + 180) / 360 * Math.pow(2, tileZ))
-        const latRad = center.lat * Math.PI / 180
-        const tileY = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, tileZ))
-
-        locationData.satelliteImageUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${tileZ}/${tileY}/${tileX}`
+        const dataUrl = await fetchSatelliteImage(bounds, zoom)
+        if (dataUrl) {
+          locationData.satelliteImageDataUrl = dataUrl
+          locationData.satelliteImageUrl = dataUrl
+        }
       }
 
       // Fetch elevation data if enabled
@@ -267,6 +335,7 @@ export default function LeafletMapImportDialog({
       onImport(locationData, importLayers)
       onClose()
     } catch (err) {
+      console.error('Import error:', err)
       setError('Failed to import location data. Please try again.')
     } finally {
       setIsLoading(false)
