@@ -6462,12 +6462,12 @@ function CADEditorContent() {
         // Add satellite image as a background layer
         const newLayerId = `map-satellite-${Date.now()}`
 
-        // Add the layer to the layers list
+        // Add the layer to the layers list (NOT locked so user can edit)
         const newLayer: Layer = {
           id: newLayerId,
           name: 'Map Satellite',
           visible: true,
-          locked: true,
+          locked: false,
           color: '#4a5568',
           opacity: 0.8,
           lineWeight: 1,
@@ -6488,12 +6488,26 @@ function CADEditorContent() {
             const centerX = (-pan.x + rect.width / 2) / zoom
             const centerY = (-pan.y + rect.height / 2) / zoom
 
-            // Calculate size based on actual meters (scale to fit reasonably on canvas)
-            // Using 1 pixel = 1 meter as base scale, but capped at reasonable size
-            const maxSize = 800 // Max size in canvas units
-            const scaleFactor = Math.min(maxSize / locationData.widthMeters, maxSize / locationData.heightMeters, 1)
-            const imageWidth = locationData.widthMeters * scaleFactor
-            const imageHeight = locationData.heightMeters * scaleFactor
+            // Calculate size to fill most of the visible canvas area
+            // Use larger base size so the map is usable for planning
+            const viewportWidth = rect.width / zoom
+            const viewportHeight = rect.height / zoom
+            const targetSize = Math.min(viewportWidth, viewportHeight) * 0.8 // Fill 80% of viewport
+
+            // Scale to maintain aspect ratio
+            const aspectRatio = locationData.widthMeters / locationData.heightMeters
+            let imageWidth: number
+            let imageHeight: number
+
+            if (aspectRatio > 1) {
+              // Wider than tall
+              imageWidth = targetSize
+              imageHeight = targetSize / aspectRatio
+            } else {
+              // Taller than wide
+              imageHeight = targetSize
+              imageWidth = targetSize * aspectRatio
+            }
 
             const satelliteElement: DrawingElement = {
               id: `satellite-${Date.now()}`,
@@ -6509,7 +6523,7 @@ function CADEditorContent() {
               imageWidth,
               imageHeight,
               imageOpacity: satelliteLayer.opacity,
-              locked: true
+              locked: false
             }
 
             const newElements = [satelliteElement, ...elements]
