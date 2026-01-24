@@ -92,6 +92,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       return
     }
 
+    // Handle course purchases
+    if (metadata.type === 'course_purchase') {
+      await handleCoursePurchaseCheckout(session, metadata)
+      return
+    }
+
     console.log('⚠️ Unhandled checkout session type:', session.id)
 
   } catch (error) {
@@ -377,6 +383,101 @@ async function handleMonetizationCheckout(session: Stripe.Checkout.Session, meta
 
   } catch (error) {
     console.error('Error handling monetization checkout:', error)
+  }
+}
+
+async function handleCoursePurchaseCheckout(
+  session: Stripe.Checkout.Session,
+  metadata: Record<string, string>
+) {
+  try {
+    const userId = metadata.userId
+    const courseIds = metadata.courseIds?.split(',') || []
+
+    if (!userId || courseIds.length === 0) {
+      console.error('Missing userId or courseIds in course purchase metadata')
+      return
+    }
+
+    console.log(`📚 Processing course purchase for user ${userId}: ${courseIds.join(', ')}`)
+
+    // Update purchase records
+    await prisma.coursePurchase.updateMany({
+      where: {
+        stripeSessionId: session.id,
+        status: 'pending'
+      },
+      data: {
+        status: 'completed',
+        stripePaymentId: session.payment_intent as string,
+        purchasedAt: new Date()
+      }
+    })
+
+    // Create enrollments for each course
+    for (const courseId of courseIds) {
+      // Check if enrollment already exists
+      const existing = await prisma.courseEnrollment.findUnique({
+        where: { userId_courseId: { userId, courseId } }
+      })
+
+      if (!existing) {
+        await prisma.courseEnrollment.create({
+          data: {
+            userId,
+            courseId,
+            source: 'purchase'
+          }
+        })
+
+        // Initialize progress tracking
+        const course = await prisma.course.findUnique({
+          where: { id: courseId },
+          include: {
+            lessons: { select: { id: true } },
+            quizzes: { where: { lessonId: null }, select: { id: true } }
+          }
+        })
+
+        if (course) {
+          await prisma.lMSProgress.upsert({
+            where: { userId_courseId: { userId, courseId } },
+            create: {
+              userId,
+              courseId,
+              progress: 0,
+              totalLessons: course.lessons.length,
+              totalQuizzes: course.quizzes.length
+            },
+            update: {}
+          })
+        }
+      }
+    }
+
+    console.log(`✅ Course purchase completed: ${courseIds.length} courses enrolled`)
+
+    // Log successful purchase
+    await prisma.securityLog.create({
+      data: {
+        userId,
+        action: 'COURSE_PURCHASE_SUCCESS',
+        resource: 'lms_course',
+        details: JSON.stringify({
+          sessionId: session.id,
+          courseIds,
+          amount: session.amount_total ? session.amount_total / 100 : 0,
+          currency: session.currency
+        }),
+        ipAddress: '127.0.0.1',
+        userAgent: 'Stripe Webhook',
+        success: true,
+        riskLevel: 'LOW'
+      }
+    })
+
+  } catch (error) {
+    console.error('Error handling course purchase checkout:', error)
   }
 }
 

@@ -82,8 +82,6 @@ model User {
   creditPurchases       CreditPurchase[]
   reviews               Review[]
   issueReports      IssueReport[]
-  lmsProgress       LMSProgress[]
-  certificates      Certificate[]
   riggingEquipment  RiggingEquipment[]
   equipmentMovements EquipmentMovement[]
   userSessions      UserSession[]
@@ -96,6 +94,17 @@ model User {
   maintenanceSchedules MaintenanceSchedule[]
   equipmentUsageLogs  EquipmentUsageLog[]
   profile             UserProfile?
+
+  // LMS Relations
+  instructorCourses   Course[]           @relation("CourseInstructor")
+  lmsProgress         LMSProgress[]
+  certificates        Certificate[]
+  courseEnrollments   CourseEnrollment[]
+  coursePurchases     CoursePurchase[]
+  quizAttempts        QuizAttempt[]
+  videoProgress       VideoProgress[]
+  lessonProgress      LessonProgress[]
+  cartItems           CartItem[]
 
   // Social Features Relations
   followers           UserFollow[]       @relation("UserFollow_followingIdToUser")
@@ -239,39 +248,304 @@ model IssueReport {
   @@map("issue_reports")
 }
 
-// Learning Management System
+// ============================================
+// Learning Management System (LMS) - Complete
+// ============================================
+
+// Course - Main course entity
+model Course {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  description     String   @db.Text
+  shortDescription String?
+  thumbnail       String?
+  previewVideoUrl String?
+  instructorId    String
+  category        String   @default("general")
+  difficulty      String   @default("beginner") // beginner, intermediate, advanced
+  duration        Int?     // Total duration in minutes
+  price           Float    @default(0) // 0 = free
+  currency        String   @default("GBP")
+  isFeatured      Boolean  @default(false)
+  isPublished     Boolean  @default(false)
+  publishedAt     DateTime?
+  requirements    String[] @default([])
+  learningOutcomes String[] @default([])
+  tags            String[] @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  instructor      User     @relation("CourseInstructor", fields: [instructorId], references: [id], onDelete: Cascade)
+  lessons         CourseLesson[]
+  enrollments     CourseEnrollment[]
+  purchases       CoursePurchase[]
+  quizzes         Quiz[]
+  certificates    Certificate[]
+  progress        LMSProgress[]
+
+  @@map("courses")
+}
+
+// CourseLesson - Individual lessons within a course
+model CourseLesson {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  description String?  @db.Text
+  content     String?  @db.Text // Rich text content
+  order       Int
+  duration    Int?     // Duration in minutes
+  isFree      Boolean  @default(false) // Free preview lesson
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  videos      LessonVideo[]
+  quizzes     Quiz[]
+  progress    LessonProgress[]
+
+  @@unique([courseId, order])
+  @@map("course_lessons")
+}
+
+// LessonVideo - Video content for lessons
+model LessonVideo {
+  id          String   @id @default(cuid())
+  lessonId    String
+  title       String
+  description String?
+  videoUrl    String   // URL to video (YouTube, Vimeo, or hosted)
+  videoType   String   @default("youtube") // youtube, vimeo, hosted, upload
+  duration    Int?     // Duration in seconds
+  order       Int      @default(0)
+  thumbnail   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lesson      CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  progress    VideoProgress[]
+
+  @@map("lesson_videos")
+}
+
+// VideoProgress - Track video watch progress per user
+model VideoProgress {
+  id            String   @id @default(cuid())
+  userId        String
+  videoId       String
+  watchedSeconds Int     @default(0)
+  totalSeconds  Int
+  completed     Boolean  @default(false)
+  completedAt   DateTime?
+  lastWatchedAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video         LessonVideo  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@map("video_progress")
+}
+
+// LessonProgress - Track lesson completion per user
+model LessonProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  lessonId    String
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson      CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("lesson_progress")
+}
+
+// Quiz - Quiz configuration linked to lessons or courses
+model Quiz {
+  id              String   @id @default(cuid())
+  courseId        String?
+  lessonId        String?
+  title           String
+  description     String?
+  passingScore    Int      @default(80) // Percentage required to pass
+  maxAttempts     Int      @default(3) // 0 = unlimited
+  timeLimit       Int?     // Time limit in minutes (null = no limit)
+  shuffleQuestions Boolean @default(false)
+  showResults     Boolean  @default(true)
+  isRequired      Boolean  @default(true) // Required to complete lesson/course
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  course          Course?       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson          CourseLesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions       QuizQuestion[]
+  attempts        QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+// QuizQuestion - Individual questions
+model QuizQuestion {
+  id          String   @id @default(cuid())
+  quizId      String
+  question    String   @db.Text
+  questionType String  @default("multiple_choice") // multiple_choice, true_false, multi_select
+  options     Json     // Array of options: [{text: string, isCorrect: boolean}]
+  explanation String?  @db.Text
+  points      Int      @default(1)
+  order       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers     QuizAnswer[]
+
+  @@map("quiz_questions")
+}
+
+// QuizAttempt - Track user quiz attempts
+model QuizAttempt {
+  id          String   @id @default(cuid())
+  userId      String
+  quizId      String
+  score       Int      // Percentage score
+  passed      Boolean
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  timeSpent   Int?     // Time spent in seconds
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers     QuizAnswer[]
+
+  @@map("quiz_attempts")
+}
+
+// QuizAnswer - Individual answers in an attempt
+model QuizAnswer {
+  id          String   @id @default(cuid())
+  attemptId   String
+  questionId  String
+  selectedOptions Json // Array of selected option indices
+  isCorrect   Boolean
+  createdAt   DateTime @default(now())
+
+  attempt     QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question    QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@map("quiz_answers")
+}
+
+// CourseEnrollment - Track which users are enrolled in courses
+model CourseEnrollment {
+  id          String   @id @default(cuid())
+  userId      String
+  courseId    String
+  enrolledAt  DateTime @default(now())
+  expiresAt   DateTime? // For time-limited access
+  status      String   @default("active") // active, expired, cancelled
+  source      String   @default("purchase") // purchase, gift, promo, admin
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("course_enrollments")
+}
+
+// CoursePurchase - Payment transactions for course purchases
+model CoursePurchase {
+  id                String   @id @default(cuid())
+  userId            String
+  courseId          String
+  amount            Float
+  currency          String   @default("GBP")
+  stripePaymentId   String?  @unique
+  stripeSessionId   String?
+  status            String   @default("pending") // pending, completed, failed, refunded
+  paymentMethod     String?  // card, paypal, etc.
+  receiptUrl        String?
+  invoiceNumber     String?  @unique
+  purchasedAt       DateTime @default(now())
+  refundedAt        DateTime?
+  refundAmount      Float?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course            Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("course_purchases")
+}
+
+// LMSProgress - Overall course progress per user
 model LMSProgress {
   id              String   @id @default(cuid())
   userId          String
   courseId        String
-  progress        Int      @default(0)
+  progress        Int      @default(0) // Percentage
+  lessonsCompleted Int     @default(0)
+  totalLessons    Int      @default(0)
+  quizzesPassed   Int      @default(0)
+  totalQuizzes    Int      @default(0)
   completed       Boolean  @default(false)
-  score           Int?
-  attempts        Int      @default(0)
-  lastAttemptAt   DateTime?
   completedAt     DateTime?
+  lastAccessedAt  DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
   @@map("lms_progress")
 }
 
+// Certificate - Certificates issued upon course completion
 model Certificate {
-  id          String   @id @default(cuid())
-  userId      String
-  courseId    String
-  courseName  String
-  score       Int
-  issuedAt    DateTime @default(now())
-  expiresAt   DateTime?
-  certificateNumber String @unique
+  id                String   @id @default(cuid())
+  userId            String
+  courseId          String
+  certificateNumber String   @unique
+  studentName       String
+  courseName        String
+  completionDate    DateTime @default(now())
+  score             Int?     // Final quiz score if applicable
+  issuedAt          DateTime @default(now())
+  expiresAt         DateTime?
+  templateVersion   String   @default("v1")
+  pdfUrl            String?  // Stored PDF URL
+  verificationUrl   String?
+  metadata          Json?    // Additional certificate data
+  createdAt         DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course            Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@map("certificates")
+}
+
+// Shopping Cart for multiple course purchases
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  addedAt   DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("cart_items")
 }
 
 model StripeSubscription {
