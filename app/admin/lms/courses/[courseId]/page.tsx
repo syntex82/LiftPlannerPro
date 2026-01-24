@@ -8,6 +8,9 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
+// Admin emails - must match lib/subscription.ts
+const ADMIN_EMAILS = ['mickyblenk@gmail.com', 'admin@liftplannerpro.org']
+
 interface Video {
   id: string
   title: string
@@ -70,6 +73,7 @@ export default function EditCoursePage() {
   // Quiz form
   const [newQuiz, setNewQuiz] = useState({ title: '', passingScore: 80, lessonId: '' })
   const [addingQuiz, setAddingQuiz] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -77,8 +81,17 @@ export default function EditCoursePage() {
       router.push(`/auth/signin?callbackUrl=/admin/lms/courses/${courseId}`)
       return
     }
+
+    // Check if user is admin
+    const userEmail = session.user?.email?.toLowerCase() || ''
+    if (!ADMIN_EMAILS.includes(userEmail)) {
+      router.push('/lms/courses')
+      return
+    }
+
+    setIsAdmin(true)
     fetchCourse()
-  }, [session, status, courseId])
+  }, [session, status, courseId, router])
 
   const fetchCourse = async () => {
     try {
@@ -184,7 +197,7 @@ export default function EditCoursePage() {
     }
   }
 
-  if (loading) {
+  if (loading || !isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>

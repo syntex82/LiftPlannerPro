@@ -8,6 +8,9 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
+// Admin emails - must match lib/subscription.ts
+const ADMIN_EMAILS = ['mickyblenk@gmail.com', 'admin@liftplannerpro.org']
+
 interface Option {
   text: string
   isCorrect: boolean
@@ -40,10 +43,11 @@ export default function EditQuizPage() {
   const params = useParams()
   const router = useRouter()
   const quizId = params?.quizId as string
-  
+
   const [quiz, setQuiz] = useState<Quiz | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
   const [newQuestion, setNewQuestion] = useState<Partial<Question>>({
     question: '',
@@ -59,8 +63,17 @@ export default function EditQuizPage() {
       router.push(`/auth/signin?callbackUrl=/admin/lms/quizzes/${quizId}`)
       return
     }
+
+    // Check if user is admin
+    const userEmail = session.user?.email?.toLowerCase() || ''
+    if (!ADMIN_EMAILS.includes(userEmail)) {
+      router.push('/lms/courses')
+      return
+    }
+
+    setIsAdmin(true)
     fetchQuiz()
-  }, [session, status, quizId])
+  }, [session, status, quizId, router])
 
   const fetchQuiz = async () => {
     try {
@@ -147,7 +160,7 @@ export default function EditQuizPage() {
     }))
   }
 
-  if (loading) {
+  if (loading || !isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>

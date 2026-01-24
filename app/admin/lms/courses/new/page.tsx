@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -8,12 +8,16 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
+// Admin emails - must match lib/subscription.ts
+const ADMIN_EMAILS = ['mickyblenk@gmail.com', 'admin@liftplannerpro.org']
+
 export default function NewCoursePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  
+  const [isAdmin, setIsAdmin] = useState(false)
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -25,6 +29,23 @@ export default function NewCoursePage() {
     isPublished: false,
     isFeatured: false
   })
+
+  useEffect(() => {
+    if (status === 'loading') return
+    if (!session) {
+      router.push('/auth/signin?callbackUrl=/admin/lms/courses/new')
+      return
+    }
+
+    // Check if user is admin
+    const userEmail = session.user?.email?.toLowerCase() || ''
+    if (!ADMIN_EMAILS.includes(userEmail)) {
+      router.push('/lms/courses')
+      return
+    }
+
+    setIsAdmin(true)
+  }, [session, status, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,7 +82,7 @@ export default function NewCoursePage() {
     }
   }
 
-  if (status === 'loading') {
+  if (status === 'loading' || !isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
