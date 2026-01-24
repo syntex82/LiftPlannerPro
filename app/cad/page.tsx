@@ -38,7 +38,7 @@ import { MapLocationData, MapLayer } from "@/lib/google-maps-cad"
 import { CraneSpecifications } from "@/lib/crane-models"
 import { exportDrawing } from "@/lib/cad-2d-export"
 import { getDefaultPrintLayout } from "@/lib/cad-paper-sizes"
-import { drawWireframeMobileCrane, drawWireframeTowerCrane, drawWireframeCrawlerCrane } from "@/lib/wireframe-cranes"
+import { drawWireframeMobileCrane, drawWireframeTowerCrane, drawWireframeCrawlerCrane, drawWireframeMobileCranePlanView, CraneDrawingConfig } from "@/lib/wireframe-cranes"
 
 // Horizontal ribbon refactor for improved CAD interface
 import { DesktopRecommendation } from "@/components/ui/desktop-recommendation"
@@ -195,6 +195,11 @@ interface DrawingElement {
     showLoadChart: boolean
     loadLineLength?: number
     wireframe?: boolean
+    // LTM 1055 professional drawing properties
+    boomSections?: number
+    outriggerExtension?: number
+    counterweightTons?: number
+    showDimensions?: boolean
     // Tandem crane properties
     crane1?: {
       boomAngle: number
@@ -2465,9 +2470,22 @@ function CADEditorContent() {
       if (crane.wireframe && crane.wireframeType) {
         // Use wireframe drawing functions based on crane type
         const boomLen = crane.boom.baseLength + (crane.boom.maxLength - crane.boom.baseLength) * boomExtension
+        const craneConfig: Partial<CraneDrawingConfig> = {
+          boomAngle,
+          boomLength: boomLen * 3,
+          boomSections: element.craneData?.boomSections || 5,
+          outriggerExtension: element.craneData?.outriggerExtension || 1.0,
+          counterweightTons: element.craneData?.counterweightTons || 12,
+          loadLineLength,
+          showDimensions: element.craneData?.showDimensions !== false,
+          scale
+        }
         switch (crane.wireframeType) {
           case 'mobile':
-            drawWireframeMobileCrane(ctx, boomAngle, boomLen * 3, scale)
+            drawWireframeMobileCrane(ctx, boomAngle, boomLen * 3, scale, craneConfig)
+            break
+          case 'mobile-plan':
+            drawWireframeMobileCranePlanView(ctx, boomAngle, boomLen * 3, scale, craneConfig)
             break
           case 'tower':
             drawWireframeTowerCrane(ctx, 250, boomLen * 3, 70, scale)

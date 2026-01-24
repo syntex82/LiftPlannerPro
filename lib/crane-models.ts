@@ -93,7 +93,7 @@ export interface CraneSpecifications {
 
   // Wireframe mode for technical drawings
   wireframe?: boolean
-  wireframeType?: 'mobile' | 'tower' | 'crawler'
+  wireframeType?: 'mobile' | 'tower' | 'crawler' | 'mobile-plan'
 
   // Certification & Standards
   certification: {
@@ -1652,6 +1652,84 @@ export const MOBILE_CRANE_MODELS: CraneSpecifications[] = [
 
     certification: {
       standards: ['Technical Drawing'],
+      certificationBody: 'CAD Standard'
+    }
+  },
+
+  // Wireframe Mobile Crane - PLAN VIEW (Top-down)
+  {
+    id: 'wireframe-mobile-plan',
+    manufacturer: 'Wireframe',
+    model: 'Mobile Crane Plan View (LTM 1055)',
+    type: 'all-terrain',
+    category: 'mobile',
+    maxCapacity: 55,
+    maxRadius: 40,
+    maxHeight: 56,
+    wireframe: true,
+    wireframeType: 'mobile-plan',
+
+    dimensions: {
+      length: 11360,
+      width: 2500,
+      height: 3500,
+      weight: 36000
+    },
+
+    boom: {
+      baseLength: 10.5,
+      maxLength: 40,
+      sections: 5,
+      luffingAngle: { min: 0, max: 82 },
+      telescopic: true
+    },
+
+    loadChart: [
+      { radius: 3, capacity: 55 },
+      { radius: 5, capacity: 36 },
+      { radius: 8, capacity: 21 },
+      { radius: 10, capacity: 16 },
+      { radius: 12, capacity: 12.5 },
+      { radius: 16, capacity: 8.5 },
+      { radius: 20, capacity: 6.2 },
+      { radius: 30, capacity: 3.2 },
+      { radius: 40, capacity: 1.8 }
+    ],
+
+    engine: {
+      manufacturer: 'Liebherr',
+      model: 'D936 A7',
+      power: 270,
+      fuelType: 'diesel',
+      emissions: 'Stage V'
+    },
+
+    operational: {
+      workingSpeed: { hoist: 112, boom: 0, swing: 2.5, travel: 80 },
+      gradeability: 60,
+      groundPressure: 180
+    },
+
+    safety: {
+      loadMomentIndicator: true,
+      antiTwoBlock: true,
+      outriggerMonitoring: true,
+      windSpeedIndicator: true,
+      loadBlockProtection: true
+    },
+
+    cadData: {
+      basePoints: [{ x: -140, y: -42 }, { x: 140, y: -42 }, { x: 140, y: 42 }, { x: -140, y: 42 }],
+      boomPoints: [{ x: 20, y: 0 }],
+      counterweightPoints: [{ x: -25, y: -20 }, { x: -25, y: 20 }],
+      cabPoints: [{ x: -140, y: -42 }, { x: -85, y: -42 }, { x: -85, y: -7 }, { x: -140, y: -7 }],
+      scale: 1.0,
+      color: '#000000',
+      lineWeight: 1.0
+    },
+
+    certification: {
+      standards: ['EN 13000', 'Technical Drawing'],
       certificationBody: 'CAD Standard'
     }
   }
