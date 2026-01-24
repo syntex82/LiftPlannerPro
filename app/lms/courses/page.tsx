@@ -7,6 +7,9 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
+// Admin emails - must match lib/subscription.ts
+const ADMIN_EMAILS = ['mickyblenk@gmail.com', 'admin@liftplannerpro.org']
+
 interface Course {
   id: string
   title: string
@@ -120,16 +123,24 @@ export default function CourseCatalogPage() {
               <span className="ml-4 text-blue-400">Training Courses</span>
             </div>
             <div className="flex items-center gap-4">
+              {/* Admin Course Builder Link */}
+              {session?.user?.email && ADMIN_EMAILS.includes(session.user.email.toLowerCase()) && (
+                <Link href="/admin/lms">
+                  <Button className="bg-green-600 hover:bg-green-700">
+                    📚 Course Builder
+                  </Button>
+                </Link>
+              )}
               {cart.length > 0 && (
-                <Button onClick={handleCheckout} className="bg-green-600 hover:bg-green-700">
+                <Button onClick={handleCheckout} className="bg-blue-600 hover:bg-blue-700">
                   Checkout ({cart.length}) - {formatPrice(
                     courses.filter(c => cart.includes(c.id)).reduce((sum, c) => sum + c.price, 0),
                     'GBP'
                   )}
                 </Button>
               )}
-              <Link href="/lms">
-                <Button variant="outline">Back to LMS</Button>
+              <Link href="/dashboard">
+                <Button variant="outline">Dashboard</Button>
               </Link>
             </div>
           </div>

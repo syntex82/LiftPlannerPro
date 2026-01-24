@@ -361,7 +361,7 @@ ${result.findings?.map((f: any) => `${f.severity}: ${f.description}`).join('\n')
           </div>
 
           {/* Quick Access Menu */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <Button
               onClick={() => window.location.href = '/dashboard'}
               variant="outline"
@@ -379,12 +379,19 @@ ${result.findings?.map((f: any) => `${f.severity}: ${f.description}`).join('\n')
               <span className="text-sm">CAD Editor</span>
             </Button>
             <Button
-              onClick={() => window.location.href = '/lms'}
+              onClick={() => window.location.href = '/admin/lms'}
+              className="bg-green-600 hover:bg-green-700 text-white p-4 h-auto flex flex-col items-center"
+            >
+              <span className="text-2xl mb-2">📚</span>
+              <span className="text-sm font-bold">Course Builder</span>
+            </Button>
+            <Button
+              onClick={() => window.location.href = '/lms/courses'}
               variant="outline"
               className="border-slate-600 text-slate-300 hover:bg-slate-700 p-4 h-auto flex flex-col items-center"
             >
               <span className="text-2xl mb-2">🎓</span>
-              <span className="text-sm">LMS</span>
+              <span className="text-sm">View Courses</span>
             </Button>
             <Button
               onClick={() => window.location.href = '/rigging-loft'}
