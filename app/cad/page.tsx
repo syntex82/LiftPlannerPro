@@ -14,6 +14,7 @@ import { DeviceNotification } from "@/components/ui/device-notification"
 import CraneLibrary from "@/components/cad/CraneLibrarySimple"
 import CraneConfigDialog from "@/components/cad/CraneConfigDialog"
 import TandemCraneConfigDialog from "@/components/cad/TandemCraneConfigDialog"
+import WireframeCraneConfigDialog from "@/components/cad/WireframeCraneConfigDialog"
 import ConfigurableCraneDialog from "@/components/cad/ConfigurableCraneDialog"
 import CranePartsBuilder from "@/components/cad/CranePartsBuilder"
 import { AssembledCrane } from '@/lib/crane-builder-generator'
@@ -2472,7 +2473,7 @@ function CADEditorContent() {
             drawWireframeTowerCrane(ctx, 250, boomLen * 3, 70, scale)
             break
           case 'crawler':
-            drawWireframeCrawlerCrane(ctx, boomAngle, boomLen * 3, scale)
+            drawWireframeCrawlerCrane(ctx, boomAngle, boomLen * 3, loadLineLength, scale)
             break
           default:
             drawRealisticCrane(ctx, crane, boomAngle, boomExtension, scale, loadLineLength, wireframe)
@@ -10843,6 +10844,23 @@ function CADEditorContent() {
             spacing: configuringCrane.craneData?.spacing || 200,
             specifications: configuringCrane.craneData?.specifications || {} as CraneSpecifications,
             showLoadChart: false
+          }}
+          isOpen={showCraneConfig}
+          onClose={() => {
+            setShowCraneConfig(false)
+            setConfiguringCrane(null)
+          }}
+          onUpdate={handleUpdateCraneConfig}
+        />
+      ) : configuringCrane?.craneData?.specifications?.wireframe ? (
+        // Wireframe crane configuration
+        <WireframeCraneConfigDialog
+          craneData={{
+            boomAngle: configuringCrane?.craneData?.boomAngle || 45,
+            boomExtension: configuringCrane?.craneData?.boomExtension || 0.5,
+            scale: configuringCrane?.craneData?.scale || 1.0,
+            loadLineLength: configuringCrane?.craneData?.loadLineLength || 70,
+            specifications: configuringCrane?.craneData?.specifications || { boom: { baseLength: 15, maxLength: 60 } }
           }}
           isOpen={showCraneConfig}
           onClose={() => {

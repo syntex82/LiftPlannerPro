@@ -282,11 +282,12 @@ export function drawWireframeTowerCrane(
 }
 
 
-// Draw wireframe crawler crane
+// Draw wireframe crawler crane (SIDE VIEW - like reference image)
 export function drawWireframeCrawlerCrane(
   ctx: CanvasRenderingContext2D,
   boomAngle: number = 50,
   boomLength: number = 220,
+  loadLineLength: number = 70,
   scale: number = 1.0
 ) {
   ctx.save()
@@ -296,136 +297,128 @@ export function drawWireframeCrawlerCrane(
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
 
-  // Crawler tracks (left and right)
-  const trackLength = 160
-  const trackHeight = 35
-  const trackSpacing = 70
+  // SIDE VIEW - Single track visible (like reference image)
+  const trackLength = 180
+  const trackHeight = 40
+  const trackY = 20 // Ground level
 
-  // Left track
+  // Track outline - rounded rectangle (side view shows one track)
+  const trackRadius = trackHeight / 2
   ctx.beginPath()
-  // Track outline with rounded ends
-  ctx.moveTo(-trackLength / 2, trackSpacing / 2)
-  ctx.lineTo(trackLength / 2, trackSpacing / 2)
-  ctx.arc(trackLength / 2, trackSpacing / 2 + trackHeight / 2, trackHeight / 2, -Math.PI / 2, Math.PI / 2)
-  ctx.lineTo(-trackLength / 2, trackSpacing / 2 + trackHeight)
-  ctx.arc(-trackLength / 2, trackSpacing / 2 + trackHeight / 2, trackHeight / 2, Math.PI / 2, -Math.PI / 2)
+  ctx.moveTo(-trackLength / 2 + trackRadius, trackY)
+  ctx.lineTo(trackLength / 2 - trackRadius, trackY)
+  ctx.arc(trackLength / 2 - trackRadius, trackY + trackRadius, trackRadius, -Math.PI / 2, Math.PI / 2)
+  ctx.lineTo(-trackLength / 2 + trackRadius, trackY + trackHeight)
+  ctx.arc(-trackLength / 2 + trackRadius, trackY + trackRadius, trackRadius, Math.PI / 2, -Math.PI / 2)
   ctx.closePath()
   ctx.stroke()
 
-  // Track treads (left)
-  for (let i = -trackLength / 2 + 10; i < trackLength / 2; i += 12) {
+  // Track treads/grooves (vertical lines)
+  for (let i = -trackLength / 2 + 15; i < trackLength / 2 - 10; i += 10) {
     ctx.beginPath()
-    ctx.moveTo(i, trackSpacing / 2)
-    ctx.lineTo(i, trackSpacing / 2 + trackHeight)
+    ctx.moveTo(i, trackY + 3)
+    ctx.lineTo(i, trackY + trackHeight - 3)
     ctx.stroke()
   }
 
-  // Right track
+  // Drive sprocket (front circle)
   ctx.beginPath()
-  ctx.moveTo(-trackLength / 2, -trackSpacing / 2)
-  ctx.lineTo(trackLength / 2, -trackSpacing / 2)
-  ctx.arc(trackLength / 2, -trackSpacing / 2 - trackHeight / 2, trackHeight / 2, Math.PI / 2, -Math.PI / 2)
-  ctx.lineTo(-trackLength / 2, -trackSpacing / 2 - trackHeight)
-  ctx.arc(-trackLength / 2, -trackSpacing / 2 - trackHeight / 2, trackHeight / 2, -Math.PI / 2, Math.PI / 2)
-  ctx.closePath()
+  ctx.arc(trackLength / 2 - trackRadius - 5, trackY + trackRadius, trackRadius - 5, 0, Math.PI * 2)
   ctx.stroke()
 
-  // Track treads (right)
-  for (let i = -trackLength / 2 + 10; i < trackLength / 2; i += 12) {
-    ctx.beginPath()
-    ctx.moveTo(i, -trackSpacing / 2)
-    ctx.lineTo(i, -trackSpacing / 2 - trackHeight)
-    ctx.stroke()
-  }
-
-  // Carbody/superstructure platform
-  const bodyWidth = 100
-  const bodyHeight = 50
-  ctx.strokeRect(-bodyWidth / 2, -bodyHeight / 2, bodyWidth, bodyHeight)
-
-  // Turntable circle
+  // Idler wheel (rear circle)
   ctx.beginPath()
-  ctx.arc(0, 0, 20, 0, Math.PI * 2)
+  ctx.arc(-trackLength / 2 + trackRadius + 5, trackY + trackRadius, trackRadius - 5, 0, Math.PI * 2)
   ctx.stroke()
 
-  // Counterweight
-  ctx.strokeRect(-bodyWidth / 2 - 25, -20, 30, 40)
-  // Counterweight stacking lines
-  for (let i = 1; i < 4; i++) {
+  // Carbody/superstructure (sits on top of tracks)
+  const bodyWidth = 140
+  const bodyHeight = 45
+  const bodyY = trackY - bodyHeight
+  ctx.strokeRect(-bodyWidth / 2, bodyY, bodyWidth, bodyHeight)
+
+  // Turntable circle (visible on side)
+  ctx.beginPath()
+  ctx.arc(0, bodyY + bodyHeight / 2, 18, 0, Math.PI * 2)
+  ctx.stroke()
+
+  // Counterweight (rear, stacked blocks)
+  const cwWidth = 50
+  const cwHeight = 55
+  ctx.strokeRect(-bodyWidth / 2 - cwWidth + 10, bodyY - 10, cwWidth, cwHeight)
+  // Counterweight stacking lines (horizontal)
+  for (let i = 1; i <= 4; i++) {
     ctx.beginPath()
-    ctx.moveTo(-bodyWidth / 2 - 25, -20 + i * 10)
-    ctx.lineTo(-bodyWidth / 2 + 5, -20 + i * 10)
+    ctx.moveTo(-bodyWidth / 2 - cwWidth + 10, bodyY - 10 + i * (cwHeight / 5))
+    ctx.lineTo(-bodyWidth / 2 + 10, bodyY - 10 + i * (cwHeight / 5))
     ctx.stroke()
   }
 
-  // Operator cab
-  ctx.strokeRect(bodyWidth / 2 - 25, -15, 25, 30)
+  // Operator cab (front side)
+  const cabWidth = 35
+  const cabHeight = 40
+  ctx.strokeRect(bodyWidth / 2 - cabWidth - 15, bodyY - cabHeight + 10, cabWidth, cabHeight)
   // Cab window
-  ctx.strokeRect(bodyWidth / 2 - 22, -12, 18, 15)
+  ctx.strokeRect(bodyWidth / 2 - cabWidth - 10, bodyY - cabHeight + 15, cabWidth - 10, cabHeight / 2)
 
-  // Engine housing
-  ctx.strokeRect(-15, -bodyHeight / 2, 40, 20)
+  // Engine housing (middle section)
+  ctx.strokeRect(-20, bodyY, 50, bodyHeight - 5)
 
-  // A-frame/gantry
-  const aFrameHeight = 40
+  // A-frame/gantry for boom support
+  const aFrameHeight = 35
+  const aFrameBase = bodyY
   ctx.beginPath()
-  ctx.moveTo(-10, -bodyHeight / 2)
-  ctx.lineTo(0, -bodyHeight / 2 - aFrameHeight)
-  ctx.lineTo(10, -bodyHeight / 2)
+  ctx.moveTo(-15, aFrameBase)
+  ctx.lineTo(0, aFrameBase - aFrameHeight)
+  ctx.lineTo(15, aFrameBase)
   ctx.stroke()
 
-  // Boom pivot point
-  const pivotX = 15
-  const pivotY = -bodyHeight / 2
+  // Boom pivot point (front of superstructure)
+  const pivotX = bodyWidth / 2 - 30
+  const pivotY = bodyY
   ctx.beginPath()
-  ctx.arc(pivotX, pivotY, 6, 0, Math.PI * 2)
+  ctx.arc(pivotX, pivotY, 5, 0, Math.PI * 2)
   ctx.stroke()
 
-  // Calculate boom end
+  // Calculate boom end position
   const boomRad = (boomAngle * Math.PI) / 180
   const boomEndX = pivotX + boomLength * Math.cos(boomRad)
   const boomEndY = pivotY - boomLength * Math.sin(boomRad)
 
   // Draw lattice boom
-  drawLatticeBoom(ctx, pivotX, pivotY, boomEndX, boomEndY, 16, 12)
+  drawLatticeBoom(ctx, pivotX, pivotY, boomEndX, boomEndY, 14, Math.floor(boomLength / 18))
 
-  // Boom backstay/pendant lines from A-frame to boom
+  // Boom tip sheave housing
+  ctx.strokeRect(boomEndX - 8, boomEndY - 6, 16, 12)
+  // Sheave circle
   ctx.beginPath()
-  ctx.setLineDash([4, 4])
-  ctx.moveTo(0, -bodyHeight / 2 - aFrameHeight)
-  const midBoomX = pivotX + (boomLength * 0.4) * Math.cos(boomRad)
-  const midBoomY = pivotY - (boomLength * 0.4) * Math.sin(boomRad)
-  ctx.lineTo(midBoomX, midBoomY)
-  ctx.stroke()
-  ctx.setLineDash([])
-
-  // Boom tip sheave
-  ctx.beginPath()
-  ctx.arc(boomEndX, boomEndY, 5, 0, Math.PI * 2)
+  ctx.arc(boomEndX, boomEndY, 4, 0, Math.PI * 2)
   ctx.stroke()
 
-  // Load lines
-  const hookDropLength = 70
+  // Load lines (multiple for realism)
   for (let i = -1; i <= 1; i++) {
     ctx.beginPath()
-    ctx.moveTo(boomEndX + i * 2, boomEndY)
-    ctx.lineTo(boomEndX + i * 2, boomEndY + hookDropLength - 12)
+    ctx.moveTo(boomEndX + i * 2, boomEndY + 6)
+    ctx.lineTo(boomEndX + i * 2, boomEndY + loadLineLength - 12)
     ctx.stroke()
   }
 
   // Hook block
-  ctx.strokeRect(boomEndX - 10, boomEndY + hookDropLength - 12, 20, 14)
+  ctx.strokeRect(boomEndX - 10, boomEndY + loadLineLength - 12, 20, 14)
   // Sheaves in block
   ctx.beginPath()
-  ctx.arc(boomEndX - 4, boomEndY + hookDropLength - 5, 3, 0, Math.PI * 2)
-  ctx.arc(boomEndX + 4, boomEndY + hookDropLength - 5, 3, 0, Math.PI * 2)
+  ctx.arc(boomEndX - 4, boomEndY + loadLineLength - 5, 3, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(boomEndX + 4, boomEndY + loadLineLength - 5, 3, 0, Math.PI * 2)
   ctx.stroke()
 
   // Hook
+  ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.moveTo(boomEndX, boomEndY + hookDropLength + 2)
-  ctx.lineTo(boomEndX, boomEndY + hookDropLength + 18)
-  ctx.arc(boomEndX + 7, boomEndY + hookDropLength + 18, 7, Math.PI, 0, true)
+  ctx.moveTo(boomEndX, boomEndY + loadLineLength + 2)
+  ctx.lineTo(boomEndX, boomEndY + loadLineLength + 15)
+  ctx.arc(boomEndX + 6, boomEndY + loadLineLength + 15, 6, Math.PI, 0, true)
   ctx.stroke()
 
   ctx.restore()
