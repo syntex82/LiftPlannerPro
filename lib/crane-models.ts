@@ -91,6 +91,10 @@ export interface CraneSpecifications {
     lineWeight: number
   }
 
+  // Wireframe mode for technical drawings
+  wireframe?: boolean
+  wireframeType?: 'mobile' | 'tower' | 'crawler'
+
   // Certification & Standards
   certification: {
     standards: string[]
@@ -1414,6 +1418,241 @@ export const MOBILE_CRANE_MODELS: CraneSpecifications[] = [
     certification: {
       standards: ['EN 13000', 'ASME B30.5', 'CE'],
       certificationBody: 'TÜV Rheinland'
+    }
+  },
+
+  // ==========================================
+  // WIREFRAME CRANE BLOCKS
+  // Professional technical line drawings
+  // ==========================================
+
+  // Wireframe Mobile Crane (Truck Mounted)
+  {
+    id: 'wireframe-mobile',
+    manufacturer: 'Wireframe',
+    model: 'Mobile Crane (Technical)',
+    type: 'all-terrain',
+    category: 'mobile',
+    maxCapacity: 100,
+    maxRadius: 40,
+    maxHeight: 50,
+    wireframe: true,
+    wireframeType: 'mobile',
+
+    dimensions: {
+      length: 12000,
+      width: 2800,
+      height: 3500,
+      weight: 48000
+    },
+
+    boom: {
+      baseLength: 15,
+      maxLength: 60,
+      sections: 5,
+      luffingAngle: { min: 0, max: 82 },
+      telescopic: true
+    },
+
+    loadChart: [
+      { radius: 3, capacity: 100 },
+      { radius: 6, capacity: 70 },
+      { radius: 10, capacity: 45 },
+      { radius: 15, capacity: 28 },
+      { radius: 20, capacity: 18 },
+      { radius: 30, capacity: 10 },
+      { radius: 40, capacity: 5 }
+    ],
+
+    engine: {
+      manufacturer: 'Generic',
+      model: 'Diesel Engine',
+      power: 350,
+      fuelType: 'diesel',
+      emissions: 'Stage V'
+    },
+
+    operational: {
+      workingSpeed: { hoist: 80, boom: 50, swing: 2.5, travel: 80 },
+      gradeability: 65,
+      groundPressure: 180
+    },
+
+    safety: {
+      loadMomentIndicator: true,
+      antiTwoBlock: true,
+      outriggerMonitoring: true,
+      windSpeedIndicator: true,
+      loadBlockProtection: true
+    },
+
+    cadData: {
+      basePoints: [{ x: -90, y: -15 }, { x: 90, y: -15 }, { x: 90, y: 15 }, { x: -90, y: 15 }],
+      boomPoints: [{ x: 0, y: -20 }],
+      counterweightPoints: [{ x: -70, y: -25 }, { x: -35, y: -25 }, { x: -35, y: 0 }, { x: -70, y: 0 }],
+      cabPoints: [{ x: 30, y: -35 }, { x: 60, y: -35 }, { x: 60, y: 0 }, { x: 30, y: 0 }],
+      outriggerPoints: [{ x: -150, y: -15 }, { x: 150, y: -15 }, { x: 150, y: 50 }, { x: -150, y: 50 }],
+      scale: 1.0,
+      color: '#000000',
+      lineWeight: 1.5
+    },
+
+    certification: {
+      standards: ['Technical Drawing'],
+      certificationBody: 'CAD Standard'
+    }
+  },
+
+  // Wireframe Tower Crane
+  {
+    id: 'wireframe-tower',
+    manufacturer: 'Wireframe',
+    model: 'Tower Crane (Technical)',
+    type: 'city',
+    category: 'tower',
+    maxCapacity: 12,
+    maxRadius: 60,
+    maxHeight: 80,
+    wireframe: true,
+    wireframeType: 'tower',
+
+    dimensions: {
+      length: 4000,
+      width: 4000,
+      height: 80000,
+      weight: 150000
+    },
+
+    boom: {
+      baseLength: 50,
+      maxLength: 60,
+      sections: 1,
+      luffingAngle: { min: 0, max: 0 },
+      telescopic: false
+    },
+
+    loadChart: [
+      { radius: 10, capacity: 12 },
+      { radius: 20, capacity: 8 },
+      { radius: 30, capacity: 5 },
+      { radius: 40, capacity: 3.5 },
+      { radius: 50, capacity: 2.5 },
+      { radius: 60, capacity: 1.8 }
+    ],
+
+    engine: {
+      manufacturer: 'Generic',
+      model: 'Electric Motor',
+      power: 75,
+      fuelType: 'electric',
+      emissions: 'None'
+    },
+
+    operational: {
+      workingSpeed: { hoist: 60, boom: 0, swing: 0.7, travel: 0 },
+      gradeability: 0,
+      groundPressure: 350
+    },
+
+    safety: {
+      loadMomentIndicator: true,
+      antiTwoBlock: true,
+      outriggerMonitoring: false,
+      windSpeedIndicator: true,
+      loadBlockProtection: true
+    },
+
+    cadData: {
+      basePoints: [{ x: -30, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 20 }, { x: -30, y: 20 }],
+      boomPoints: [{ x: 0, y: -250 }],
+      counterweightPoints: [{ x: -60, y: -255 }, { x: -30, y: -255 }, { x: -30, y: -230 }, { x: -60, y: -230 }],
+      cabPoints: [{ x: -15, y: -235 }, { x: 15, y: -235 }, { x: 15, y: -210 }, { x: -15, y: -210 }],
+      scale: 1.0,
+      color: '#000000',
+      lineWeight: 1.5
+    },
+
+    certification: {
+      standards: ['Technical Drawing'],
+      certificationBody: 'CAD Standard'
+    }
+  },
+
+  // Wireframe Crawler Crane
+  {
+    id: 'wireframe-crawler',
+    manufacturer: 'Wireframe',
+    model: 'Crawler Crane (Technical)',
+    type: 'crawler',
+    category: 'mobile',
+    maxCapacity: 250,
+    maxRadius: 50,
+    maxHeight: 100,
+    wireframe: true,
+    wireframeType: 'crawler',
+
+    dimensions: {
+      length: 12000,
+      width: 8500,
+      height: 4000,
+      weight: 250000,
+      trackWidth: 1200
+    },
+
+    boom: {
+      baseLength: 30,
+      maxLength: 90,
+      sections: 6,
+      luffingAngle: { min: 15, max: 85 },
+      telescopic: false
+    },
+
+    loadChart: [
+      { radius: 8, capacity: 250 },
+      { radius: 12, capacity: 180 },
+      { radius: 18, capacity: 120 },
+      { radius: 24, capacity: 80 },
+      { radius: 30, capacity: 55 },
+      { radius: 40, capacity: 35 },
+      { radius: 50, capacity: 20 }
+    ],
+
+    engine: {
+      manufacturer: 'Generic',
+      model: 'Diesel Engine',
+      power: 600,
+      fuelType: 'diesel',
+      emissions: 'Stage V'
+    },
+
+    operational: {
+      workingSpeed: { hoist: 100, boom: 40, swing: 1.5, travel: 1.5 },
+      gradeability: 30,
+      groundPressure: 85
+    },
+
+    safety: {
+      loadMomentIndicator: true,
+      antiTwoBlock: true,
+      outriggerMonitoring: false,
+      windSpeedIndicator: true,
+      loadBlockProtection: true
+    },
+
+    cadData: {
+      basePoints: [{ x: -80, y: 35 }, { x: 80, y: 35 }, { x: 80, y: 70 }, { x: -80, y: 70 }],
+      boomPoints: [{ x: 15, y: -25 }],
+      counterweightPoints: [{ x: -75, y: -20 }, { x: -45, y: -20 }, { x: -45, y: 20 }, { x: -75, y: 20 }],
+      cabPoints: [{ x: 25, y: -15 }, { x: 50, y: -15 }, { x: 50, y: 15 }, { x: 25, y: 15 }],
+      trackPoints: [{ x: -80, y: 35 }, { x: 80, y: 35 }, { x: 80, y: 70 }, { x: -80, y: 70 }],
+      scale: 1.0,
+      color: '#000000',
+      lineWeight: 1.5
+    },
+
+    certification: {
+      standards: ['Technical Drawing'],
+      certificationBody: 'CAD Standard'
     }
   }
 ]

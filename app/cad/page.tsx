@@ -37,6 +37,7 @@ import { MapLocationData, MapLayer } from "@/lib/google-maps-cad"
 import { CraneSpecifications } from "@/lib/crane-models"
 import { exportDrawing } from "@/lib/cad-2d-export"
 import { getDefaultPrintLayout } from "@/lib/cad-paper-sizes"
+import { drawWireframeMobileCrane, drawWireframeTowerCrane, drawWireframeCrawlerCrane } from "@/lib/wireframe-cranes"
 
 // Horizontal ribbon refactor for improved CAD interface
 import { DesktopRecommendation } from "@/components/ui/desktop-recommendation"
@@ -2458,7 +2459,28 @@ function CADEditorContent() {
     } else {
       // Draw single crane
       const { specifications: crane, boomAngle, boomExtension, scale = 1.0, loadLineLength = 40, wireframe = false } = element.craneData
-      drawRealisticCrane(ctx, crane, boomAngle, boomExtension, scale, loadLineLength, wireframe)
+
+      // Check if this is a wireframe crane (professional technical drawing)
+      if (crane.wireframe && crane.wireframeType) {
+        // Use wireframe drawing functions based on crane type
+        const boomLen = crane.boom.baseLength + (crane.boom.maxLength - crane.boom.baseLength) * boomExtension
+        switch (crane.wireframeType) {
+          case 'mobile':
+            drawWireframeMobileCrane(ctx, boomAngle, boomLen * 3, scale)
+            break
+          case 'tower':
+            drawWireframeTowerCrane(ctx, 250, boomLen * 3, 70, scale)
+            break
+          case 'crawler':
+            drawWireframeCrawlerCrane(ctx, boomAngle, boomLen * 3, scale)
+            break
+          default:
+            drawRealisticCrane(ctx, crane, boomAngle, boomExtension, scale, loadLineLength, wireframe)
+        }
+      } else {
+        // Draw realistic crane
+        drawRealisticCrane(ctx, crane, boomAngle, boomExtension, scale, loadLineLength, wireframe)
+      }
     }
 
     ctx.restore()
