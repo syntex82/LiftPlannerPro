@@ -101,6 +101,279 @@ async function main() {
 
   console.log('Created courses:', course1.title, course2.title, course3.title, course4.title)
 
+  // =====================================================
+  // CREATE LESSONS AND VIDEOS FOR EACH COURSE
+  // =====================================================
+
+  // Course 1: Crane Setup & Operation - Lessons
+  const lesson1_1 = await prisma.courseLesson.upsert({
+    where: { id: 'lesson-crane-intro' },
+    update: {},
+    create: {
+      id: 'lesson-crane-intro',
+      courseId: course1.id,
+      title: 'Introduction to Crane Safety',
+      description: 'Learn the fundamental principles of crane safety, including hazard awareness and the importance of proper planning.',
+      order: 1,
+      duration: 900 // 15 minutes
+    }
+  })
+
+  const lesson1_2 = await prisma.courseLesson.upsert({
+    where: { id: 'lesson-crane-setup' },
+    update: {},
+    create: {
+      id: 'lesson-crane-setup',
+      courseId: course1.id,
+      title: 'Crane Setup Procedures',
+      description: 'Step-by-step guide to setting up a mobile crane, including outrigger deployment and ground bearing checks.',
+      order: 2,
+      duration: 1200 // 20 minutes
+    }
+  })
+
+  const lesson1_3 = await prisma.courseLesson.upsert({
+    where: { id: 'lesson-crane-operation' },
+    update: {},
+    create: {
+      id: 'lesson-crane-operation',
+      courseId: course1.id,
+      title: 'Safe Crane Operation',
+      description: 'Operating procedures, load charts, and communication protocols for safe lifting.',
+      order: 3,
+      duration: 1500 // 25 minutes
+    }
+  })
+
+  console.log('Created lessons for Course 1')
+
+  // Course 2: AP Standards - Lessons
+  const lesson2_1 = await prisma.courseLesson.upsert({
+    where: { id: 'lesson-ap-role' },
+    update: {},
+    create: {
+      id: 'lesson-ap-role',
+      courseId: course2.id,
+      title: 'The Role of the Appointed Person',
+      description: 'Understanding the legal responsibilities and duties of an Appointed Person for lifting operations.',
+      order: 1,
+      duration: 1200
+    }
+  })
+
+  const lesson2_2 = await prisma.courseLesson.upsert({
+    where: { id: 'lesson-ap-planning' },
+    update: {},
+    create: {
+      id: 'lesson-ap-planning',
+      courseId: course2.id,
+      title: 'Lift Planning Essentials',
+      description: 'How to create comprehensive lift plans that meet BS7121 requirements.',
+      order: 2,
+      duration: 1800 // 30 minutes
+    }
+  })
+
+  console.log('Created lessons for Course 2')
+
+  // Course 3: LOLER & BS7121 - Lessons
+  const lesson3_1 = await prisma.courseLesson.upsert({
+    where: { id: 'lesson-loler-overview' },
+    update: {},
+    create: {
+      id: 'lesson-loler-overview',
+      courseId: course3.id,
+      title: 'LOLER Requirements Overview',
+      description: 'Understanding the Lifting Operations and Lifting Equipment Regulations 1998.',
+      order: 1,
+      duration: 1500
+    }
+  })
+
+  const lesson3_2 = await prisma.courseLesson.upsert({
+    where: { id: 'lesson-bs7121-overview' },
+    update: {},
+    create: {
+      id: 'lesson-bs7121-overview',
+      courseId: course3.id,
+      title: 'BS7121 Code of Practice',
+      description: 'British Standard for safe use of cranes - key requirements and implementation.',
+      order: 2,
+      duration: 1500
+    }
+  })
+
+  console.log('Created lessons for Course 3')
+
+  // Course 4: Safe Lifting Equipment - Lessons
+  const lesson4_1 = await prisma.courseLesson.upsert({
+    where: { id: 'lesson-slings-shackles' },
+    update: {},
+    create: {
+      id: 'lesson-slings-shackles',
+      courseId: course4.id,
+      title: 'Slings, Shackles & Lifting Accessories',
+      description: 'Selection, inspection and safe use of lifting accessories.',
+      order: 1,
+      duration: 1200
+    }
+  })
+
+  const lesson4_2 = await prisma.courseLesson.upsert({
+    where: { id: 'lesson-hand-signals' },
+    update: {},
+    create: {
+      id: 'lesson-hand-signals',
+      courseId: course4.id,
+      title: 'Hand Signals & Communication',
+      description: 'Standard crane hand signals and effective communication during lifting operations.',
+      order: 2,
+      duration: 900
+    }
+  })
+
+  console.log('Created lessons for Course 4')
+
+  // =====================================================
+  // CREATE VIDEOS FOR EACH LESSON
+  // =====================================================
+
+  // Course 1 Videos
+  await prisma.lessonVideo.upsert({
+    where: { id: 'video-crane-safety-intro' },
+    update: {},
+    create: {
+      id: 'video-crane-safety-intro',
+      lessonId: lesson1_1.id,
+      title: 'Crane Safety Fundamentals',
+      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Placeholder - replace with actual training video
+      duration: 480,
+      order: 1
+    }
+  })
+
+  await prisma.lessonVideo.upsert({
+    where: { id: 'video-hazard-awareness' },
+    update: {},
+    create: {
+      id: 'video-hazard-awareness',
+      lessonId: lesson1_1.id,
+      title: 'Hazard Awareness on Site',
+      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      duration: 420,
+      order: 2
+    }
+  })
+
+  await prisma.lessonVideo.upsert({
+    where: { id: 'video-outrigger-setup' },
+    update: {},
+    create: {
+      id: 'video-outrigger-setup',
+      lessonId: lesson1_2.id,
+      title: 'Outrigger Setup & Ground Bearing',
+      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      duration: 720,
+      order: 1
+    }
+  })
+
+  await prisma.lessonVideo.upsert({
+    where: { id: 'video-load-charts' },
+    update: {},
+    create: {
+      id: 'video-load-charts',
+      lessonId: lesson1_3.id,
+      title: 'Understanding Load Charts',
+      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      duration: 900,
+      order: 1
+    }
+  })
+
+  // Course 2 Videos
+  await prisma.lessonVideo.upsert({
+    where: { id: 'video-ap-responsibilities' },
+    update: {},
+    create: {
+      id: 'video-ap-responsibilities',
+      lessonId: lesson2_1.id,
+      title: 'AP Legal Responsibilities',
+      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      duration: 720,
+      order: 1
+    }
+  })
+
+  await prisma.lessonVideo.upsert({
+    where: { id: 'video-lift-plan-creation' },
+    update: {},
+    create: {
+      id: 'video-lift-plan-creation',
+      lessonId: lesson2_2.id,
+      title: 'Creating a Lift Plan Step by Step',
+      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      duration: 1080,
+      order: 1
+    }
+  })
+
+  // Course 3 Videos
+  await prisma.lessonVideo.upsert({
+    where: { id: 'video-loler-explained' },
+    update: {},
+    create: {
+      id: 'video-loler-explained',
+      lessonId: lesson3_1.id,
+      title: 'LOLER 1998 Explained',
+      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      duration: 900,
+      order: 1
+    }
+  })
+
+  await prisma.lessonVideo.upsert({
+    where: { id: 'video-bs7121-guide' },
+    update: {},
+    create: {
+      id: 'video-bs7121-guide',
+      lessonId: lesson3_2.id,
+      title: 'BS7121 Practical Guide',
+      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      duration: 900,
+      order: 1
+    }
+  })
+
+  // Course 4 Videos
+  await prisma.lessonVideo.upsert({
+    where: { id: 'video-sling-inspection' },
+    update: {},
+    create: {
+      id: 'video-sling-inspection',
+      lessonId: lesson4_1.id,
+      title: 'Sling Inspection & Selection',
+      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      duration: 720,
+      order: 1
+    }
+  })
+
+  await prisma.lessonVideo.upsert({
+    where: { id: 'video-hand-signals-demo' },
+    update: {},
+    create: {
+      id: 'video-hand-signals-demo',
+      lessonId: lesson4_2.id,
+      title: 'Standard Crane Hand Signals',
+      videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      duration: 540,
+      order: 1
+    }
+  })
+
+  console.log('Created videos for all lessons')
+
   // Create quizzes for each course
   const quizzes = [
     { courseId: course1.id, title: 'Crane Setup & Operation Quiz', passingScore: 80 },
