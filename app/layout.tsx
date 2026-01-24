@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
   description: seoConfig.description,
   keywords: seoConfig.keywords,
-  authors: [{ name: 'Lift Planner Pro', url: 'https://liftplannerpro.co.uk' }],
+  authors: [{ name: 'Lift Planner Pro', url: 'https://liftplannerpro.org' }],
   creator: 'Lift Planner Pro',
   publisher: 'Lift Planner Pro',
   formatDetection: {
@@ -83,10 +83,32 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Software Application Schema */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(seoConfig.structuredData)
+          }}
+        />
+        {/* Organization Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(seoConfig.organizationData)
+          }}
+        />
+        {/* Website Schema (for sitelinks search) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(seoConfig.websiteData)
+          }}
+        />
+        {/* FAQ Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(seoConfig.faqData)
           }}
         />
         <BusinessStructuredData />
