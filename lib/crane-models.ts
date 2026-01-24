@@ -1426,55 +1426,57 @@ export const MOBILE_CRANE_MODELS: CraneSpecifications[] = [
   // Professional technical line drawings
   // ==========================================
 
-  // Wireframe Mobile Crane (Truck Mounted)
+  // LTM 1055-3.1 Side Elevation (Technical Drawing)
   {
     id: 'wireframe-mobile',
-    manufacturer: 'Wireframe',
-    model: 'Mobile Crane (Technical)',
+    manufacturer: 'LTM 1055',
+    model: 'Side Elevation',
     type: 'all-terrain',
     category: 'mobile',
-    maxCapacity: 100,
+    maxCapacity: 55,
     maxRadius: 40,
-    maxHeight: 50,
+    maxHeight: 56,
     wireframe: true,
     wireframeType: 'mobile',
 
     dimensions: {
-      length: 12000,
-      width: 2800,
+      length: 11360,
+      width: 2500,
       height: 3500,
-      weight: 48000
+      weight: 36000
     },
 
     boom: {
-      baseLength: 15,
-      maxLength: 60,
+      baseLength: 10.5,
+      maxLength: 40,
       sections: 5,
       luffingAngle: { min: 0, max: 82 },
       telescopic: true
     },
 
     loadChart: [
-      { radius: 3, capacity: 100 },
-      { radius: 6, capacity: 70 },
-      { radius: 10, capacity: 45 },
-      { radius: 15, capacity: 28 },
-      { radius: 20, capacity: 18 },
-      { radius: 30, capacity: 10 },
-      { radius: 40, capacity: 5 }
+      { radius: 3, capacity: 55 },
+      { radius: 5, capacity: 36 },
+      { radius: 8, capacity: 21 },
+      { radius: 10, capacity: 16 },
+      { radius: 12, capacity: 12.5 },
+      { radius: 16, capacity: 8.5 },
+      { radius: 20, capacity: 6.2 },
+      { radius: 30, capacity: 3.2 },
+      { radius: 40, capacity: 1.8 }
     ],
 
     engine: {
-      manufacturer: 'Generic',
-      model: 'Diesel Engine',
-      power: 350,
+      manufacturer: 'Liebherr',
+      model: 'D936 A7',
+      power: 270,
       fuelType: 'diesel',
       emissions: 'Stage V'
     },
 
     operational: {
-      workingSpeed: { hoist: 80, boom: 50, swing: 2.5, travel: 80 },
-      gradeability: 65,
+      workingSpeed: { hoist: 112, boom: 0, swing: 2.5, travel: 80 },
+      gradeability: 60,
       groundPressure: 180
     },
 
@@ -1487,14 +1489,14 @@ export const MOBILE_CRANE_MODELS: CraneSpecifications[] = [
     },
 
     cadData: {
-      basePoints: [{ x: -90, y: -15 }, { x: 90, y: -15 }, { x: 90, y: 15 }, { x: -90, y: 15 }],
-      boomPoints: [{ x: 0, y: -20 }],
-      counterweightPoints: [{ x: -70, y: -25 }, { x: -35, y: -25 }, { x: -35, y: 0 }, { x: -70, y: 0 }],
-      cabPoints: [{ x: 30, y: -35 }, { x: 60, y: -35 }, { x: 60, y: 0 }, { x: 30, y: 0 }],
-      outriggerPoints: [{ x: -150, y: -15 }, { x: 150, y: -15 }, { x: 150, y: 50 }, { x: -150, y: 50 }],
+      basePoints: [{ x: -140, y: -20 }, { x: 140, y: -20 }, { x: 140, y: 20 }, { x: -140, y: 20 }],
+      boomPoints: [{ x: 80, y: -60 }],
+      counterweightPoints: [{ x: -120, y: -50 }, { x: -70, y: -50 }, { x: -70, y: 0 }, { x: -120, y: 0 }],
+      cabPoints: [{ x: 50, y: -45 }, { x: 90, y: -45 }, { x: 90, y: -5 }, { x: 50, y: -5 }],
+      outriggerPoints: [{ x: -100, y: 20 }, { x: 100, y: 20 }, { x: 100, y: 35 }, { x: -100, y: 35 }],
       scale: 1.0,
       color: '#000000',
-      lineWeight: 1.5
+      lineWeight: 1.0
     },
 
     certification: {
@@ -1656,11 +1658,11 @@ export const MOBILE_CRANE_MODELS: CraneSpecifications[] = [
     }
   },
 
-  // Wireframe Mobile Crane - PLAN VIEW (Top-down)
+  // LTM 1055-3.1 Plan View (Top-down Technical Drawing)
   {
     id: 'wireframe-mobile-plan',
-    manufacturer: 'Wireframe',
-    model: 'Mobile Crane Plan View (LTM 1055)',
+    manufacturer: 'LTM 1055',
+    model: 'Plan View',
     type: 'all-terrain',
     category: 'mobile',
     maxCapacity: 55,
