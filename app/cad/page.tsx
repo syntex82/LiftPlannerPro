@@ -645,6 +645,9 @@ function CADEditorContent() {
     }
 
     setElements(prev => [...prev, craneElement])
+    // Reset tool to select after inserting crane so drawing tools work again
+    setTool('select')
+    setSelectedElement(craneElement.id)
     addDebugLog(`Inserted ${crane.manufacturer} ${crane.model} crane`, 'success')
     trackCADOperation('crane_insert', `${crane.manufacturer} ${crane.model}`)
   }
