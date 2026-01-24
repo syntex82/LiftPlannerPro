@@ -438,23 +438,26 @@ export function drawWireframeMobileCrane(
 
   // === DIMENSION LINES (if enabled) ===
   if (cfg.showDimensions) {
-    // Overall length
-    drawDimensionLine(ctx, -chassisLength/2, groundY, chassisLength/2, groundY,
-      `${(chassisLength * 0.033).toFixed(1)}m`, 25, 'below')
+    // Conversion: 12 pixels = 1 meter
+    const pxToM = 1 / 12
 
-    // Boom length
+    // Overall carrier length (chassis is ~280px = ~9.3m which is close to LTM 1055 at 11.36m)
+    drawDimensionLine(ctx, -chassisLength/2, groundY, chassisLength/2, groundY,
+      `${(chassisLength * pxToM).toFixed(1)}m`, 25, 'below')
+
+    // Boom length (already in pixels, convert to meters)
     drawDimensionLine(ctx, pivotX, pivotY, boomEndX, boomEndY,
-      `${(boomLength * 0.15).toFixed(1)}m`, 20, 'above')
+      `${(boomLength * pxToM).toFixed(1)}m`, 20, 'above')
 
     // Height to boom tip
     const tipHeight = pivotY - boomEndY
     drawDimensionLine(ctx, boomEndX + 30, pivotY, boomEndX + 30, boomEndY,
-      `${(tipHeight * 0.1).toFixed(1)}m`, 15, 'right')
+      `${(tipHeight * pxToM).toFixed(1)}m`, 15, 'right')
 
     // Working radius
     const radius = boomEndX - pivotX
     drawDimensionLine(ctx, pivotX, groundY + 40, boomEndX, groundY + 40,
-      `R=${(radius * 0.1).toFixed(1)}m`, 0, 'below')
+      `R=${(radius * pxToM).toFixed(1)}m`, 0, 'below')
   }
 
   ctx.restore()
@@ -835,28 +838,31 @@ export function drawWireframeMobileCranePlanView(
 
   // === WORKING RADIUS ARCS ===
   if (cfg.showDimensions) {
+    // Conversion: 12 pixels = 1 meter
+    const pxToM = 1 / 12
+
     ctx.setLineDash([5, 5])
     ctx.strokeStyle = '#666666'
 
-    // Draw radius arcs
-    const radii = [boomLength * 0.5, boomLength * 0.75, boomLength]
+    // Draw radius arcs at 25%, 50%, 75%, 100% of boom length
+    const radii = [boomLength * 0.25, boomLength * 0.5, boomLength * 0.75, boomLength]
     for (const r of radii) {
       ctx.beginPath()
       ctx.arc(boomStartX, boomStartY, r, 0, Math.PI * 2)
       ctx.stroke()
 
-      // Radius label
+      // Radius label (convert pixels to meters)
       ctx.fillStyle = '#000000'
-      ctx.font = '9px Arial'
-      ctx.fillText(`R=${(r * 0.1).toFixed(0)}m`, boomStartX + r + 5, boomStartY)
+      ctx.font = '10px Arial'
+      ctx.fillText(`R=${(r * pxToM).toFixed(1)}m`, boomStartX + r + 5, boomStartY)
     }
 
     ctx.setLineDash([])
     ctx.strokeStyle = '#000000'
 
-    // Outrigger spread dimension
+    // Outrigger spread dimension (convert to meters)
     drawDimensionLine(ctx, frontOutX, -outriggerSpread/2, frontOutX, outriggerSpread/2,
-      `${(outriggerSpread * 0.033).toFixed(1)}m`, 30, 'left')
+      `${(outriggerSpread * pxToM).toFixed(1)}m`, 30, 'left')
   }
 
   ctx.restore()

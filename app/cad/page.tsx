@@ -2469,29 +2469,31 @@ function CADEditorContent() {
       // Check if this is a wireframe crane (professional technical drawing)
       if (crane.wireframe && crane.wireframeType) {
         // Use wireframe drawing functions based on crane type
-        const boomLen = crane.boom.baseLength + (crane.boom.maxLength - crane.boom.baseLength) * boomExtension
+        // Boom length in meters - convert to pixels (1m = 12px for proper scale)
+        const boomLenMeters = crane.boom.baseLength + (crane.boom.maxLength - crane.boom.baseLength) * boomExtension
+        const boomLenPixels = boomLenMeters * 12  // 12 pixels per meter for good visibility
         const craneConfig: Partial<CraneDrawingConfig> = {
           boomAngle,
-          boomLength: boomLen * 3,
+          boomLength: boomLenPixels,
           boomSections: element.craneData?.boomSections || 5,
           outriggerExtension: element.craneData?.outriggerExtension || 1.0,
           counterweightTons: element.craneData?.counterweightTons || 12,
-          loadLineLength,
+          loadLineLength: loadLineLength * 3,  // Scale up load line too
           showDimensions: element.craneData?.showDimensions !== false,
           scale
         }
         switch (crane.wireframeType) {
           case 'mobile':
-            drawWireframeMobileCrane(ctx, boomAngle, boomLen * 3, scale, craneConfig)
+            drawWireframeMobileCrane(ctx, boomAngle, boomLenPixels, scale, craneConfig)
             break
           case 'mobile-plan':
-            drawWireframeMobileCranePlanView(ctx, boomAngle, boomLen * 3, scale, craneConfig)
+            drawWireframeMobileCranePlanView(ctx, boomAngle, boomLenPixels, scale, craneConfig)
             break
           case 'tower':
-            drawWireframeTowerCrane(ctx, 250, boomLen * 3, 70, scale)
+            drawWireframeTowerCrane(ctx, 250, boomLenPixels, 70, scale)
             break
           case 'crawler':
-            drawWireframeCrawlerCrane(ctx, boomAngle, boomLen * 3, loadLineLength, scale)
+            drawWireframeCrawlerCrane(ctx, boomAngle, boomLenPixels, loadLineLength, scale)
             break
           default:
             drawRealisticCrane(ctx, crane, boomAngle, boomExtension, scale, loadLineLength, wireframe)
