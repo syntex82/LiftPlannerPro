@@ -78,7 +78,15 @@ export default function CourseDetailPage() {
         const res = await fetch(`/api/lms/courses/${courseId}/enroll`, { method: 'POST' })
         const data = await res.json()
         if (data.success) {
-          fetchCourse() // Refresh to show enrolled state
+          alert('Successfully enrolled! You now have access to all course content.')
+          await fetchCourse() // Refresh to show enrolled state
+        } else if (data.error) {
+          if (data.error === 'Already enrolled in this course') {
+            alert('You are already enrolled in this course.')
+            await fetchCourse()
+          } else {
+            alert(`Enrollment failed: ${data.error}`)
+          }
         }
       } else {
         // Paid course - go to checkout
@@ -90,10 +98,13 @@ export default function CourseDetailPage() {
         const data = await res.json()
         if (data.checkoutUrl) {
           window.location.href = data.checkoutUrl
+        } else if (data.error) {
+          alert(`Checkout failed: ${data.error}`)
         }
       }
     } catch (error) {
       console.error('Enrollment failed:', error)
+      alert('Enrollment failed. Please try again.')
     } finally {
       setEnrolling(false)
     }
