@@ -19,6 +19,7 @@
     "db:setup:prod": "node scripts/setup-production-db.js",
     "db:migrate": "npx prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
+    "db:seed:lms": "npx tsx prisma/seed-lms.ts",
     "db:migrate:prod": "node scripts/migrate-production.js",
     "db:generate": "npx prisma generate",
     "db:studio": "npx prisma studio",
