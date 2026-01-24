@@ -178,6 +178,7 @@ function drawLatticeBoom(
 // Draw professional LTM 1055-3.1 style mobile crane (SIDE VIEW)
 // Based on Liebherr technical specification drawings
 // Layout: Driver cab (front/left) -> Engine -> Superstructure with crane cab -> Counterweight (rear/right)
+// LTM 1055-3.1 real dimensions: carrier length ~11.4m, boom 10.5-40m
 export function drawWireframeMobileCrane(
   ctx: CanvasRenderingContext2D,
   boomAngle: number = 45,
@@ -195,118 +196,126 @@ export function drawWireframeMobileCrane(
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
 
+  // Scale: 12 pixels = 1 meter
+  // LTM 1055-3.1 carrier is ~11.4m = ~137 pixels
   // Ground level and base measurements
   const groundY = 70
-  const wheelRadius = 18
+  const wheelRadius = 12  // ~1m wheels
   const wheelY = groundY - wheelRadius
 
-  // === CARRIER/CHASSIS ===
-  const chassisLeft = -180
-  const chassisRight = 180
-  const chassisLength = chassisRight - chassisLeft
-  const chassisTop = groundY - 55
-  const chassisBottom = groundY - 25
+  // === CARRIER/CHASSIS (11.4m = 137px) ===
+  const carrierLengthM = 11.4
+  const carrierLengthPx = carrierLengthM * 12  // 137 pixels
+  const chassisLeft = -carrierLengthPx / 2  // -68.5
+  const chassisRight = carrierLengthPx / 2   // 68.5
+  const chassisLength = carrierLengthPx
+  const chassisTop = groundY - 35
+  const chassisBottom = groundY - 18
 
   // Main chassis frame
   ctx.strokeRect(chassisLeft, chassisTop, chassisLength, chassisBottom - chassisTop)
 
-  // === DRIVER CAB (Front - Left side) ===
+  // === DRIVER CAB (Front - Left side, ~2.5m wide) ===
+  const cabWidth = 2.5 * 12  // 30px
   const cabLeft = chassisLeft
-  const cabRight = chassisLeft + 70
-  const cabTop = chassisTop - 35
+  const cabRight = chassisLeft + cabWidth
+  const cabTop = chassisTop - 20
 
   ctx.beginPath()
   ctx.moveTo(cabLeft, chassisTop)
-  ctx.lineTo(cabLeft, cabTop + 10)
-  ctx.lineTo(cabLeft + 10, cabTop)  // Windscreen angle
-  ctx.lineTo(cabRight - 5, cabTop)
-  ctx.lineTo(cabRight, cabTop + 8)
+  ctx.lineTo(cabLeft, cabTop + 5)
+  ctx.lineTo(cabLeft + 5, cabTop)  // Windscreen angle
+  ctx.lineTo(cabRight - 3, cabTop)
+  ctx.lineTo(cabRight, cabTop + 5)
   ctx.lineTo(cabRight, chassisTop)
   ctx.stroke()
 
-  // Cab windows
-  ctx.strokeRect(cabLeft + 12, cabTop + 5, 20, 22)
-  ctx.strokeRect(cabLeft + 38, cabTop + 5, 22, 22)
+  // Cab window
+  ctx.strokeRect(cabLeft + 6, cabTop + 3, cabWidth - 12, 12)
 
-  // === ENGINE COMPARTMENT ===
-  const engineLeft = cabRight + 5
-  const engineRight = engineLeft + 60
-  const engineTop = chassisTop - 20
-  ctx.strokeRect(engineLeft, engineTop, engineRight - engineLeft, chassisTop - engineTop + 5)
+  // === ENGINE COMPARTMENT (~2m) ===
+  const engineWidth = 2 * 12  // 24px
+  const engineLeft = cabRight + 2
+  const engineRight = engineLeft + engineWidth
+  const engineTop = chassisTop - 12
+  ctx.strokeRect(engineLeft, engineTop, engineWidth, chassisTop - engineTop + 3)
   // Engine vents
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 3; i++) {
     ctx.beginPath()
-    ctx.moveTo(engineLeft + 8 + i * 12, engineTop + 3)
-    ctx.lineTo(engineLeft + 8 + i * 12, chassisTop - 2)
+    ctx.moveTo(engineLeft + 4 + i * 8, engineTop + 2)
+    ctx.lineTo(engineLeft + 4 + i * 8, chassisTop - 1)
     ctx.stroke()
   }
 
-  // === SUPERSTRUCTURE (sits on turntable, center-right of carrier) ===
-  const superCenterX = 40
-  const superLeft = superCenterX - 60
-  const superRight = superCenterX + 80
-  const superTop = chassisTop - 50
-  const superBottom = chassisTop + 5
+  // === SUPERSTRUCTURE (sits on turntable, ~4m wide) ===
+  const superWidth = 4 * 12  // 48px
+  const superCenterX = chassisRight - superWidth / 2 - 10  // Near rear of carrier
+  const superLeft = superCenterX - superWidth / 2
+  const superRight = superCenterX + superWidth / 2
+  const superTop = chassisTop - 28
+  const superBottom = chassisTop + 3
 
   // Turntable ring
   ctx.beginPath()
-  ctx.arc(superCenterX, chassisTop, 25, 0, Math.PI * 2)
+  ctx.arc(superCenterX, chassisTop, 15, 0, Math.PI * 2)
   ctx.stroke()
 
   // Superstructure body
   ctx.beginPath()
   ctx.moveTo(superLeft, superBottom)
-  ctx.lineTo(superLeft, superTop + 15)
-  ctx.lineTo(superLeft + 15, superTop)
-  ctx.lineTo(superRight - 20, superTop)
-  ctx.lineTo(superRight, superTop + 20)
+  ctx.lineTo(superLeft, superTop + 8)
+  ctx.lineTo(superLeft + 8, superTop)
+  ctx.lineTo(superRight - 10, superTop)
+  ctx.lineTo(superRight, superTop + 10)
   ctx.lineTo(superRight, superBottom)
   ctx.closePath()
   ctx.stroke()
 
-  // === CRANE OPERATOR CAB (on superstructure, front-facing) ===
-  const craneCabLeft = superLeft - 5
-  const craneCabTop = superTop - 25
+  // === CRANE OPERATOR CAB (on superstructure) ===
+  const craneCabLeft = superLeft - 3
+  const craneCabTop = superTop - 15
   ctx.beginPath()
   ctx.moveTo(craneCabLeft, superTop)
-  ctx.lineTo(craneCabLeft, craneCabTop + 8)
-  ctx.lineTo(craneCabLeft + 8, craneCabTop)
-  ctx.lineTo(craneCabLeft + 40, craneCabTop)
-  ctx.lineTo(craneCabLeft + 45, craneCabTop + 10)
-  ctx.lineTo(craneCabLeft + 45, superTop)
+  ctx.lineTo(craneCabLeft, craneCabTop + 5)
+  ctx.lineTo(craneCabLeft + 5, craneCabTop)
+  ctx.lineTo(craneCabLeft + 22, craneCabTop)
+  ctx.lineTo(craneCabLeft + 25, craneCabTop + 6)
+  ctx.lineTo(craneCabLeft + 25, superTop)
   ctx.stroke()
-  // Crane cab windows
-  ctx.strokeRect(craneCabLeft + 5, craneCabTop + 5, 15, 18)
-  ctx.strokeRect(craneCabLeft + 24, craneCabTop + 5, 16, 18)
+  // Crane cab window
+  ctx.strokeRect(craneCabLeft + 4, craneCabTop + 3, 16, 10)
 
-  // === COUNTERWEIGHT (REAR - Right side, behind superstructure) ===
-  const cwLeft = superRight + 10
-  const cwRight = cwLeft + 55
-  const cwTop = superTop + 5
-  const cwBottom = superBottom - 5
+  // === COUNTERWEIGHT (REAR - behind superstructure, ~2m) ===
+  const cwWidth = 2 * 12  // 24px
+  const cwLeft = superRight + 5
+  const cwRight = cwLeft + cwWidth
+  const cwTop = superTop + 3
+  const cwBottom = superBottom - 3
   const cwHeight = cwBottom - cwTop
 
-  ctx.strokeRect(cwLeft, cwTop, cwRight - cwLeft, cwHeight)
+  ctx.strokeRect(cwLeft, cwTop, cwWidth, cwHeight)
   // Counterweight stacking lines
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; i <= 2; i++) {
     ctx.beginPath()
-    ctx.moveTo(cwLeft, cwTop + i * (cwHeight / 4))
-    ctx.lineTo(cwRight, cwTop + i * (cwHeight / 4))
+    ctx.moveTo(cwLeft, cwTop + i * (cwHeight / 3))
+    ctx.lineTo(cwRight, cwTop + i * (cwHeight / 3))
     ctx.stroke()
   }
   // Counterweight label
-  ctx.font = '10px Arial'
+  ctx.font = '8px Arial'
   ctx.textAlign = 'center'
-  ctx.fillText(`${cfg.counterweightTons}t`, (cwLeft + cwRight) / 2, cwTop + cwHeight / 2 + 4)
+  ctx.fillText(`${cfg.counterweightTons}t`, (cwLeft + cwRight) / 2, cwTop + cwHeight / 2 + 3)
 
-  // === AXLES AND WHEELS (3 axle groups like LTM 1055) ===
+  // === AXLES AND WHEELS (5 axles for LTM 1055) ===
+  // Axle spacing ~1.5m apart
+  const axleSpacing = 1.5 * 12  // 18px
   // Front axle group (2 axles)
-  const frontAxle1 = chassisLeft + 45
-  const frontAxle2 = chassisLeft + 85
+  const frontAxle1 = chassisLeft + 20
+  const frontAxle2 = frontAxle1 + axleSpacing
   // Rear axle group (3 axles)
-  const rearAxle1 = chassisRight - 100
-  const rearAxle2 = chassisRight - 65
-  const rearAxle3 = chassisRight - 30
+  const rearAxle3 = chassisRight - 15
+  const rearAxle2 = rearAxle3 - axleSpacing
+  const rearAxle1 = rearAxle2 - axleSpacing
 
   const allAxles = [frontAxle1, frontAxle2, rearAxle1, rearAxle2, rearAxle3]
 
@@ -325,41 +334,41 @@ export function drawWireframeMobileCrane(
     ctx.fill()
   }
 
-  // === OUTRIGGERS ===
-  const outriggerExtend = 100 * cfg.outriggerExtension
+  // === OUTRIGGERS (extend ~3.5m each side) ===
+  const outriggerExtend = 3.5 * 12 * cfg.outriggerExtension  // 42px at full extension
 
-  // Front outrigger
-  const frontOutX = chassisLeft + 65
+  // Front outrigger (near front axle group)
+  const frontOutX = frontAxle2 + 5
   if (cfg.outriggerExtension > 0) {
     ctx.beginPath()
     ctx.moveTo(frontOutX, chassisBottom)
     ctx.lineTo(frontOutX - outriggerExtend, chassisBottom)
-    ctx.lineTo(frontOutX - outriggerExtend, groundY + 5)
+    ctx.lineTo(frontOutX - outriggerExtend, groundY + 3)
     ctx.stroke()
     // Pad
-    ctx.fillRect(frontOutX - outriggerExtend - 15, groundY + 5, 30, 8)
+    ctx.fillRect(frontOutX - outriggerExtend - 8, groundY + 3, 16, 5)
   }
 
-  // Rear outrigger
-  const rearOutX = chassisRight - 50
+  // Rear outrigger (near rear axle group)
+  const rearOutX = rearAxle1 - 5
   if (cfg.outriggerExtension > 0) {
     ctx.beginPath()
     ctx.moveTo(rearOutX, chassisBottom)
     ctx.lineTo(rearOutX + outriggerExtend, chassisBottom)
-    ctx.lineTo(rearOutX + outriggerExtend, groundY + 5)
+    ctx.lineTo(rearOutX + outriggerExtend, groundY + 3)
     ctx.stroke()
     // Pad
-    ctx.fillRect(rearOutX + outriggerExtend - 15, groundY + 5, 30, 8)
+    ctx.fillRect(rearOutX + outriggerExtend - 8, groundY + 3, 16, 5)
   }
 
   // === BOOM ===
-  // Boom pivot is on the superstructure, front area
-  const pivotX = superLeft + 30
-  const pivotY = superTop - 5
+  // Boom pivot is on the superstructure
+  const pivotX = superCenterX
+  const pivotY = superTop - 3
 
   // Boom foot pivot circle
   ctx.beginPath()
-  ctx.arc(pivotX, pivotY, 8, 0, Math.PI * 2)
+  ctx.arc(pivotX, pivotY, 5, 0, Math.PI * 2)
   ctx.stroke()
 
   // Calculate boom end position
@@ -367,9 +376,9 @@ export function drawWireframeMobileCrane(
   const boomEndX = pivotX + boomLength * Math.cos(boomRad)
   const boomEndY = pivotY - boomLength * Math.sin(boomRad)
 
-  // Telescopic boom sections
-  const boomBaseWidth = 28
-  const boomTipWidth = 14
+  // Telescopic boom sections (boom base ~0.8m wide, tip ~0.4m)
+  const boomBaseWidth = 0.8 * 12  // 10px
+  const boomTipWidth = 0.4 * 12   // 5px
   const sections = cfg.boomSections
 
   ctx.save()
@@ -406,10 +415,10 @@ export function drawWireframeMobileCrane(
 
   // === BOOM HEAD / SHEAVE ===
   ctx.beginPath()
-  ctx.arc(boomEndX, boomEndY, 10, 0, Math.PI * 2)
+  ctx.arc(boomEndX, boomEndY, 6, 0, Math.PI * 2)
   ctx.stroke()
   ctx.beginPath()
-  ctx.arc(boomEndX, boomEndY, 5, 0, Math.PI * 2)
+  ctx.arc(boomEndX, boomEndY, 3, 0, Math.PI * 2)
   ctx.stroke()
 
   // === LOAD LINE AND HOOK ===
@@ -417,24 +426,24 @@ export function drawWireframeMobileCrane(
 
   // Wire rope
   ctx.beginPath()
-  ctx.moveTo(boomEndX, boomEndY + 10)
-  ctx.lineTo(boomEndX, boomEndY + hookDrop - 20)
+  ctx.moveTo(boomEndX, boomEndY + 6)
+  ctx.lineTo(boomEndX, boomEndY + hookDrop - 12)
   ctx.stroke()
 
   // Hook block
-  ctx.strokeRect(boomEndX - 12, boomEndY + hookDrop - 20, 24, 22)
+  ctx.strokeRect(boomEndX - 8, boomEndY + hookDrop - 12, 16, 14)
   // Sheaves
   ctx.beginPath()
-  ctx.arc(boomEndX - 5, boomEndY + hookDrop - 10, 5, 0, Math.PI * 2)
-  ctx.arc(boomEndX + 5, boomEndY + hookDrop - 10, 5, 0, Math.PI * 2)
+  ctx.arc(boomEndX - 3, boomEndY + hookDrop - 6, 3, 0, Math.PI * 2)
+  ctx.arc(boomEndX + 3, boomEndY + hookDrop - 6, 3, 0, Math.PI * 2)
   ctx.stroke()
 
   // Hook
-  ctx.lineWidth = 2.5
+  ctx.lineWidth = 2
   ctx.beginPath()
   ctx.moveTo(boomEndX, boomEndY + hookDrop + 2)
-  ctx.lineTo(boomEndX, boomEndY + hookDrop + 20)
-  ctx.arc(boomEndX + 10, boomEndY + hookDrop + 20, 10, Math.PI, 0, true)
+  ctx.lineTo(boomEndX, boomEndY + hookDrop + 12)
+  ctx.arc(boomEndX + 6, boomEndY + hookDrop + 12, 6, Math.PI, 0, true)
   ctx.stroke()
   ctx.lineWidth = 1.2
 
@@ -443,24 +452,24 @@ export function drawWireframeMobileCrane(
     const pxToM = 1 / 12
 
     // Carrier length
-    drawDimensionLine(ctx, chassisLeft, groundY + 20, chassisRight, groundY + 20,
+    drawDimensionLine(ctx, chassisLeft, groundY + 15, chassisRight, groundY + 15,
       `${(chassisLength * pxToM).toFixed(1)}m`, 0, 'below')
 
     // Boom length
     drawDimensionLine(ctx, pivotX, pivotY, boomEndX, boomEndY,
-      `${(boomLength * pxToM).toFixed(1)}m`, 25, 'above')
+      `${(boomLength * pxToM).toFixed(1)}m`, 15, 'above')
 
-    // Tip height
-    const tipHeight = pivotY - boomEndY
-    if (tipHeight > 20) {
-      drawDimensionLine(ctx, boomEndX + 40, groundY, boomEndX + 40, boomEndY,
-        `${((groundY - boomEndY) * pxToM).toFixed(1)}m`, 0, 'right')
+    // Tip height (from ground to boom tip)
+    const tipHeight = groundY - boomEndY
+    if (tipHeight > 30) {
+      drawDimensionLine(ctx, boomEndX + 25, groundY, boomEndX + 25, boomEndY,
+        `${(tipHeight * pxToM).toFixed(1)}m`, 0, 'right')
     }
 
-    // Working radius
+    // Working radius (from pivot to boom tip horizontal)
     const radius = boomEndX - pivotX
-    if (radius > 50) {
-      drawDimensionLine(ctx, pivotX, groundY + 50, boomEndX, groundY + 50,
+    if (radius > 30) {
+      drawDimensionLine(ctx, pivotX, groundY + 35, boomEndX, groundY + 35,
         `R=${(radius * pxToM).toFixed(1)}m`, 0, 'below')
     }
   }
