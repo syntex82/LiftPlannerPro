@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://liftplannerpro.org'
+  const baseUrl = 'https://liftplannerpro.co.uk'
 
   // Static pages
   const staticPages = [

@@ -41,7 +41,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: '/',
       },
     ],
-    sitemap: 'https://liftplannerpro.org/sitemap.xml',
-    host: 'https://liftplannerpro.org',
+    sitemap: 'https://liftplannerpro.co.uk/sitemap.xml',
+    host: 'https://liftplannerpro.co.uk',
   }
 }
