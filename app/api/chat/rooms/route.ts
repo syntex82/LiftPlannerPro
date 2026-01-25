@@ -116,9 +116,17 @@ export async function POST(request: NextRequest) {
       category: group.category
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create chat room error:', error)
-    return NextResponse.json({ error: 'Failed to create room' }, { status: 500 })
+    // Return more specific error message
+    const errorMessage = error?.message || 'Failed to create room'
+    const isDbError = errorMessage.includes('does not exist') || errorMessage.includes('relation')
+    if (isDbError) {
+      return NextResponse.json({
+        error: 'Database table not found. Please run: npx prisma db push'
+      }, { status: 500 })
+    }
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
