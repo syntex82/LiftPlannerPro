@@ -79,7 +79,7 @@ interface ChatMessage {
   userId?: string
   roomId: number
   created_at: string
-  messageType: 'text' | 'image' | 'file' | 'gif' | 'code' | 'system'
+  messageType: 'text' | 'image' | 'file' | 'gif' | 'code' | 'system' | 'video_call_signal'
   fileUrl?: string
   fileName?: string
   fileSize?: number
@@ -125,11 +125,18 @@ const getStatusLabel = (status: string) => {
   }
 }
 
-const formatTime = (date: string) => {
+const formatTime = (date: string | null | undefined) => {
+  // Handle null, undefined, or empty dates
+  if (!date) return 'Unknown'
+
   const d = new Date(date)
+
+  // Check if date is valid
+  if (isNaN(d.getTime())) return 'Unknown'
+
   const now = new Date()
   const diff = now.getTime() - d.getTime()
-  
+
   if (diff < 60000) return 'Just now'
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`
   if (diff < 86400000 && d.getDate() === now.getDate()) {
@@ -720,7 +727,8 @@ export default function ProfessionalTeamChat() {
           name: newChannelName.trim(),
           slug: slug,
           description: newChannelDescription.trim() || `Channel for ${newChannelName}`,
-          type: 'channel'
+          type: 'PUBLIC',  // Must match GroupType enum: PUBLIC, PRIVATE, or SYSTEM
+          category: 'TEAM' // Must match GroupCategory enum
         })
       })
 
@@ -805,10 +813,17 @@ export default function ProfessionalTeamChat() {
     )
   }, [users, userSearchQuery])
 
-  // Filter messages for search
+  // Filter messages for search AND exclude video call signals from display
   const filteredMessages = useMemo(() => {
-    if (!messageSearchQuery) return messages
-    return messages.filter(m =>
+    // First, filter out video call signals - they should never be displayed
+    const displayableMessages = messages.filter(m =>
+      m.messageType !== 'video_call_signal' &&
+      !m.content?.includes('"type":"video_call_signal"') &&
+      !m.content?.includes('"type":"videocallsignal"')
+    )
+
+    if (!messageSearchQuery) return displayableMessages
+    return displayableMessages.filter(m =>
       m.content?.toLowerCase().includes(messageSearchQuery.toLowerCase()) ||
       m.username?.toLowerCase().includes(messageSearchQuery.toLowerCase())
     )

@@ -70,24 +70,47 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Valid enum values
+const validGroupTypes = ['PUBLIC', 'PRIVATE', 'SYSTEM']
+const validGroupCategories = ['TEAM', 'PROJECT', 'SUPPORT', 'ANNOUNCEMENT', 'VIDEO']
+
 // Create a new chat room
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized - please log in' }, { status: 401 })
     }
 
-    const { name, description, icon = 'hash', type = 'PUBLIC', category = 'TEAM' } = await request.json()
+    const body = await request.json()
+    const { name, description, icon = 'hash' } = body
+
+    // Validate and normalize type - convert 'channel' to 'PUBLIC' for backwards compatibility
+    let type = body.type || 'PUBLIC'
+    if (type === 'channel') type = 'PUBLIC'
+    if (!validGroupTypes.includes(type)) {
+      type = 'PUBLIC'
+    }
+
+    // Validate and normalize category
+    let category = body.category || 'TEAM'
+    if (!validGroupCategories.includes(category)) {
+      category = 'TEAM'
+    }
 
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Room name required' }, { status: 400 })
     }
 
     // Generate slug from name
-    const slug = name.toLowerCase()
+    const baseSlug = name.toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '')
+
+    // Add timestamp to make slug unique
+    const slug = `${baseSlug}-${Date.now()}`
+
+    console.log(`📝 Creating channel: ${name} (slug: ${slug}, type: ${type}, category: ${category})`)
 
     // Create group in database
     const group = await prisma.group.create({
@@ -96,8 +119,8 @@ export async function POST(request: NextRequest) {
         slug,
         description: description?.trim() || null,
         icon,
-        type,
-        category,
+        type: type as any,
+        category: category as any,
         ownerId: session.user.id,
         members: {
           create: { userId: session.user.id, role: 'OWNER' }
@@ -105,7 +128,10 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log(`✅ Channel created: ${group.name} (id: ${group.id})`)
+
     return NextResponse.json({
+      success: true,
       id: 999, // Placeholder ID for frontend
       dbId: group.id,
       name: group.name,
@@ -118,14 +144,23 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Create chat room error:', error)
-    // Return more specific error message
     const errorMessage = error?.message || 'Failed to create room'
+
+    // Check for unique constraint violation (slug already exists)
+    if (errorMessage.includes('Unique constraint') || errorMessage.includes('unique')) {
+      return NextResponse.json({
+        error: 'A channel with this name already exists. Please choose a different name.'
+      }, { status: 400 })
+    }
+
+    // Check for database table not found
     const isDbError = errorMessage.includes('does not exist') || errorMessage.includes('relation')
     if (isDbError) {
       return NextResponse.json({
-        error: 'Database table not found. Please run: npx prisma db push'
+        error: 'Database tables not found. Please run: npx prisma db push on your server'
       }, { status: 500 })
     }
+
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
