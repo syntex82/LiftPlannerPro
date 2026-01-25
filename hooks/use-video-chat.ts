@@ -224,12 +224,29 @@ export function useVideoChat({
 
   // End current call
   const endCall = useCallback(() => {
+    console.log('📹 endCall called, isInCall:', callState.isInCall, 'callId:', callState.callId)
+
+    // Send call-end signal to the other party BEFORE ending locally
+    if (callState.isInCall && callState.callId && onSendMessageRef.current) {
+      console.log('📹 Sending call-end signal')
+      onSendMessageRef.current({
+        type: 'video_call_signal',
+        data: {
+          type: 'call-end',
+          callId: callState.callId,
+          from: currentUserName,
+          to: callState.participantName || 'remote'
+        },
+        timestamp: new Date().toISOString()
+      })
+    }
+
     if (webrtcManagerRef.current) {
       webrtcManagerRef.current.endCall()
     }
     setIncomingCall({ isVisible: false, callerName: '', callId: '' })
     pendingOfferRef.current = null
-  }, [])
+  }, [callState, currentUserName])
 
   // Toggle audio
   const toggleAudio = useCallback(() => {
@@ -270,6 +287,15 @@ export function useVideoChat({
 
     switch (signalData.type) {
       case 'call-request':
+        // Don't show incoming call if already in a call or already showing incoming call modal
+        if (callState.isInCall) {
+          console.log('📹 Ignoring call-request - already in a call')
+          return
+        }
+        if (incomingCall.isVisible) {
+          console.log('📹 Ignoring call-request - already showing incoming call modal')
+          return
+        }
         // Accept call requests from anyone in the room (not just targeted to our username)
         // This enables room-based calling where the caller doesn't know exact usernames
         console.log('📹📞 SHOWING INCOMING CALL MODAL - caller:', signalData.from, 'callId:', signalData.callId)
@@ -293,15 +319,31 @@ export function useVideoChat({
       case 'call-reject':
         if (callState.isInCall && callState.isInitiator) {
           console.log('📹 Call rejected by', signalData.from)
-          endCall()
+          // Don't call endCall here as it would send another signal - just clean up locally
+          if (webrtcManagerRef.current) {
+            webrtcManagerRef.current.endCall()
+          }
+          setIncomingCall({ isVisible: false, callerName: '', callId: '' })
+          pendingOfferRef.current = null
           alert(`${signalData.from} declined the video call.`)
         }
         break
 
       case 'call-end':
-        if (callState.isInCall && callState.callId === signalData.callId) {
-          console.log('📹 Call ended by', signalData.from)
-          endCall()
+        // End call if we're in a call (check callId if available, but also handle cases where callId might not match)
+        if (callState.isInCall) {
+          console.log('📹 Call ended by', signalData.from, 'our callId:', callState.callId, 'signal callId:', signalData.callId)
+          // Don't call endCall here as it would send another signal - just clean up locally
+          if (webrtcManagerRef.current) {
+            webrtcManagerRef.current.endCall()
+          }
+          setIncomingCall({ isVisible: false, callerName: '', callId: '' })
+          pendingOfferRef.current = null
+        }
+        // Also dismiss incoming call modal if it's showing for this call
+        if (incomingCall.isVisible && incomingCall.callId === signalData.callId) {
+          console.log('📹 Dismissing incoming call modal - caller ended call')
+          setIncomingCall({ isVisible: false, callerName: '', callId: '' })
         }
         break
 
@@ -333,7 +375,7 @@ export function useVideoChat({
         }
         break
     }
-  }, [currentUserName, callState, endCall])
+  }, [currentUserName, callState, incomingCall])
 
   // Send WebSocket message wrapper
   const sendWebSocketMessage = useCallback((message: WebRTCMessage) => {

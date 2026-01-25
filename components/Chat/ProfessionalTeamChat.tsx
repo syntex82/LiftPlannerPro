@@ -1305,7 +1305,13 @@ export default function ProfessionalTeamChat() {
 
                   <Button
                     size="sm"
-                    onClick={handleStartVideoCall}
+                    onClick={() => {
+                      if (videoChat.callState.isInCall) {
+                        videoChat.endCall()
+                      } else {
+                        handleStartVideoCall()
+                      }
+                    }}
                     className={`rounded-xl gap-2 ${
                       videoChat.callState.isInCall
                         ? 'bg-red-500 hover:bg-red-600 text-white'
@@ -1325,14 +1331,16 @@ export default function ProfessionalTeamChat() {
                     )}
                   </Button>
 
-                  <Button
-                    size="sm"
-                    onClick={handleStartVideoCall}
-                    className="bg-slate-700/50 hover:bg-slate-700 text-white rounded-xl gap-2"
-                  >
-                    <Phone className="w-4 h-4" />
-                    <span className="hidden sm:inline">Call</span>
-                  </Button>
+                  {!videoChat.callState.isInCall && (
+                    <Button
+                      size="sm"
+                      onClick={handleStartVideoCall}
+                      className="bg-slate-700/50 hover:bg-slate-700 text-white rounded-xl gap-2"
+                    >
+                      <Phone className="w-4 h-4" />
+                      <span className="hidden sm:inline">Call</span>
+                    </Button>
+                  )}
 
                   <Button
                     onClick={() => setShowUserList(!showUserList)}
