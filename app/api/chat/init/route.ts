@@ -12,13 +12,41 @@ const defaultGroups = [
   { name: 'Announcements', slug: 'announcements', description: 'Important announcements and updates', icon: 'megaphone', type: 'SYSTEM', category: 'ANNOUNCEMENT' }
 ] as const
 
+// Check if required database tables exist
+async function checkDatabaseTables(): Promise<{ exists: boolean; error?: string }> {
+  try {
+    // Try to query the Group table - if it fails, table doesn't exist
+    await prisma.$queryRaw`SELECT 1 FROM "groups" LIMIT 1`
+    return { exists: true }
+  } catch (e: any) {
+    const errorMessage = e?.message || 'Unknown error'
+    if (errorMessage.includes('does not exist') || errorMessage.includes('relation')) {
+      return {
+        exists: false,
+        error: 'Database tables not found. Run: npx prisma db push'
+      }
+    }
+    return { exists: false, error: errorMessage }
+  }
+}
+
 // Initialize chat groups - creates default groups if they don't exist
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized - please log in' }, { status: 401 })
+    }
+
+    // Check if database tables exist first
+    const tableCheck = await checkDatabaseTables()
+    if (!tableCheck.exists) {
+      return NextResponse.json({
+        error: 'Database not ready',
+        details: tableCheck.error,
+        action: 'Run: npx prisma db push on your server'
+      }, { status: 503 })
     }
 
     // Get the user to use as owner for groups
@@ -28,13 +56,13 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found in database' }, { status: 404 })
     }
 
     console.log('🏗️ Initializing chat groups...')
-    
+
     const results = []
-    
+
     for (const groupData of defaultGroups) {
       try {
         // Check if group already exists
@@ -70,17 +98,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const successCount = results.filter(r => r.status === 'created' || r.status === 'exists').length
+    const errorCount = results.filter(r => r.status === 'error').length
+
     return NextResponse.json({
-      success: true,
-      message: 'Chat groups initialized',
+      success: errorCount === 0,
+      message: `Chat initialized: ${successCount} groups ready, ${errorCount} errors`,
       results
     })
 
   } catch (error: any) {
     console.error('💥 Chat init error:', error)
-    return NextResponse.json({ 
-      error: 'Failed to initialize chat', 
-      details: error.message 
+
+    // Check for specific database errors
+    const errorMessage = error?.message || 'Unknown error'
+    if (errorMessage.includes('does not exist') || errorMessage.includes('relation')) {
+      return NextResponse.json({
+        error: 'Database tables not found',
+        details: 'The Group, GroupMember, or GroupMessage tables do not exist.',
+        action: 'Run: npx prisma db push on your server'
+      }, { status: 503 })
+    }
+
+    return NextResponse.json({
+      error: 'Failed to initialize chat',
+      details: errorMessage
     }, { status: 500 })
   }
 }
@@ -88,6 +130,20 @@ export async function POST(request: NextRequest) {
 // GET endpoint to check current group status
 export async function GET(request: NextRequest) {
   try {
+    // First check if tables exist
+    const tableCheck = await checkDatabaseTables()
+    if (!tableCheck.exists) {
+      return NextResponse.json({
+        initialized: false,
+        tablesExist: false,
+        error: tableCheck.error,
+        action: 'Run: npx prisma db push on your server',
+        groups: [],
+        expectedSlugs: defaultGroups.map(g => g.slug),
+        missingSlugs: defaultGroups.map(g => g.slug)
+      })
+    }
+
     const groups = await prisma.group.findMany({
       select: {
         id: true,
@@ -105,19 +161,35 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       initialized: missingSlugs.length === 0,
+      tablesExist: true,
       groups,
       expectedSlugs,
       missingSlugs,
-      message: missingSlugs.length === 0 
-        ? 'All chat groups are initialized' 
-        : `Missing groups: ${missingSlugs.join(', ')}. Call POST to initialize.`
+      message: missingSlugs.length === 0
+        ? 'All chat groups are initialized'
+        : `Missing groups: ${missingSlugs.join(', ')}. Call POST /api/chat/init to initialize.`
     })
   } catch (error: any) {
     console.error('💥 Chat status check error:', error)
-    return NextResponse.json({ 
+
+    const errorMessage = error?.message || 'Unknown error'
+    if (errorMessage.includes('does not exist') || errorMessage.includes('relation')) {
+      return NextResponse.json({
+        initialized: false,
+        tablesExist: false,
+        error: 'Database tables not found',
+        action: 'Run: npx prisma db push on your server',
+        groups: [],
+        expectedSlugs: defaultGroups.map(g => g.slug),
+        missingSlugs: defaultGroups.map(g => g.slug)
+      })
+    }
+
+    return NextResponse.json({
       error: 'Failed to check chat status',
-      details: error.message,
-      initialized: false
+      details: errorMessage,
+      initialized: false,
+      tablesExist: false
     }, { status: 500 })
   }
 }

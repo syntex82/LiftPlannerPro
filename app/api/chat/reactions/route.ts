@@ -1,23 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
-// In-memory store for reactions (use your database in production)
-const messageReactions = new Map<number, { emoji: string, users: string[] }[]>()
+// In-memory store for reactions (fallback if no database)
+// Note: In production, reactions should be stored in the database
+const messageReactions = new Map<string, { emoji: string, users: string[] }[]>()
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized - please log in' }, { status: 401 })
+    }
+
+    const username = session.user.name || session.user.email || 'Unknown'
+
     const body = await request.json()
     const { messageId, emoji } = body
 
-    // TODO: Get user from session
-    const userId = await getUserFromSession(request)
-    const username = 'Current User' // TODO: Get from user data
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!messageId) {
+      return NextResponse.json({ error: 'Message ID is required' }, { status: 400 })
     }
 
-    // Get current reactions for message
-    let reactions = messageReactions.get(messageId) || []
+    if (!emoji) {
+      return NextResponse.json({ error: 'Emoji is required' }, { status: 400 })
+    }
+
+    // Get current reactions for message (use string key for compatibility)
+    const messageKey = String(messageId)
+    let reactions = messageReactions.get(messageKey) || []
 
     // Find existing reaction with same emoji
     const existingReaction = reactions.find(r => r.emoji === emoji)
@@ -44,46 +56,48 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Update reactions
-    messageReactions.set(messageId, reactions)
+    // Update reactions in memory
+    messageReactions.set(messageKey, reactions)
 
-    // TODO: Update database
-    // UPDATE chat_messages SET reactions = ? WHERE id = ?
+    console.log(`✅ Reaction ${emoji} toggled for message ${messageId} by ${username}`)
 
-    // Broadcast reaction update to all room subscribers
-    // TODO: Implement SSE broadcast for reactions
-
-    return NextResponse.json({ 
-      messageId, 
-      reactions 
+    return NextResponse.json({
+      success: true,
+      messageId,
+      reactions
     })
 
-  } catch (error) {
-    console.error('Reaction error:', error)
-    return NextResponse.json({ error: 'Failed to add reaction' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Reaction error:', error?.message || error)
+    return NextResponse.json({
+      error: 'Failed to add reaction',
+      details: error?.message || 'Unknown error'
+    }, { status: 500 })
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const messageId = parseInt(searchParams.get('messageId') || '0')
+    const messageId = searchParams.get('messageId')
 
     if (!messageId) {
       return NextResponse.json({ error: 'Message ID required' }, { status: 400 })
     }
 
     const reactions = messageReactions.get(messageId) || []
-    
-    return NextResponse.json({ reactions })
 
-  } catch (error) {
-    console.error('Get reactions error:', error)
-    return NextResponse.json({ error: 'Failed to get reactions' }, { status: 500 })
+    return NextResponse.json({
+      success: true,
+      messageId,
+      reactions
+    })
+
+  } catch (error: any) {
+    console.error('Get reactions error:', error?.message || error)
+    return NextResponse.json({
+      error: 'Failed to get reactions',
+      details: error?.message || 'Unknown error'
+    }, { status: 500 })
   }
-}
-
-async function getUserFromSession(request: NextRequest) {
-  // TODO: Implement with your auth system
-  return 1 // placeholder
 }
