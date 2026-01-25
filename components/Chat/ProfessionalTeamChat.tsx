@@ -567,11 +567,14 @@ export default function ProfessionalTeamChat() {
       })
 
       if (res.ok) {
-        const newMsg = await res.json()
-        setMessages(prev => [...prev, newMsg])
+        // Clear input immediately - SSE will provide the message
+        // Don't add message locally as SSE broadcast will deliver it
         setNewMessage('')
         setReplyTo(null)
         setShowEmojiPicker(false)
+      } else {
+        const error = await res.json()
+        console.error('Failed to send message:', error)
       }
     } catch (error) {
       console.error('Failed to send message:', error)

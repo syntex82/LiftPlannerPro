@@ -158,15 +158,26 @@ async function getMessagesFromDB(roomId: number) {
 
           console.log(`📨 Found ${messages.length} messages in GroupMessage table`)
 
-          return messages.map(msg => ({
-            id: msg.id,
-            content: msg.content,
-            username: msg.sender?.name || msg.sender?.email || 'Unknown',
-            messageType: msg.messageType,
-            created_at: msg.createdAt.toISOString(),
-            replyTo: msg.replyToId,
-            avatar: msg.sender?.image
-          }))
+          // Filter out invalid messages (no content, video signals, etc.)
+          return messages
+            .filter(msg => {
+              // Skip video call signals - they shouldn't be displayed
+              if (msg.messageType === 'video_call_signal') return false
+              // Skip messages with no content
+              if (!msg.content || msg.content.trim() === '') return false
+              // Skip messages that look like raw JSON signals
+              if (msg.content.includes('"type":"video_call_signal"')) return false
+              return true
+            })
+            .map(msg => ({
+              id: msg.id,
+              content: msg.content,
+              username: msg.sender?.name || msg.sender?.email || 'Unknown',
+              messageType: msg.messageType,
+              created_at: msg.createdAt.toISOString(),
+              replyTo: msg.replyToId,
+              avatar: msg.sender?.image
+            }))
         } else {
           console.log(`⚠️ Group with slug "${slug}" not found, falling back to ChatMessage`)
         }
