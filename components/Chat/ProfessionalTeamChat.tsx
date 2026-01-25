@@ -780,8 +780,9 @@ export default function ProfessionalTeamChat() {
 
   // Filter users for search
   const filteredUsers = useMemo(() => {
-    if (!userSearchQuery) return users
-    return users.filter(u =>
+    const safeUsers = users.filter(u => u && u.name)
+    if (!userSearchQuery) return safeUsers
+    return safeUsers.filter(u =>
       u.name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       u.email?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       u.jobTitle?.toLowerCase().includes(userSearchQuery.toLowerCase())
@@ -1548,7 +1549,7 @@ export default function ProfessionalTeamChat() {
                   {showMentions && (
                     <div className="absolute bottom-full mb-2 left-0 right-0 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto">
                       {users
-                        .filter(u => u.name.toLowerCase().includes(mentionFilter.toLowerCase()))
+                        .filter(u => u && u.name && u.name.toLowerCase().includes(mentionFilter.toLowerCase()))
                         .slice(0, 5)
                         .map((user) => (
                           <button
@@ -1557,11 +1558,11 @@ export default function ProfessionalTeamChat() {
                             className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-700 transition-colors"
                           >
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-                              {user.name[0]?.toUpperCase()}
+                              {user.name?.[0]?.toUpperCase() || '?'}
                             </div>
                             <div className="flex-1 text-left">
-                              <p className="text-sm font-medium text-white">{user.name}</p>
-                              <p className="text-xs text-slate-400">{user.jobTitle || user.email}</p>
+                              <p className="text-sm font-medium text-white">{user.name || 'Unknown'}</p>
+                              <p className="text-xs text-slate-400">{user.jobTitle || user.email || ''}</p>
                             </div>
                           </button>
                         ))}
