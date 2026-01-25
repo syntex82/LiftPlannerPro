@@ -217,6 +217,11 @@ export default function ProfessionalTeamChat() {
   const [channelToDelete, setChannelToDelete] = useState<ChatRoom | null>(null)
   const [isDeletingChannel, setIsDeletingChannel] = useState(false)
 
+  // Notification state
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default')
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  const [soundEnabled, setSoundEnabled] = useState(true)
+
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messageInputRef = useRef<HTMLTextAreaElement>(null)
@@ -228,6 +233,108 @@ export default function ProfessionalTeamChat() {
   // Current user
   const currentUserName = session?.user?.name || 'User'
   const currentUserEmail = session?.user?.email || ''
+
+  // Play notification sound using Web Audio API
+  const playNotificationSound = useCallback(() => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const oscillator = audioContext.createOscillator()
+      const gainNode = audioContext.createGain()
+
+      oscillator.connect(gainNode)
+      gainNode.connect(audioContext.destination)
+
+      // Pleasant notification tone
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime) // A5 note
+      oscillator.type = 'sine'
+
+      // Quick fade in and out
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime)
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05)
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2)
+
+      oscillator.start(audioContext.currentTime)
+      oscillator.stop(audioContext.currentTime + 0.2)
+    } catch (e) {
+      // Ignore audio errors
+    }
+  }, [])
+
+  // Initialize notification permission
+  useEffect(() => {
+    // Check notification permission
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission)
+    }
+
+    // Load notification preferences from localStorage
+    const savedNotifEnabled = localStorage.getItem('chat_notifications_enabled')
+    const savedSoundEnabled = localStorage.getItem('chat_sound_enabled')
+    if (savedNotifEnabled !== null) setNotificationsEnabled(savedNotifEnabled === 'true')
+    if (savedSoundEnabled !== null) setSoundEnabled(savedSoundEnabled === 'true')
+  }, [])
+
+  // Request notification permission
+  const requestNotificationPermission = useCallback(async () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      const permission = await Notification.requestPermission()
+      setNotificationPermission(permission)
+      return permission === 'granted'
+    }
+    return Notification.permission === 'granted'
+  }, [])
+
+  // Show notification for new message
+  const showNotification = useCallback((message: ChatMessage, roomName: string) => {
+    // Don't notify for own messages
+    if (message.username === currentUserName) return
+
+    // Don't notify if notifications are disabled
+    if (!notificationsEnabled) return
+
+    // Play sound if enabled
+    if (soundEnabled) {
+      playNotificationSound()
+    }
+
+    // Show browser notification if tab is not focused and permission granted
+    if (document.hidden && notificationPermission === 'granted') {
+      const notification = new Notification(`${message.username} in #${roomName}`, {
+        body: (message.content || '').length > 100 ? message.content.substring(0, 100) + '...' : (message.content || ''),
+        icon: '/favicon.ico',
+        tag: `chat-${message.id}`, // Prevents duplicate notifications
+        silent: true // We play our own sound
+      })
+
+      // Click notification to focus the tab
+      notification.onclick = () => {
+        window.focus()
+        notification.close()
+      }
+
+      // Auto-close after 5 seconds
+      setTimeout(() => notification.close(), 5000)
+    }
+  }, [currentUserName, notificationsEnabled, soundEnabled, notificationPermission, playNotificationSound])
+
+  // Toggle notifications
+  const toggleNotifications = useCallback(() => {
+    const newValue = !notificationsEnabled
+    setNotificationsEnabled(newValue)
+    localStorage.setItem('chat_notifications_enabled', String(newValue))
+
+    // Request permission if enabling and not yet granted
+    if (newValue && notificationPermission === 'default') {
+      requestNotificationPermission()
+    }
+  }, [notificationsEnabled, notificationPermission, requestNotificationPermission])
+
+  // Toggle sound
+  const toggleSound = useCallback(() => {
+    const newValue = !soundEnabled
+    setSoundEnabled(newValue)
+    localStorage.setItem('chat_sound_enabled', String(newValue))
+  }, [soundEnabled])
 
   // Video signal handler for sending via API
   const handleVideoMessage = useCallback(async (message: any) => {
@@ -444,6 +551,12 @@ export default function ProfessionalTeamChat() {
             // Regular message
             console.log('💬 Adding message to chat:', message.content?.substring(0, 30))
             setMessages(prev => [...prev, message])
+
+            // Show notification for messages from other users
+            if (message.username !== currentUserName) {
+              const currentRoomData = rooms.find(r => r.id === currentRoom)
+              showNotification(message, currentRoomData?.name || 'Chat')
+            }
           }
         } else if (data.type === 'connected') {
           console.log('✅ SSE connection confirmed for room')
@@ -1150,6 +1263,45 @@ export default function ProfessionalTeamChat() {
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
+
+                  {/* Notification Controls */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={toggleNotifications}
+                          className={`rounded-xl ${notificationsEnabled ? 'text-blue-400 hover:text-blue-300' : 'text-slate-400 hover:text-white'} hover:bg-slate-700/50`}
+                        >
+                          {notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-slate-800 text-white border-slate-700">
+                        {notificationsEnabled ? 'Notifications ON (click to disable)' : 'Notifications OFF (click to enable)'}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
+                  {notificationsEnabled && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={toggleSound}
+                            className={`rounded-xl ${soundEnabled ? 'text-green-400 hover:text-green-300' : 'text-slate-400 hover:text-white'} hover:bg-slate-700/50`}
+                          >
+                            {soundEnabled ? <Zap className="w-4 h-4" /> : <Coffee className="w-4 h-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-slate-800 text-white border-slate-700">
+                          {soundEnabled ? 'Sound ON (click to mute)' : 'Sound OFF (click to unmute)'}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
 
                   <Button
                     size="sm"
