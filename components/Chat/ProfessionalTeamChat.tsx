@@ -393,6 +393,11 @@ export default function ProfessionalTeamChat() {
               return
             }
 
+            if (!message.content) {
+              console.error('📹❌ Video signal has no content')
+              return
+            }
+
             try {
               const parsedContent = JSON.parse(message.content)
               console.log('📹⬅️ Raw video signal content:', JSON.stringify(parsedContent, null, 2))
@@ -484,6 +489,11 @@ export default function ProfessionalTeamChat() {
             // Only process video signals from others
             if (message.messageType === 'video_call_signal' && message.username !== currentUserName) {
               console.log('📹🔄 POLL: Found video signal from:', message.username)
+
+              if (!message.content) {
+                console.error('📹❌ POLL: Video signal has no content')
+                return
+              }
 
               try {
                 const parsedContent = JSON.parse(message.content)
@@ -1296,14 +1306,14 @@ export default function ProfessionalTeamChat() {
                             </a>
                           ) : message.messageType === 'code' ? (
                             <pre className="bg-slate-900 rounded-lg p-3 overflow-x-auto">
-                              <code className="text-sm text-green-400 font-mono">{message.content}</code>
+                              <code className="text-sm text-green-400 font-mono">{message.content || ''}</code>
                             </pre>
                           ) : (
                             <p
                               className="text-sm leading-relaxed whitespace-pre-wrap"
                               dangerouslySetInnerHTML={{
                                 __html: parseMessageFormatting(
-                                  message.content.split(/(@\w+)/g).map((part, i) =>
+                                  (message.content || '').split(/(@\w+)/g).map((part, i) =>
                                     part.startsWith('@')
                                       ? `<span class="bg-blue-400/30 text-blue-200 px-1 rounded font-medium cursor-pointer hover:underline">${part}</span>`
                                       : part
@@ -1398,7 +1408,7 @@ export default function ProfessionalTeamChat() {
                 <div className="mb-3 flex items-center justify-between bg-slate-800/50 rounded-xl px-4 py-3 border-l-4 border-blue-500">
                   <div>
                     <p className="text-xs text-blue-400 font-medium">Replying to {replyTo.username || 'Unknown'}</p>
-                    <p className="text-sm text-slate-300 truncate max-w-md">{replyTo.content}</p>
+                    <p className="text-sm text-slate-300 truncate max-w-md">{replyTo.content || ''}</p>
                   </div>
                   <button onClick={() => setReplyTo(null)} className="text-slate-400 hover:text-white transition-colors">
                     <X className="w-4 h-4" />
