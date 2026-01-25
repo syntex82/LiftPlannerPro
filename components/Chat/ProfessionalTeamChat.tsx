@@ -597,6 +597,7 @@ export default function ProfessionalTeamChat() {
 
   // Insert mention
   const insertMention = (user: ChatUser) => {
+    if (!user || !user.name) return
     const lastAtIndex = newMessage.lastIndexOf('@')
     const beforeAt = newMessage.substring(0, lastAtIndex)
     setNewMessage(beforeAt + `@${user.name} `)
@@ -612,6 +613,7 @@ export default function ProfessionalTeamChat() {
 
   // Start direct message - send a message mentioning the user
   const startDirectMessage = async (user: ChatUser) => {
+    if (!user || !user.name) return
     setShowUserProfile(false)
     // For now, insert their name in the message box to start a conversation
     setNewMessage(`@${user.name} `)
@@ -793,8 +795,8 @@ export default function ProfessionalTeamChat() {
   const filteredMessages = useMemo(() => {
     if (!messageSearchQuery) return messages
     return messages.filter(m =>
-      m.content.toLowerCase().includes(messageSearchQuery.toLowerCase()) ||
-      m.username.toLowerCase().includes(messageSearchQuery.toLowerCase())
+      m.content?.toLowerCase().includes(messageSearchQuery.toLowerCase()) ||
+      m.username?.toLowerCase().includes(messageSearchQuery.toLowerCase())
     )
   }, [messages, messageSearchQuery])
 
@@ -1221,7 +1223,7 @@ export default function ProfessionalTeamChat() {
                               ? 'bg-gradient-to-br from-blue-500 to-blue-600'
                               : 'bg-gradient-to-br from-purple-500 to-pink-500'
                           }`}>
-                            {message.username[0]?.toUpperCase()}
+                            {message.username?.[0]?.toUpperCase() || '?'}
                           </div>
                         </button>
                       ) : (
@@ -1236,7 +1238,7 @@ export default function ProfessionalTeamChat() {
                               onClick={() => messageUser && openUserProfile(messageUser)}
                               className="text-sm font-semibold text-white hover:text-blue-400 transition-colors cursor-pointer"
                             >
-                              {message.username}
+                              {message.username || 'Unknown'}
                             </button>
                             {messageUser?.jobTitle && (
                               <Badge variant="secondary" className="bg-slate-700/50 text-slate-400 text-xs px-1.5 py-0">
@@ -1395,7 +1397,7 @@ export default function ProfessionalTeamChat() {
               {replyTo && (
                 <div className="mb-3 flex items-center justify-between bg-slate-800/50 rounded-xl px-4 py-3 border-l-4 border-blue-500">
                   <div>
-                    <p className="text-xs text-blue-400 font-medium">Replying to {replyTo.username}</p>
+                    <p className="text-xs text-blue-400 font-medium">Replying to {replyTo.username || 'Unknown'}</p>
                     <p className="text-sm text-slate-300 truncate max-w-md">{replyTo.content}</p>
                   </div>
                   <button onClick={() => setReplyTo(null)} className="text-slate-400 hover:text-white transition-colors">
