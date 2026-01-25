@@ -663,6 +663,10 @@ export default function ProfessionalTeamChat() {
 
   // Start a video call to a specific user
   const handleStartVideoCallToUser = async (user: ChatUser) => {
+    if (!user || !user.name) {
+      console.error('📹❌ Cannot start call: user or user.name is undefined')
+      return
+    }
     console.log('📹🚀 Starting video call to user:', user.name)
 
     if (!user.isOnline) {
@@ -814,7 +818,7 @@ export default function ProfessionalTeamChat() {
   const filteredRooms = useMemo(() => {
     if (!searchQuery) return rooms
     return rooms.filter(r =>
-      r.name.toLowerCase().includes(searchQuery.toLowerCase())
+      r.name?.toLowerCase().includes(searchQuery.toLowerCase())
     )
   }, [rooms, searchQuery])
 
@@ -961,7 +965,7 @@ export default function ProfessionalTeamChat() {
                         >
                           <Hash className="w-4 h-4 text-slate-500 flex-shrink-0" />
                           {!sidebarCollapsed && (
-                            <span className="flex-1 text-left text-sm font-medium truncate">{room.name}</span>
+                            <span className="flex-1 text-left text-sm font-medium truncate">{room.name || 'Unnamed'}</span>
                           )}
                         </button>
                         {!sidebarCollapsed && (
@@ -1011,13 +1015,13 @@ export default function ProfessionalTeamChat() {
                 >
                   <div className="relative flex-shrink-0">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-                      {user.name[0]?.toUpperCase()}
+                      {(user.name || 'U')[0]?.toUpperCase() || '?'}
                     </div>
                     <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${getStatusColor(user.status)}`} />
                   </div>
                   {!sidebarCollapsed && (
                     <div className="flex-1 text-left min-w-0">
-                      <p className="text-sm font-medium truncate">{user.name}</p>
+                      <p className="text-sm font-medium truncate">{user.name || 'Unknown'}</p>
                       <p className="text-xs text-slate-500 truncate">{user.statusMessage || getStatusLabel(user.status)}</p>
                     </div>
                   )}
@@ -1040,7 +1044,7 @@ export default function ProfessionalTeamChat() {
           <div className={`flex items-center gap-3 p-2 rounded-xl bg-slate-800/50 ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <div className="relative">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold">
-                {currentUserName[0]?.toUpperCase()}
+                {(currentUserName || 'U')[0]?.toUpperCase() || '?'}
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-slate-800 bg-green-500" />
             </div>
@@ -1666,12 +1670,12 @@ export default function ProfessionalTeamChat() {
                   <button onClick={() => openUserProfile(user)} className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="relative">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
-                        {user.name[0]?.toUpperCase()}
+                        {(user.name || 'U')[0]?.toUpperCase() || '?'}
                       </div>
                       <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${getStatusColor(user.status)}`} />
                     </div>
                     <div className="flex-1 min-w-0 text-left">
-                      <p className="text-sm font-medium text-white truncate group-hover:text-blue-400 transition-colors">{user.name}</p>
+                      <p className="text-sm font-medium text-white truncate group-hover:text-blue-400 transition-colors">{user.name || 'Unknown'}</p>
                       <p className="text-xs text-slate-500 truncate">{user.statusMessage || user.jobTitle || getStatusLabel(user.status)}</p>
                     </div>
                   </button>
@@ -1715,12 +1719,12 @@ export default function ProfessionalTeamChat() {
                 >
                   <div className="relative">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white text-sm font-bold">
-                      {user.name[0]?.toUpperCase()}
+                      {(user.name || 'U')[0]?.toUpperCase() || '?'}
                     </div>
                     <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 bg-slate-500" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-sm font-medium text-slate-300 truncate group-hover:text-white transition-colors">{user.name}</p>
+                    <p className="text-sm font-medium text-slate-300 truncate group-hover:text-white transition-colors">{user.name || 'Unknown'}</p>
                     <p className="text-xs text-slate-500 truncate">{user.lastSeen ? `Last seen ${formatTime(user.lastSeen)}` : 'Offline'}</p>
                   </div>
                 </button>
@@ -1741,7 +1745,7 @@ export default function ProfessionalTeamChat() {
                 <div className="absolute -bottom-8 left-6">
                   <div className="relative">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl font-bold border-4 border-slate-900">
-                      {selectedUser.name[0]?.toUpperCase()}
+                      {(selectedUser.name || 'U')[0]?.toUpperCase() || '?'}
                     </div>
                     <div className={`absolute bottom-1 right-1 w-5 h-5 rounded-full border-3 border-slate-900 ${getStatusColor(selectedUser.status)}`} />
                   </div>
@@ -1752,7 +1756,7 @@ export default function ProfessionalTeamChat() {
                 {/* Name & Status */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-xl font-bold text-white">{selectedUser.name}</h2>
+                    <h2 className="text-xl font-bold text-white">{selectedUser.name || 'Unknown User'}</h2>
                     <p className="text-sm text-slate-400">{selectedUser.email}</p>
                   </div>
                   <Badge className={`${
@@ -1915,7 +1919,7 @@ export default function ProfessionalTeamChat() {
           try {
             await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             setShowPermissionModal(false)
-            if (targetCallUser) {
+            if (targetCallUser && targetCallUser.name) {
               videoChat.startCall(targetCallUser.name)
               setTargetCallUser(null)
             } else {
