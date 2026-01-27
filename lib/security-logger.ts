@@ -35,7 +35,10 @@ export enum SecurityAction {
   RIGGING_LOFT_ACCESS = 'RIGGING_LOFT_ACCESS',
   USER_CREATED = 'USER_CREATED',
   USER_REACTIVATED = 'USER_REACTIVATED',
-  REGISTRATION_FAILED = 'REGISTRATION_FAILED'
+  REGISTRATION_FAILED = 'REGISTRATION_FAILED',
+  IP_BLOCKED = 'IP_BLOCKED',
+  BLOCKED_REQUEST = 'BLOCKED_REQUEST',
+  UNAUTHORIZED_PENTEST = 'UNAUTHORIZED_PENTEST'
 }
 
 export enum RiskLevel {
@@ -45,10 +48,64 @@ export enum RiskLevel {
   CRITICAL = 'CRITICAL'
 }
 
+// Actions that REQUIRE a valid userId - cannot be logged without one
+const ACTIONS_REQUIRING_USER_ID = [
+  SecurityAction.LOGIN_SUCCESS,
+  SecurityAction.LOGOUT,
+  SecurityAction.PASSWORD_CHANGE,
+  SecurityAction.EMAIL_CHANGE,
+  SecurityAction.ACCOUNT_LOCKED,
+  SecurityAction.ACCOUNT_UNLOCKED,
+  SecurityAction.DATA_ACCESS,
+  SecurityAction.DATA_MODIFICATION,
+  SecurityAction.DATA_DELETE,
+  SecurityAction.FILE_UPLOAD,
+  SecurityAction.FILE_DOWNLOAD,
+  SecurityAction.CAD_ACCESS,
+  SecurityAction.LMS_ACCESS,
+  SecurityAction.RIGGING_LOFT_ACCESS,
+  SecurityAction.USER_CREATED,
+  SecurityAction.USER_REACTIVATED
+]
+
 // Security Logger Class
 export class SecurityLogger {
   static async log(data: SecurityLogData): Promise<void> {
     try {
+      // SECURITY: Reject LOGIN_SUCCESS and other sensitive actions without valid userId
+      if (ACTIONS_REQUIRING_USER_ID.includes(data.action)) {
+        if (!data.userId || data.userId === 'anonymous' || data.userId.trim() === '') {
+          console.error(`🚨 SECURITY VIOLATION: Attempted to log ${data.action} without valid userId from IP ${data.ipAddress}`)
+
+          // Log this as suspicious activity instead
+          await prisma.securityLog.create({
+            data: {
+              userId: null,
+              action: SecurityAction.SUSPICIOUS_ACTIVITY,
+              resource: `invalid_${data.action.toLowerCase()}_attempt`,
+              ipAddress: data.ipAddress,
+              userAgent: data.userAgent,
+              success: false,
+              details: JSON.stringify({
+                originalAction: data.action,
+                originalDetails: data.details,
+                reason: 'Attempted to log authenticated action without valid userId',
+                timestamp: new Date().toISOString()
+              }),
+              riskLevel: RiskLevel.CRITICAL,
+              createdAt: new Date()
+            }
+          })
+
+          // Auto-block the IP if trying to fake login success
+          if (data.action === SecurityAction.LOGIN_SUCCESS) {
+            await this.blockIP(data.ipAddress, 'Attempted to log fake LOGIN_SUCCESS without userId', 24 * 60 * 60 * 1000) // 24 hour block
+          }
+
+          return // Don't log the original action
+        }
+      }
+
       await prisma.securityLog.create({
         data: {
           userId: data.userId,
@@ -69,6 +126,245 @@ export class SecurityLogger {
       }
     } catch (error) {
       console.error('Failed to log security event:', error)
+    }
+  }
+
+  // ==================== IP BLOCKING SYSTEM ====================
+
+  static async blockIP(
+    ipAddress: string,
+    reason: string,
+    durationMs?: number, // null = permanent
+    blockedBy?: string
+  ): Promise<boolean> {
+    try {
+      const expiresAt = durationMs ? new Date(Date.now() + durationMs) : null
+
+      await prisma.blockedIP.upsert({
+        where: { ipAddress },
+        update: {
+          reason,
+          blockedAt: new Date(),
+          blockedBy,
+          expiresAt,
+          isActive: true,
+          hitCount: { increment: 1 }
+        },
+        create: {
+          ipAddress,
+          reason,
+          blockedBy,
+          expiresAt,
+          isActive: true,
+          hitCount: 0
+        }
+      })
+
+      console.log(`🚫 IP BLOCKED: ${ipAddress} - Reason: ${reason}`)
+
+      // Log the block action
+      await prisma.securityLog.create({
+        data: {
+          userId: blockedBy,
+          action: SecurityAction.IP_BLOCKED,
+          resource: `ip:${ipAddress}`,
+          ipAddress,
+          userAgent: 'System',
+          success: true,
+          details: JSON.stringify({ reason, expiresAt, blockedBy }),
+          riskLevel: RiskLevel.HIGH,
+          createdAt: new Date()
+        }
+      })
+
+      return true
+    } catch (error) {
+      console.error('Failed to block IP:', error)
+      return false
+    }
+  }
+
+  static async unblockIP(ipAddress: string, unblockedBy?: string): Promise<boolean> {
+    try {
+      await prisma.blockedIP.update({
+        where: { ipAddress },
+        data: { isActive: false }
+      })
+
+      console.log(`✅ IP UNBLOCKED: ${ipAddress}`)
+      return true
+    } catch (error) {
+      console.error('Failed to unblock IP:', error)
+      return false
+    }
+  }
+
+  static async isIPBlocked(ipAddress: string): Promise<{ blocked: boolean; reason?: string }> {
+    try {
+      const blockedIP = await prisma.blockedIP.findUnique({
+        where: { ipAddress }
+      })
+
+      if (!blockedIP || !blockedIP.isActive) {
+        return { blocked: false }
+      }
+
+      // Check if block has expired
+      if (blockedIP.expiresAt && blockedIP.expiresAt < new Date()) {
+        // Auto-unblock expired entries
+        await prisma.blockedIP.update({
+          where: { ipAddress },
+          data: { isActive: false }
+        })
+        return { blocked: false }
+      }
+
+      // Update hit count
+      await prisma.blockedIP.update({
+        where: { ipAddress },
+        data: {
+          hitCount: { increment: 1 },
+          lastHitAt: new Date()
+        }
+      })
+
+      return { blocked: true, reason: blockedIP.reason }
+    } catch (error) {
+      console.error('Failed to check IP block status:', error)
+      return { blocked: false }
+    }
+  }
+
+  static async getBlockedIPs(): Promise<any[]> {
+    try {
+      return await prisma.blockedIP.findMany({
+        where: { isActive: true },
+        orderBy: { blockedAt: 'desc' }
+      })
+    } catch (error) {
+      console.error('Failed to get blocked IPs:', error)
+      return []
+    }
+  }
+
+  // ==================== SECURITY INCIDENT REPORTING ====================
+
+  static async createSecurityIncident(data: {
+    incidentType: string
+    ipAddresses: string[]
+    startTime: Date
+    endTime?: Date
+    description: string
+    evidence: any
+    severity?: string
+    createdBy?: string
+  }): Promise<string | null> {
+    try {
+      const incident = await prisma.securityIncident.create({
+        data: {
+          incidentType: data.incidentType,
+          ipAddresses: JSON.stringify(data.ipAddresses),
+          startTime: data.startTime,
+          endTime: data.endTime,
+          description: data.description,
+          evidence: JSON.stringify(data.evidence),
+          severity: data.severity || 'HIGH',
+          status: 'OPEN',
+          createdBy: data.createdBy
+        }
+      })
+
+      console.log(`📋 Security Incident Created: ${incident.id}`)
+      return incident.id
+    } catch (error) {
+      console.error('Failed to create security incident:', error)
+      return null
+    }
+  }
+
+  static async generateIncidentReport(incidentId: string): Promise<string | null> {
+    try {
+      const incident = await prisma.securityIncident.findUnique({
+        where: { id: incidentId }
+      })
+
+      if (!incident) return null
+
+      const ipAddresses = JSON.parse(incident.ipAddresses)
+      const evidence = JSON.parse(incident.evidence)
+
+      // Generate formal report for authorities
+      const report = `
+================================================================================
+                    UNAUTHORIZED CYBER SECURITY TESTING REPORT
+================================================================================
+
+INCIDENT REFERENCE: ${incident.id}
+DATE GENERATED: ${new Date().toISOString()}
+STATUS: ${incident.status}
+SEVERITY: ${incident.severity}
+
+--------------------------------------------------------------------------------
+                              INCIDENT DETAILS
+--------------------------------------------------------------------------------
+
+INCIDENT TYPE: ${incident.incidentType}
+START TIME: ${incident.startTime.toISOString()}
+END TIME: ${incident.endTime?.toISOString() || 'Ongoing'}
+
+DESCRIPTION:
+${incident.description}
+
+--------------------------------------------------------------------------------
+                           OFFENDING IP ADDRESSES
+--------------------------------------------------------------------------------
+
+${ipAddresses.map((ip: string, i: number) => `${i + 1}. ${ip}`).join('\n')}
+
+--------------------------------------------------------------------------------
+                              LEGAL NOTICE
+--------------------------------------------------------------------------------
+
+This report documents unauthorized access attempts and/or security testing
+conducted WITHOUT the explicit written permission of the system owner.
+
+Under the Computer Misuse Act 1990 (UK), unauthorized access to computer
+systems is a criminal offense punishable by:
+- Up to 2 years imprisonment for unauthorized access
+- Up to 10 years imprisonment for unauthorized access with intent to commit
+  further offenses
+- Up to 14 years imprisonment for unauthorized acts causing serious damage
+
+The system owner reserves the right to:
+1. Report this incident to law enforcement authorities
+2. Report to the Internet Service Provider (ISP) of the offending IP addresses
+3. Report to the UK Information Commissioner's Office (ICO)
+4. Pursue civil damages for any harm caused
+
+--------------------------------------------------------------------------------
+                              EVIDENCE SUMMARY
+--------------------------------------------------------------------------------
+
+${JSON.stringify(evidence, null, 2)}
+
+--------------------------------------------------------------------------------
+                           REPORTING STATUS
+--------------------------------------------------------------------------------
+
+Reported to ISP: ${incident.reportedToISP ? 'YES' : 'NO'}
+Reported to Police: ${incident.reportedToPolice ? 'YES' : 'NO'}
+Reported to ICO: ${incident.reportedToICO ? 'YES' : 'NO'}
+Legal Reference: ${incident.legalReference || 'N/A'}
+
+================================================================================
+                              END OF REPORT
+================================================================================
+`
+
+      return report
+    } catch (error) {
+      console.error('Failed to generate incident report:', error)
+      return null
     }
   }
 

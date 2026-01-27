@@ -7,29 +7,96 @@ const LOCAL_IP_RANGES = [
   /^10\./,                    // 10.0.0.0/8
   /^172\.(1[6-9]|2[0-9]|3[0-1])\./,  // 172.16.0.0/12
   /^192\.168\./,              // 192.168.0.0/16
-  
+
   // Loopback and localhost
   /^127\./,                   // 127.0.0.0/8 (loopback)
   /^::1$/,                    // IPv6 loopback
   /^localhost$/i,
-  
+
   // Link-local addresses
   /^169\.254\./,              // 169.254.0.0/16 (APIPA)
   /^fe80:/i,                  // IPv6 link-local
-  
+
   // Other special ranges
   /^0\.0\.0\.0$/,             // Unspecified
   /^255\.255\.255\.255$/,     // Broadcast
 ]
 
+// ==================== IN-MEMORY IP BLOCKLIST ====================
+// This is synced from the database periodically via API
+// Format: { ipAddress: { reason: string, expiresAt: number | null } }
+const blockedIPCache = new Map<string, { reason: string; expiresAt: number | null }>()
+
+// Track suspicious activity for auto-blocking
+const suspiciousActivityTracker = new Map<string, { count: number; firstSeen: number }>()
+
 // Rate limiting store (use Redis in production)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 
-// Clear rate limit store in development mode on startup
+// Clear stores in development mode on startup
 if (process.env.NODE_ENV === 'development') {
   rateLimitStore.clear()
-  console.log('🧹 Rate limit store cleared for development')
+  blockedIPCache.clear()
+  suspiciousActivityTracker.clear()
+  console.log('🧹 Security stores cleared for development')
 }
+
+// ==================== IP BLOCKLIST FUNCTIONS ====================
+
+export function addToBlocklist(ip: string, reason: string, expiresAt: number | null = null) {
+  blockedIPCache.set(ip, { reason, expiresAt })
+  console.log(`🚫 IP added to blocklist: ${ip} - ${reason}`)
+}
+
+export function removeFromBlocklist(ip: string) {
+  blockedIPCache.delete(ip)
+  console.log(`✅ IP removed from blocklist: ${ip}`)
+}
+
+export function isIPBlocked(ip: string): { blocked: boolean; reason?: string } {
+  const entry = blockedIPCache.get(ip)
+  if (!entry) return { blocked: false }
+
+  // Check if block has expired
+  if (entry.expiresAt && Date.now() > entry.expiresAt) {
+    blockedIPCache.delete(ip)
+    return { blocked: false }
+  }
+
+  return { blocked: true, reason: entry.reason }
+}
+
+export function getBlockedIPs(): string[] {
+  return Array.from(blockedIPCache.keys())
+}
+
+// Track suspicious activity and auto-block repeat offenders
+function trackSuspiciousActivity(ip: string, pathname: string): boolean {
+  const now = Date.now()
+  const windowMs = 5 * 60 * 1000 // 5 minute window
+  const maxAttempts = 10 // Block after 10 suspicious requests in 5 minutes
+
+  let tracker = suspiciousActivityTracker.get(ip)
+
+  if (!tracker || now - tracker.firstSeen > windowMs) {
+    tracker = { count: 1, firstSeen: now }
+  } else {
+    tracker.count++
+  }
+
+  suspiciousActivityTracker.set(ip, tracker)
+
+  // Auto-block if threshold exceeded
+  if (tracker.count >= maxAttempts) {
+    addToBlocklist(ip, `Auto-blocked: ${tracker.count} suspicious requests in 5 minutes`, now + 24 * 60 * 60 * 1000) // 24 hour block
+    suspiciousActivityTracker.delete(ip)
+    return true // IP was auto-blocked
+  }
+
+  return false
+}
+
+// ==================== HELPER FUNCTIONS ====================
 
 function isLocalIP(ip: string): boolean {
   if (!ip || ip === 'unknown') return true // Treat unknown as local for safety
@@ -47,7 +114,7 @@ function getClientIP(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for')
   const realIP = request.headers.get('x-real-ip')
   const cfConnectingIP = request.headers.get('cf-connecting-ip')
-  
+
   // Parse x-forwarded-for (can contain multiple IPs)
   if (forwarded) {
     const ips = forwarded.split(',').map(ip => ip.trim())
@@ -59,20 +126,22 @@ function getClientIP(request: NextRequest): string {
     }
     return ips[0] // Return first IP if all are local
   }
-  
+
   return realIP || cfConnectingIP || 'unknown'
 }
 
 function rateLimit(ip: string, limit: number = 1000, windowMs: number = 15 * 60 * 1000): boolean {
   const now = Date.now()
-  
-  // Clean old entries
-  for (const [key, data] of rateLimitStore.entries()) {
-    if (now > data.resetTime) {
-      rateLimitStore.delete(key)
+
+  // Clean old entries periodically
+  if (Math.random() < 0.01) { // 1% chance to clean on each request
+    for (const [key, data] of rateLimitStore.entries()) {
+      if (now > data.resetTime) {
+        rateLimitStore.delete(key)
+      }
     }
   }
-  
+
   // Get or create rate limit data for this IP
   let rateLimitData = rateLimitStore.get(ip)
   if (!rateLimitData || now > rateLimitData.resetTime) {
@@ -82,85 +151,51 @@ function rateLimit(ip: string, limit: number = 1000, windowMs: number = 15 * 60 
     }
     rateLimitStore.set(ip, rateLimitData)
   }
-  
+
   // Check if limit exceeded
   if (rateLimitData.count >= limit) {
     return false
   }
-  
+
   // Increment counter
   rateLimitData.count++
   rateLimitStore.set(ip, rateLimitData)
-  
+
   return true
 }
 
+// ==================== MAIN MIDDLEWARE ====================
+
 export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
-
-  // ============================================
-  // RATE LIMITING DISABLED - User request
-  // ============================================
-  // Just add basic security headers and pass through
-  const response = NextResponse.next()
-
-  // Basic security headers
-  response.headers.set('X-Content-Type-Options', 'nosniff')
-  response.headers.set('X-Frame-Options', 'DENY')
-  response.headers.set('X-XSS-Protection', '1; mode=block')
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-
-  // Check for obvious attack patterns (still block these)
-  const suspiciousPatterns = [
-    /\/cgi-bin\//i,            // CGI exploitation attempts
-    /luci/i,                   // OpenWrt router attacks
-    /;stok=/i,                 // Router token exploitation
-    /\.\./,                    // Path traversal
-    /\/etc\/passwd/,           // System file access
-    /\/wp-admin/i,             // WordPress admin attempts
-    /\/phpmyadmin/i,           // Database admin attempts
-    /\.php$/i,                 // PHP file access on non-PHP site
-    /\/shell/i,                // Shell access attempts
-    /<script/i,                // XSS attempts
-  ]
-
-  const isSuspicious = suspiciousPatterns.some(pattern =>
-    pattern.test(pathname) || pattern.test(request.url)
-  )
-
-  if (isSuspicious) {
-    // Return 404 for suspicious requests to not reveal information
-    return new NextResponse('Not Found', { status: 404 })
-  }
-
-  return response
-}
-
-// Old rate limiting code - DISABLED
-function _oldMiddleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const clientIP = getClientIP(request)
   const isLocal = isLocalIP(clientIP)
 
-  // Skip security scanning for local IPs
-  if (isLocal) {
-    console.log(`🏠 Local IP detected (${clientIP}), skipping security scan`)
-
-    // Still add basic security headers but no rate limiting
-    const response = NextResponse.next()
-
-    // Basic security headers (safe for local development)
-    response.headers.set('X-Content-Type-Options', 'nosniff')
-    response.headers.set('X-Frame-Options', 'DENY')
-    response.headers.set('X-XSS-Protection', '1; mode=block')
-
-    return response
+  // ==================== CHECK IP BLOCKLIST ====================
+  if (!isLocal) {
+    const blockStatus = isIPBlocked(clientIP)
+    if (blockStatus.blocked) {
+      console.log(`🚫 BLOCKED REQUEST from ${clientIP}: ${blockStatus.reason}`)
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Access Denied',
+          message: 'Your IP address has been blocked due to suspicious activity.',
+          reason: blockStatus.reason,
+          contact: 'If you believe this is an error, contact support.'
+        }),
+        {
+          status: 403,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Blocked-IP': clientIP,
+            'X-Block-Reason': blockStatus.reason || 'Suspicious activity'
+          }
+        }
+      )
+    }
   }
 
-  // Apply full security scanning for remote IPs only
-  console.log(`🌐 Remote IP detected (${clientIP}), applying security scan`)
-
-  // Check for suspicious patterns in URL
+  // ==================== SUSPICIOUS PATTERN DETECTION ====================
   const suspiciousPatterns = [
     /\/cgi-bin\//i,            // CGI exploitation attempts
     /luci/i,                   // OpenWrt router attacks
@@ -172,66 +207,101 @@ function _oldMiddleware(request: NextRequest) {
     /\.php$/i,                 // PHP file access on non-PHP site
     /\/shell/i,                // Shell access attempts
     /<script/i,                // XSS attempts
+    /\/\.env/i,                // Environment file access
+    /\/\.git/i,                // Git directory access
+    /\/config\./i,             // Config file access
+    /\/backup/i,               // Backup file access
+    /\/admin\.php/i,           // Admin PHP access
+    /\/xmlrpc/i,               // XML-RPC attacks
+    /\/wp-content/i,           // WordPress content
+    /\/wp-includes/i,          // WordPress includes
+    /union.*select/i,          // SQL injection
+    /select.*from/i,           // SQL injection
+    /insert.*into/i,           // SQL injection
+    /drop.*table/i,            // SQL injection
+    /exec\(/i,                 // Command execution
+    /eval\(/i,                 // Code evaluation
   ]
 
   const isSuspicious = suspiciousPatterns.some(pattern =>
     pattern.test(pathname) || pattern.test(request.url)
   )
 
-  if (isSuspicious) {
-    console.log(`🚨 SUSPICIOUS REQUEST DETECTED from ${clientIP}: ${pathname}`)
+  if (isSuspicious && !isLocal) {
+    console.log(`🚨 SUSPICIOUS REQUEST from ${clientIP}: ${pathname}`)
 
-    // Log suspicious activity (you can implement this)
-    // await logSuspiciousActivity(clientIP, pathname, request)
+    // Track and potentially auto-block
+    const wasBlocked = trackSuspiciousActivity(clientIP, pathname)
+
+    if (wasBlocked) {
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Access Denied',
+          message: 'Your IP has been blocked due to repeated suspicious activity.',
+          warning: 'Unauthorized security testing is illegal under the Computer Misuse Act 1990.'
+        }),
+        {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+    }
 
     // Return 404 for suspicious requests to not reveal information
     return new NextResponse('Not Found', { status: 404 })
   }
 
-  // Apply stricter rate limiting to auth routes for remote IPs
-  if (pathname.startsWith('/api/auth/')) {
-    if (!rateLimit(clientIP, 200, 15 * 60 * 1000)) { // 200 requests per 15 minutes (was 50)
-      console.log(`🚫 Rate limit exceeded for remote IP: ${clientIP}`)
-      return new NextResponse(
-        JSON.stringify({
-          error: 'Authentication rate limit exceeded',
-          message: 'Too many authentication attempts from your IP address'
-        }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Retry-After': '900' // 15 minutes
+  // ==================== RATE LIMITING FOR REMOTE IPS ====================
+  if (!isLocal) {
+    // Stricter rate limiting for auth routes
+    if (pathname.startsWith('/api/auth/')) {
+      if (!rateLimit(clientIP, 50, 15 * 60 * 1000)) { // 50 auth requests per 15 minutes
+        console.log(`🚫 Auth rate limit exceeded for ${clientIP}`)
+
+        // Auto-block after rate limit exceeded
+        addToBlocklist(clientIP, 'Rate limit exceeded on auth endpoints', Date.now() + 60 * 60 * 1000) // 1 hour block
+
+        return new NextResponse(
+          JSON.stringify({
+            error: 'Rate Limit Exceeded',
+            message: 'Too many authentication attempts. Your IP has been temporarily blocked.',
+            retryAfter: 3600
+          }),
+          {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              'Retry-After': '3600'
+            }
           }
-        }
-      )
+        )
+      }
+    }
+
+    // General API rate limiting
+    if (pathname.startsWith('/api/')) {
+      if (!rateLimit(clientIP, 200, 15 * 60 * 1000)) { // 200 API requests per 15 minutes
+        console.log(`🚫 API rate limit exceeded for ${clientIP}`)
+        return new NextResponse(
+          JSON.stringify({
+            error: 'Rate Limit Exceeded',
+            message: 'Too many requests from your IP address.'
+          }),
+          {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              'Retry-After': '900'
+            }
+          }
+        )
+      }
     }
   }
 
-  // Apply general rate limiting to API routes for remote IPs
-  if (pathname.startsWith('/api/')) {
-    if (!rateLimit(clientIP, 500, 15 * 60 * 1000)) { // 500 requests per 15 minutes (was 100)
-      console.log(`🚫 API rate limit exceeded for remote IP: ${clientIP}`)
-      return new NextResponse(
-        JSON.stringify({ 
-          error: 'API rate limit exceeded',
-          message: 'Too many requests from your IP address'
-        }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Retry-After': '900'
-          }
-        }
-      )
-    }
-  }
-  
-  // Add comprehensive security headers for remote IPs
+  // ==================== SECURITY HEADERS ====================
   const response = NextResponse.next()
-  
-  // Security headers for remote access
+
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-XSS-Protection', '1; mode=block')
@@ -239,13 +309,12 @@ function _oldMiddleware(request: NextRequest) {
   response.headers.set('X-DNS-Prefetch-Control', 'off')
   response.headers.set('X-Download-Options', 'noopen')
   response.headers.set('X-Permitted-Cross-Domain-Policies', 'none')
-  
-  // Add IP info to response headers for debugging (development only)
-  if (process.env.NODE_ENV === 'development') {
+
+  // Add client IP to headers for logging (production only)
+  if (process.env.NODE_ENV === 'production' && !isLocal) {
     response.headers.set('X-Client-IP', clientIP)
-    response.headers.set('X-Is-Local', isLocal.toString())
   }
-  
+
   return response
 }
 
