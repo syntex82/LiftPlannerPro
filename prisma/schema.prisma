@@ -1162,47 +1162,4 @@ enum ActivityType {
   SHARED_FILE
 }
 
-// Blocked IP addresses for security
-model BlockedIP {
-  id          String   @id @default(cuid())
-  ipAddress   String   @unique
-  reason      String
-  blockedAt   DateTime @default(now())
-  blockedBy   String?  // Admin user ID who blocked
-  expiresAt   DateTime? // null = permanent block
-  isActive    Boolean  @default(true)
-  hitCount    Int      @default(0) // Number of blocked requests
-  lastHitAt   DateTime?
-  details     String?  // JSON with additional info
 
-  // For legal reporting
-  reportGenerated Boolean @default(false)
-  reportedToAuthorities Boolean @default(false)
-
-  @@map("blocked_ips")
-}
-
-// Security Incident Reports for unauthorized testing
-model SecurityIncident {
-  id              String   @id @default(cuid())
-  incidentType    String   // UNAUTHORIZED_PENTEST, BRUTE_FORCE, SQL_INJECTION, etc.
-  ipAddresses     String   // JSON array of IPs involved
-  startTime       DateTime
-  endTime         DateTime?
-  description     String
-  evidence        String   // JSON with log entries, request details
-  severity        String   @default("HIGH") // LOW, MEDIUM, HIGH, CRITICAL
-  status          String   @default("OPEN") // OPEN, INVESTIGATING, REPORTED, CLOSED
-
-  // Legal reporting
-  reportedToISP   Boolean  @default(false)
-  reportedToPolice Boolean @default(false)
-  reportedToICO   Boolean  @default(false) // UK Information Commissioner's Office
-  legalReference  String?  // Case reference number
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  createdBy       String?  // Admin who created the report
-
-  @@map("security_incidents")
-}

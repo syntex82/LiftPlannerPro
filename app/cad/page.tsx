@@ -1731,6 +1731,7 @@ function CADEditorContent() {
   }
 
   // Export clean drawing without UI elements
+  // PROFESSIONAL CAD EXPORT - High quality print-ready output
   const exportCleanDrawing = async (format: 'png' | 'pdf' | 'svg' = 'png') => {
     const canvas = canvasRef.current
     if (!canvas) {
@@ -1744,36 +1745,55 @@ function CADEditorContent() {
     }
 
     try {
-      console.log('Starting export with', elements.length, 'elements')
+      // ============ CONFIGURATION ============
+      const DPI = 300 // Print quality resolution
+      const PAPER_WIDTH_MM = 297 // A4 Landscape
+      const PAPER_HEIGHT_MM = 210
+      const BORDER_MM = 10
+      const TITLE_BLOCK_HEIGHT_MM = 25
 
-      // Create a new canvas for clean export
+      // Convert mm to pixels at 300 DPI
+      const mmToPx = (mm: number) => Math.round((mm / 25.4) * DPI)
+
+      const canvasWidth = mmToPx(PAPER_WIDTH_MM)
+      const canvasHeight = mmToPx(PAPER_HEIGHT_MM)
+      const borderPx = mmToPx(BORDER_MM)
+      const titleBlockHeight = mmToPx(TITLE_BLOCK_HEIGHT_MM)
+
+      // Line weight multiplier for print (thicker lines look better on paper)
+      const LINE_WEIGHT_MULTIPLIER = 3
+
+      // Create high-resolution export canvas
       const exportCanvas = document.createElement('canvas')
-      const exportCtx = exportCanvas.getContext('2d')
-      if (!exportCtx) {
+      const ctx = exportCanvas.getContext('2d')
+      if (!ctx) {
         alert('Failed to create export canvas.')
         return
       }
 
-      // Set export canvas size (A4 proportions)
-      const exportWidth = 1200
-      const exportHeight = 800
-      exportCanvas.width = exportWidth
-      exportCanvas.height = exportHeight
+      exportCanvas.width = canvasWidth
+      exportCanvas.height = canvasHeight
 
-      // Clear export canvas with white background
-      exportCtx.fillStyle = '#ffffff'
-      exportCtx.fillRect(0, 0, exportWidth, exportHeight)
+      // ============ WHITE BACKGROUND ============
+      ctx.fillStyle = '#FFFFFF'
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
-      // Calculate bounding box of all visible elements
+      // ============ DRAWING BORDER (Double line) ============
+      ctx.strokeStyle = '#000000'
+      ctx.lineWidth = 4
+      ctx.strokeRect(borderPx, borderPx, canvasWidth - borderPx * 2, canvasHeight - borderPx * 2)
+      ctx.lineWidth = 2
+      ctx.strokeRect(borderPx + 8, borderPx + 8, canvasWidth - borderPx * 2 - 16, canvasHeight - borderPx * 2 - 16)
+
+      // ============ CALCULATE DRAWING BOUNDS ============
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
       let hasVisibleElements = false
 
       elements.forEach(element => {
-        // Check if element is on a visible layer
         const layer = layers.find(l => l.id === element.layer)
         if (!layer || !layer.visible) return
-
         hasVisibleElements = true
+
         element.points.forEach(point => {
           minX = Math.min(minX, point.x)
           minY = Math.min(minY, point.y)
@@ -1781,86 +1801,140 @@ function CADEditorContent() {
           maxY = Math.max(maxY, point.y)
         })
 
-        // Include element-specific dimensions
-        if (element.type === 'table') {
-          const width = (element.columns || 1) * (element.cellWidth || 100)
-          const height = (element.rows || 1) * (element.cellHeight || 30)
-          maxX = Math.max(maxX, element.points[0].x + width)
-          maxY = Math.max(maxY, element.points[0].y + height)
+        // Include special element dimensions
+        if (element.type === 'circle' && element.radius) {
+          const center = element.points[0]
+          minX = Math.min(minX, center.x - element.radius)
+          minY = Math.min(minY, center.y - element.radius)
+          maxX = Math.max(maxX, center.x + element.radius)
+          maxY = Math.max(maxY, center.y + element.radius)
         }
-        if (element.type === 'logo') {
-          maxX = Math.max(maxX, element.points[0].x + (element.logoWidth || 100))
-          maxY = Math.max(maxY, element.points[0].y + (element.logoHeight || 50))
+        if (element.type === 'table') {
+          const w = (element.columns || 1) * (element.cellWidth || 100)
+          const h = (element.rows || 1) * (element.cellHeight || 30)
+          maxX = Math.max(maxX, element.points[0].x + w)
+          maxY = Math.max(maxY, element.points[0].y + h)
         }
       })
 
       if (!hasVisibleElements) {
-        alert('No visible elements to export. Please check layer visibility.')
+        alert('No visible elements to export.')
         return
       }
 
-      console.log('Bounding box:', { minX, minY, maxX, maxY })
+      // ============ CALCULATE SCALE TO FIT ============
+      const drawAreaWidth = canvasWidth - borderPx * 2 - 40
+      const drawAreaHeight = canvasHeight - borderPx * 2 - titleBlockHeight - 60
+      const contentWidth = maxX - minX || 100
+      const contentHeight = maxY - minY || 100
 
-      // Add padding
-      const padding = 50
-      const drawingWidth = maxX - minX + padding * 2
-      const drawingHeight = maxY - minY + padding * 2
+      const scaleX = drawAreaWidth / contentWidth
+      const scaleY = drawAreaHeight / contentHeight
+      const exportScale = Math.min(scaleX, scaleY) * 0.85 // 85% to leave margin
 
-      // Calculate scale to fit drawing in export canvas
-      const scaleX = (exportWidth - 100) / drawingWidth
-      const scaleY = (exportHeight - 100) / drawingHeight
-      const exportScale = Math.min(scaleX, scaleY, 1) // Don't scale up
+      // Center the drawing in the drawing area
+      const scaledWidth = contentWidth * exportScale
+      const scaledHeight = contentHeight * exportScale
+      const offsetX = borderPx + 20 + (drawAreaWidth - scaledWidth) / 2 - minX * exportScale
+      const offsetY = borderPx + 20 + (drawAreaHeight - scaledHeight) / 2 - minY * exportScale
 
-      // Center the drawing
-      const offsetX = (exportWidth - drawingWidth * exportScale) / 2 - (minX - padding) * exportScale
-      const offsetY = (exportHeight - drawingHeight * exportScale) / 2 - (minY - padding) * exportScale
+      // ============ DRAW ALL ELEMENTS WITH THICKER LINES ============
+      ctx.save()
+      ctx.translate(offsetX, offsetY)
+      ctx.scale(exportScale, exportScale)
 
-      console.log('Export scale:', exportScale, 'Offset:', { offsetX, offsetY })
-
-      // Apply transformations
-      exportCtx.save()
-      exportCtx.translate(offsetX, offsetY)
-      exportCtx.scale(exportScale, exportScale)
-
-      // Draw all visible elements
-      let drawnElements = 0
       elements.forEach(element => {
         const layer = layers.find(l => l.id === element.layer)
-        if (layer && layer.visible) {
-          drawElement(exportCtx, element)
-          drawnElements++
+        if (!layer || !layer.visible) return
+
+        // Create a modified element with thicker lines for print
+        const printElement = {
+          ...element,
+          style: {
+            ...element.style,
+            strokeWidth: (element.style?.strokeWidth || 1) * LINE_WEIGHT_MULTIPLIER
+          }
         }
+        drawElement(ctx, printElement)
       })
+      ctx.restore()
 
-      exportCtx.restore()
+      // ============ TITLE BLOCK ============
+      const tbX = borderPx + 20
+      const tbY = canvasHeight - borderPx - titleBlockHeight - 20
+      const tbWidth = canvasWidth - borderPx * 2 - 40
+      const tbHeight = titleBlockHeight
 
-      console.log('Drew', drawnElements, 'elements to export canvas')
+      // Title block border
+      ctx.strokeStyle = '#000000'
+      ctx.lineWidth = 3
+      ctx.strokeRect(tbX, tbY, tbWidth, tbHeight)
 
-      // Add title block and scale info
-      exportCtx.fillStyle = '#000000'
-      exportCtx.font = 'bold 16px Arial'
-      exportCtx.fillText(projectName || 'CAD Drawing', 20, 30)
-      exportCtx.font = '14px Arial'
-      exportCtx.fillText(`Scale: ${drawingScale || '1:1'}`, exportWidth - 150, exportHeight - 50)
-      exportCtx.fillText(`Units: ${drawingUnits || 'mm'}`, exportWidth - 150, exportHeight - 30)
-      exportCtx.fillText(`Date: ${new Date().toLocaleDateString()}`, exportWidth - 150, exportHeight - 10)
+      // Vertical dividers
+      const col1 = tbX + tbWidth * 0.4
+      const col2 = tbX + tbWidth * 0.6
+      const col3 = tbX + tbWidth * 0.8
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.moveTo(col1, tbY)
+      ctx.lineTo(col1, tbY + tbHeight)
+      ctx.moveTo(col2, tbY)
+      ctx.lineTo(col2, tbY + tbHeight)
+      ctx.moveTo(col3, tbY)
+      ctx.lineTo(col3, tbY + tbHeight)
+      ctx.stroke()
 
-      // Export based on format
+      // Title block text
+      ctx.fillStyle = '#000000'
+      const fontSize = Math.round(tbHeight * 0.25)
+      const smallFont = Math.round(tbHeight * 0.18)
+
+      // Project Title (large)
+      ctx.font = `bold ${fontSize}px Arial`
+      ctx.fillText(projectName || 'UNTITLED DRAWING', tbX + 15, tbY + tbHeight * 0.45)
+
+      // Project info (smaller)
+      ctx.font = `${smallFont}px Arial`
+      ctx.fillText(`Project: ${projectInfo?.projectNumber || 'N/A'}`, tbX + 15, tbY + tbHeight * 0.8)
+
+      // Scale
+      ctx.font = `bold ${smallFont}px Arial`
+      ctx.fillText('SCALE', col1 + 10, tbY + tbHeight * 0.35)
+      ctx.font = `${fontSize}px Arial`
+      ctx.fillText(drawingScale || '1:1', col1 + 10, tbY + tbHeight * 0.75)
+
+      // Date
+      ctx.font = `bold ${smallFont}px Arial`
+      ctx.fillText('DATE', col2 + 10, tbY + tbHeight * 0.35)
+      ctx.font = `${fontSize}px Arial`
+      ctx.fillText(new Date().toLocaleDateString('en-GB'), col2 + 10, tbY + tbHeight * 0.75)
+
+      // Revision & Sheet
+      ctx.font = `bold ${smallFont}px Arial`
+      ctx.fillText('REV', col3 + 10, tbY + tbHeight * 0.35)
+      ctx.font = `${fontSize}px Arial`
+      ctx.fillText(projectInfo?.revision || 'A', col3 + 10, tbY + tbHeight * 0.75)
+      ctx.font = `${smallFont}px Arial`
+      ctx.fillText(`Sheet: ${projectInfo?.sheet || '1 of 1'}`, col3 + 80, tbY + tbHeight * 0.75)
+
+      // ============ EXPORT ============
       if (format === 'png') {
         const link = document.createElement('a')
-        link.download = `${(projectName || 'drawing').replace(/\s+/g, '_')}-${Date.now()}.png`
+        link.download = `${(projectName || 'Drawing').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.png`
         link.href = exportCanvas.toDataURL('image/png', 1.0)
         link.click()
-        console.log('PNG export completed')
-        alert('✅ PNG export completed successfully!')
+        alert('✅ PNG exported at 300 DPI - ready for printing!')
       } else if (format === 'pdf') {
         const { jsPDF } = await import('jspdf')
         const imgData = exportCanvas.toDataURL('image/png', 1.0)
-        const pdf = new jsPDF('landscape', 'mm', 'a4')
-        pdf.addImage(imgData, 'PNG', 10, 10, 277, 185)
-        pdf.save(`${(projectName || 'drawing').replace(/\s+/g, '_')}-${Date.now()}.pdf`)
-        console.log('PDF export completed')
-        alert('✅ PDF export completed successfully!')
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4'
+        })
+        pdf.addImage(imgData, 'PNG', 0, 0, PAPER_WIDTH_MM, PAPER_HEIGHT_MM)
+        pdf.save(`${(projectName || 'Drawing').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`)
+        alert('✅ PDF exported - ready for printing!')
       }
 
     } catch (error) {
