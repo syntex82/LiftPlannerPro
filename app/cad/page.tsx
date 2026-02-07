@@ -5197,13 +5197,13 @@ function CADEditorContent() {
       return
     }
 
-    // Handle dragging images/logos when selected (even if tool is not 'move')
+    // Handle dragging images/logos/blocks when selected (even if tool is not 'move')
     if (movingElement && moveStartPos && isDrawing && !isResizing) {
       const deltaX = point.x - moveStartPos.x
       const deltaY = point.y - moveStartPos.y
 
       const updatedElements = elements.map(element => {
-        if (element.id === movingElement && (element.type === 'image' || element.type === 'logo')) {
+        if (element.id === movingElement && (element.type === 'image' || element.type === 'logo' || element.type === 'block')) {
           const newPoints = element.points.map(p => ({
             x: p.x + deltaX,
             y: p.y + deltaY
@@ -6365,6 +6365,15 @@ function CADEditorContent() {
 
     // Handle move tool completion
     if (tool === 'move' && movingElement && isDrawing) {
+      setIsDrawing(false)
+      setMovingElement(null)
+      setMoveStartPos(null)
+      addToHistory(elements)
+      return
+    }
+
+    // Handle select tool with moving element (blocks can be dragged in select mode)
+    if (tool === 'select' && movingElement && isDrawing) {
       setIsDrawing(false)
       setMovingElement(null)
       setMoveStartPos(null)
