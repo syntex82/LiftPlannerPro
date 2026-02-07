@@ -226,6 +226,21 @@ interface DrawingElement {
   assembledCraneData?: AssembledCrane
   // Dimension type (pixels vs meters)
   isDimensionPixels?: boolean
+  // Chain block properties
+  chainBlockConfig?: {
+    capacity: number
+    chainLength: number
+    liftHeight: number
+    chainAngle: number
+    bodyRotation: number
+    showLoadChain: boolean
+    showHandChain: boolean
+    showHook: boolean
+    showCapacityLabel: boolean
+    scale: number
+    lineWeight: number
+    color: string
+  }
 }
 
 function CADEditorContent() {
