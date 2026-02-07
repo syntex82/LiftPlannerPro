@@ -61,9 +61,15 @@ export function drawChainBlock(
   const color = config.color ?? '#000000'
 
   const bodyScale = getScale(capacity) * scale
+  const rotation = config.rotation ?? 0
 
   ctx.save()
   ctx.translate(x, y)
+
+  // Apply rotation (convert degrees to radians)
+  if (rotation !== 0) {
+    ctx.rotate((rotation * Math.PI) / 180)
+  }
 
   ctx.strokeStyle = color
   ctx.fillStyle = color

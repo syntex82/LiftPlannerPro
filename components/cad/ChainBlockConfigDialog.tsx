@@ -183,15 +183,26 @@ export default function ChainBlockConfigDialog({ isOpen, onClose, onInsert, edit
             </div>
           </div>
 
-          {/* Scale */}
-          <div>
-            <Label className="text-slate-300 text-sm">Scale: {config.scale.toFixed(1)}x</Label>
-            <Slider
-              value={[config.scale]}
-              onValueChange={([v]) => setConfig({ ...config, scale: v })}
-              min={0.5} max={3} step={0.1}
-              className="mt-2"
-            />
+          {/* Scale and Line Weight */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-slate-300 text-sm">Scale: {config.scale.toFixed(1)}x</Label>
+              <Slider
+                value={[config.scale]}
+                onValueChange={([v]) => setConfig({ ...config, scale: v })}
+                min={0.5} max={3} step={0.1}
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label className="text-slate-300 text-sm">Line Weight: {config.lineWeight}</Label>
+              <Slider
+                value={[config.lineWeight]}
+                onValueChange={([v]) => setConfig({ ...config, lineWeight: v })}
+                min={1} max={5} step={1}
+                className="mt-2"
+              />
+            </div>
           </div>
 
           {/* Insert/Update Button */}
