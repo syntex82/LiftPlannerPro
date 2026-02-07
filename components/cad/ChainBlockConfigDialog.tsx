@@ -51,8 +51,10 @@ export default function ChainBlockConfigDialog({ isOpen, onClose, onInsert, edit
     ctx.fillStyle = '#1e293b'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    // Draw chain block preview
-    drawChainBlock(ctx, canvas.width / 2, 80, config)
+    // Draw chain block preview - center it better for rotation
+    // Calculate approximate center based on chain block size
+    const centerY = canvas.height / 2 - (config.liftHeight * 20)
+    drawChainBlock(ctx, canvas.width / 2, Math.max(60, centerY), config)
   }, [config])
 
   if (!isOpen) return null
@@ -89,7 +91,7 @@ export default function ChainBlockConfigDialog({ isOpen, onClose, onInsert, edit
         <CardContent className="p-4 space-y-4">
           {/* Preview */}
           <div className="flex justify-center">
-            <canvas ref={canvasRef} width={300} height={280} className="rounded border border-slate-600" />
+            <canvas ref={canvasRef} width={350} height={350} className="rounded border border-slate-600" />
           </div>
 
           {/* Presets */}
