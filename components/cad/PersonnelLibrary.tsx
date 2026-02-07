@@ -53,28 +53,34 @@ const personnelToDrawingElement = (block: PersonnelBlock, position: Point): Draw
     })
   })
 
-  // Convert circles (heads)
+  // Convert circles (heads) - need 2 points: center and edge point
   block.circles?.forEach((circle, idx) => {
+    const cx = circle[0], cy = circle[1], r = circle[2]
     blockElements.push({
       id: `${block.id}-circle-${idx}`,
       type: 'circle',
-      points: [{ x: circle[0], y: circle[1] }],
-      radius: circle[2],
+      points: [
+        { x: cx, y: cy },           // center
+        { x: cx + r, y: cy }        // edge point (right side)
+      ],
       style: { stroke: '#000000', strokeWidth: 2 },
       layer: 'layer1'
-    } as DrawingElement & { radius: number })
+    })
   })
 
   // Convert ellipses (hard hat domes) - render as circles with average radius
   block.ellipses?.forEach((ellipse, idx) => {
+    const cx = ellipse[0], cy = ellipse[1], r = (ellipse[2] + ellipse[3]) / 2
     blockElements.push({
       id: `${block.id}-ellipse-${idx}`,
       type: 'circle',
-      points: [{ x: ellipse[0], y: ellipse[1] }],
-      radius: (ellipse[2] + ellipse[3]) / 2, // Average of rx and ry
+      points: [
+        { x: cx, y: cy },           // center
+        { x: cx + r, y: cy }        // edge point
+      ],
       style: { stroke: '#000000', strokeWidth: 2 },
       layer: 'layer1'
-    } as DrawingElement & { radius: number })
+    })
   })
 
   // Convert rectangles - render as 4 lines
