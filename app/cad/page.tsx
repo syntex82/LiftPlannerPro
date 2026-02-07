@@ -4139,8 +4139,14 @@ function CADEditorContent() {
           drawCrane(ctx, element)
         } else if (element.chainBlockConfig && element.points.length >= 1) {
           // Render chain block
-          const pos = element.points[0]
-          drawChainBlock(ctx, pos.x, pos.y, element.chainBlockConfig)
+          try {
+            const pos = element.points[0]
+            if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+              drawChainBlock(ctx, pos.x, pos.y, element.chainBlockConfig)
+            }
+          } catch (e) {
+            console.error('Error rendering chain block:', e)
+          }
         } else if (element.blockElements && element.points.length >= 1) {
           const insertPoint = element.points[0]
           const scale = element.blockScale || 1

@@ -47,8 +47,18 @@ export function drawChainBlock(
   y: number,
   config: ChainBlockConfig
 ) {
-  const { capacity, liftHeight, showLoadChain, showHandChain,
-          showHook, showCapacityLabel, scale, lineWeight, color } = config
+  // Safety checks for missing/undefined config values
+  if (!config || !ctx) return
+
+  const capacity = config.capacity ?? 2
+  const liftHeight = config.liftHeight ?? 1.5
+  const showLoadChain = config.showLoadChain ?? true
+  const showHandChain = config.showHandChain ?? true
+  const showHook = config.showHook ?? true
+  const showCapacityLabel = config.showCapacityLabel ?? true
+  const scale = config.scale ?? 1
+  const lineWeight = config.lineWeight ?? 1
+  const color = config.color ?? '#000000'
 
   const bodyScale = getScale(capacity) * scale
 
