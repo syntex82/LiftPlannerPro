@@ -5524,23 +5524,28 @@ function CADEditorContent() {
           return element.id
         }
       } else if (element.type === 'block' && element.points.length >= 1) {
-        // Handle block elements (including cranes and chain blocks)
+        // Handle block elements (cranes, chain blocks, personnel)
         const blockCenter = element.points[0]
-        let blockWidth = 100  // Default block size
-        let blockHeight = 60
+        let blockWidth = 100
+        let blockHeight = 100
 
-        // If it's a crane, use much larger detection area
+        // Crane - large detection area
         if (element.craneData) {
           blockWidth = 800
           blockHeight = 600
         }
-
-        // If it's a chain block, calculate detection area based on config
-        if (element.chainBlockConfig) {
+        // Chain block - based on config
+        else if (element.chainBlockConfig) {
           const cfg = element.chainBlockConfig
           const s = cfg.scale || 1
           blockWidth = 150 * s
           blockHeight = (150 + cfg.liftHeight * 50) * s
+        }
+        // Personnel block - based on blockElements bounds
+        else if (element.blockElements && element.blockElements.length > 0) {
+          const scale = element.blockScale || 1
+          blockWidth = 200 * scale
+          blockHeight = 200 * scale
         }
 
         // Check if point is within block bounds
@@ -5548,7 +5553,7 @@ function CADEditorContent() {
             point.x <= blockCenter.x + blockWidth/2 &&
             point.y >= blockCenter.y - blockHeight/2 &&
             point.y <= blockCenter.y + blockHeight/2) {
-          console.log('Found block/crane/chainblock:', element.id)
+          console.log('Found block:', element.id)
           addDebugLog(`✅ Found block (ID: ${element.id})`, 'success')
           return element.id
         }
