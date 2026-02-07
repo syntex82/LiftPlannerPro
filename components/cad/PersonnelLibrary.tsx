@@ -38,7 +38,7 @@ interface PersonnelLibraryProps {
 // Convert PersonnelBlock to DrawingElement
 const personnelToDrawingElement = (block: PersonnelBlock, position: Point): DrawingElement => {
   const blockElements: DrawingElement[] = []
-  
+
   // Convert lines
   block.lines.forEach((line, idx) => {
     blockElements.push({
@@ -52,7 +52,7 @@ const personnelToDrawingElement = (block: PersonnelBlock, position: Point): Draw
       layer: 'layer1'
     })
   })
-  
+
   // Convert circles (heads)
   block.circles?.forEach((circle, idx) => {
     blockElements.push({
@@ -64,7 +64,56 @@ const personnelToDrawingElement = (block: PersonnelBlock, position: Point): Draw
       layer: 'layer1'
     } as DrawingElement & { radius: number })
   })
-  
+
+  // Convert ellipses (hard hat domes) - render as circles with average radius
+  block.ellipses?.forEach((ellipse, idx) => {
+    blockElements.push({
+      id: `${block.id}-ellipse-${idx}`,
+      type: 'circle',
+      points: [{ x: ellipse[0], y: ellipse[1] }],
+      radius: (ellipse[2] + ellipse[3]) / 2, // Average of rx and ry
+      style: { stroke: '#000000', strokeWidth: 2 },
+      layer: 'layer1'
+    } as DrawingElement & { radius: number })
+  })
+
+  // Convert rectangles - render as 4 lines
+  block.rects?.forEach((rect, idx) => {
+    const x = rect[0], y = rect[1], w = rect[2], h = rect[3]
+    // Top
+    blockElements.push({
+      id: `${block.id}-rect-${idx}-top`,
+      type: 'line',
+      points: [{ x, y }, { x: x + w, y }],
+      style: { stroke: '#000000', strokeWidth: 2 },
+      layer: 'layer1'
+    })
+    // Right
+    blockElements.push({
+      id: `${block.id}-rect-${idx}-right`,
+      type: 'line',
+      points: [{ x: x + w, y }, { x: x + w, y: y + h }],
+      style: { stroke: '#000000', strokeWidth: 2 },
+      layer: 'layer1'
+    })
+    // Bottom
+    blockElements.push({
+      id: `${block.id}-rect-${idx}-bottom`,
+      type: 'line',
+      points: [{ x: x + w, y: y + h }, { x, y: y + h }],
+      style: { stroke: '#000000', strokeWidth: 2 },
+      layer: 'layer1'
+    })
+    // Left
+    blockElements.push({
+      id: `${block.id}-rect-${idx}-left`,
+      type: 'line',
+      points: [{ x, y: y + h }, { x, y }],
+      style: { stroke: '#000000', strokeWidth: 2 },
+      layer: 'layer1'
+    })
+  })
+
   return {
     id: `${block.id}-${Date.now()}`,
     type: 'block',
@@ -80,47 +129,88 @@ const personnelToDrawingElement = (block: PersonnelBlock, position: Point): Draw
 // Preview canvas component
 function BlockPreview({ block }: { block: PersonnelBlock }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    
-    // Clear
+
+    // Clear with dark background
     ctx.fillStyle = '#1e293b'
-    ctx.fillRect(0, 0, 80, 80)
-    
-    // Center and scale
+    ctx.fillRect(0, 0, 100, 100)
+
+    // Calculate bounds for auto-scaling
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+
+    block.lines.forEach(line => {
+      minX = Math.min(minX, line[0], line[2])
+      maxX = Math.max(maxX, line[0], line[2])
+      minY = Math.min(minY, line[1], line[3])
+      maxY = Math.max(maxY, line[1], line[3])
+    })
+
+    block.circles?.forEach(circle => {
+      minX = Math.min(minX, circle[0] - circle[2])
+      maxX = Math.max(maxX, circle[0] + circle[2])
+      minY = Math.min(minY, circle[1] - circle[2])
+      maxY = Math.max(maxY, circle[1] + circle[2])
+    })
+
+    block.ellipses?.forEach(ellipse => {
+      minX = Math.min(minX, ellipse[0] - ellipse[2])
+      maxX = Math.max(maxX, ellipse[0] + ellipse[2])
+      minY = Math.min(minY, ellipse[1] - ellipse[3])
+      maxY = Math.max(maxY, ellipse[1] + ellipse[3])
+    })
+
+    const width = maxX - minX
+    const height = maxY - minY
+    const scale = Math.min(85 / width, 85 / height, 0.5) // Limit scale to 0.5 for larger figures
+    const offsetX = 50 - (minX + width / 2) * scale
+    const offsetY = 50 - (minY + height / 2) * scale
+
     ctx.save()
-    ctx.translate(40, 10)
-    const scale = 0.9
+    ctx.translate(offsetX, offsetY)
     ctx.scale(scale, scale)
-    
-    // Draw lines
+
+    // Draw style
     ctx.strokeStyle = '#ffffff'
-    ctx.lineWidth = 2
+    ctx.lineWidth = 2 / scale // Keep consistent line width
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
-    
+
+    // Draw lines
     block.lines.forEach(line => {
       ctx.beginPath()
       ctx.moveTo(line[0], line[1])
       ctx.lineTo(line[2], line[3])
       ctx.stroke()
     })
-    
+
     // Draw circles (heads)
     block.circles?.forEach(circle => {
       ctx.beginPath()
       ctx.arc(circle[0], circle[1], circle[2], 0, Math.PI * 2)
       ctx.stroke()
     })
-    
+
+    // Draw ellipses (hard hat domes)
+    block.ellipses?.forEach(ellipse => {
+      ctx.beginPath()
+      ctx.ellipse(ellipse[0], ellipse[1], ellipse[2], ellipse[3], 0, 0, Math.PI * 2)
+      ctx.stroke()
+    })
+
+    // Draw rectangles
+    block.rects?.forEach(rect => {
+      ctx.strokeRect(rect[0], rect[1], rect[2], rect[3])
+    })
+
     ctx.restore()
   }, [block])
-  
-  return <canvas ref={canvasRef} width={80} height={80} className="rounded" />
+
+  return <canvas ref={canvasRef} width={100} height={100} className="rounded" />
 }
 
 export default function PersonnelLibrary({ isOpen, onClose, onInsertPersonnel }: PersonnelLibraryProps) {
