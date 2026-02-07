@@ -59,6 +59,7 @@ interface CADRibbonProps {
   onNetToProjects?: () => void
   onShowScenarioLibrary?: () => void
   onShowPersonnelLibrary?: () => void
+  onShowChainBlockDialog?: () => void
   // Google Maps integration
   onImportLocation?: () => void
 }
@@ -104,6 +105,7 @@ export default function CADRibbon({
   onImport,
   onShowScenarioLibrary,
   onShowPersonnelLibrary,
+  onShowChainBlockDialog,
   onImportLocation,
 }: CADRibbonProps) {
   const [activeTab, setActiveTab] = useState<TabType>('draw')
@@ -479,6 +481,12 @@ export default function CADRibbon({
               label="Personnel"
               onClick={() => onShowPersonnelLibrary?.()}
               title="Insert lifting personnel (slingers, signallers, riggers)"
+            />
+            <RibbonButton
+              icon={<Link className="w-5 h-5" />}
+              label="Chain Block"
+              onClick={() => onShowChainBlockDialog?.()}
+              title="Insert configurable chain block/hoist"
             />
             <div className="border-r border-slate-700 h-12 mx-1"></div>
             <RibbonButton

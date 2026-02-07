@@ -28,6 +28,8 @@ import CADExportDialog from "@/components/cad/CADExportDialog"
 import CADImportDialog from "@/components/cad/CADImportDialog"
 import LiftingScenarioLibrary from "@/components/cad/LiftingScenarioLibrary"
 import PersonnelLibrary from "@/components/cad/PersonnelLibrary"
+import ChainBlockConfigDialog from "@/components/cad/ChainBlockConfigDialog"
+import { drawChainBlock } from "@/lib/chain-blocks"
 import { useAutoSave } from "@/hooks/useAutoSave"
 import { RecoveryDialog } from "@/components/cad/RecoveryDialog"
 import { TemplateLibrary } from "@/components/cad/TemplateLibrary"
@@ -314,6 +316,7 @@ function CADEditorContent() {
   const [showCraneBuilderDialog, setShowCraneBuilderDialog] = useState(false)
   const [showScenarioLibrary, setShowScenarioLibrary] = useState(false)
   const [showPersonnelLibrary, setShowPersonnelLibrary] = useState(false)
+  const [showChainBlockDialog, setShowChainBlockDialog] = useState(false)
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false)
   const [showGroundBearingCalc, setShowGroundBearingCalc] = useState(false)
   const [showGoogleMapsImport, setShowGoogleMapsImport] = useState(false)
@@ -4120,6 +4123,10 @@ function CADEditorContent() {
         if (element.craneData && element.points.length >= 1) {
           // Render crane
           drawCrane(ctx, element)
+        } else if (element.chainBlockConfig && element.points.length >= 1) {
+          // Render chain block
+          const pos = element.points[0]
+          drawChainBlock(ctx, pos.x, pos.y, element.chainBlockConfig)
         } else if (element.blockElements && element.points.length >= 1) {
           const insertPoint = element.points[0]
           const scale = element.blockScale || 1
@@ -7107,6 +7114,7 @@ function CADEditorContent() {
         onShowCraneBuilder={() => setShowCraneBuilderDialog(true)}
         onShowScenarioLibrary={() => setShowScenarioLibrary(true)}
         onShowPersonnelLibrary={() => setShowPersonnelLibrary(true)}
+        onShowChainBlockDialog={() => setShowChainBlockDialog(true)}
         showGrid={showGrid}
         setShowGrid={setShowGrid}
         snapToGrid={snapToGrid}
@@ -11018,6 +11026,16 @@ function CADEditorContent() {
         onInsertPersonnel={(element: any) => {
           setElements([...elements, element as DrawingElement])
           setShowPersonnelLibrary(false)
+        }}
+      />
+
+      {/* Chain Block Config Dialog */}
+      <ChainBlockConfigDialog
+        isOpen={showChainBlockDialog}
+        onClose={() => setShowChainBlockDialog(false)}
+        onInsert={(element: any) => {
+          setElements([...elements, element as DrawingElement])
+          setShowChainBlockDialog(false)
         }}
       />
 
