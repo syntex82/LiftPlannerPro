@@ -39,6 +39,7 @@ const getScale = (capacity: number) => 0.8 + Math.log10(capacity + 1) * 0.4
 
 /**
  * Draw professional chain block on canvas
+ * Chains always hang straight down (gravity)
  */
 export function drawChainBlock(
   ctx: CanvasRenderingContext2D,
@@ -46,15 +47,13 @@ export function drawChainBlock(
   y: number,
   config: ChainBlockConfig
 ) {
-  const { capacity, liftHeight, rotation, showLoadChain, showHandChain,
+  const { capacity, liftHeight, showLoadChain, showHandChain,
           showHook, showCapacityLabel, scale, lineWeight, color } = config
 
-  const bodyScale = getScale(capacity)
+  const bodyScale = getScale(capacity) * scale
 
   ctx.save()
   ctx.translate(x, y)
-  ctx.scale(scale, scale)
-  ctx.rotate((rotation * Math.PI) / 180)
 
   ctx.strokeStyle = color
   ctx.fillStyle = color
@@ -78,7 +77,7 @@ export function drawChainBlock(
     drawHandChain(ctx, handChainX, bodyTop + 20 * bodyScale, liftHeight * 25, bodyScale, lineWeight)
   }
 
-  // === LOAD CHAIN (center, going down) ===
+  // === LOAD CHAIN (center, going straight down) ===
   if (showLoadChain) {
     const loadChainLength = liftHeight * 50
     drawLoadChain(ctx, 0, bodyBottom, loadChainLength, bodyScale, lineWeight)
