@@ -135,13 +135,13 @@ export default function ChainBlockConfigDialog({ isOpen, onClose, onInsert }: Ch
               />
             </div>
 
-            {/* Chain Angle */}
+            {/* Rotation */}
             <div>
-              <Label className="text-slate-300 text-sm">Chain Angle: {config.chainAngle}°</Label>
+              <Label className="text-slate-300 text-sm">Rotation: {config.rotation}°</Label>
               <Slider
-                value={[config.chainAngle]}
-                onValueChange={([v]) => setConfig({ ...config, chainAngle: v })}
-                min={-45} max={45} step={5}
+                value={[config.rotation]}
+                onValueChange={([v]) => setConfig({ ...config, rotation: v })}
+                min={0} max={360} step={15}
                 className="mt-2"
               />
             </div>

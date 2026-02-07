@@ -231,8 +231,7 @@ interface DrawingElement {
     capacity: number
     chainLength: number
     liftHeight: number
-    chainAngle: number
-    bodyRotation: number
+    rotation: number
     showLoadChain: boolean
     showHandChain: boolean
     showHook: boolean
