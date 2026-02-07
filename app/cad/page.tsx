@@ -331,6 +331,7 @@ function CADEditorContent() {
   const [showScenarioLibrary, setShowScenarioLibrary] = useState(false)
   const [showPersonnelLibrary, setShowPersonnelLibrary] = useState(false)
   const [showChainBlockDialog, setShowChainBlockDialog] = useState(false)
+  const [editingChainBlockId, setEditingChainBlockId] = useState<string | null>(null)
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false)
   const [showGroundBearingCalc, setShowGroundBearingCalc] = useState(false)
   const [showGoogleMapsImport, setShowGoogleMapsImport] = useState(false)
@@ -4651,6 +4652,20 @@ function CADEditorContent() {
           }
           setLastClickTime(currentTime)
           setLastClickElement(clickedElement.id)
+        }
+
+        // Handle chain block interaction - double-click to edit properties
+        if (clickedElement.type === 'block' && clickedElement.chainBlockConfig) {
+          if (e.detail === 2) {
+            // Double-click - open chain block config dialog for editing
+            setEditingChainBlockId(clickedElement.id)
+            setShowChainBlockDialog(true)
+          } else {
+            // Single click - start dragging
+            setMovingElement(clickedElement.id)
+            setMoveStartPos(point)
+            setIsDrawing(true)
+          }
         }
       } else {
         setSelectedElement(null)
@@ -11065,10 +11080,25 @@ function CADEditorContent() {
       {/* Chain Block Config Dialog */}
       <ChainBlockConfigDialog
         isOpen={showChainBlockDialog}
-        onClose={() => setShowChainBlockDialog(false)}
+        onClose={() => {
+          setShowChainBlockDialog(false)
+          setEditingChainBlockId(null)
+        }}
         onInsert={(element: any) => {
           setElements([...elements, element as DrawingElement])
           setShowChainBlockDialog(false)
+          setEditingChainBlockId(null)
+        }}
+        editingConfig={editingChainBlockId ? elements.find(el => el.id === editingChainBlockId)?.chainBlockConfig : null}
+        onUpdate={(newConfig) => {
+          if (editingChainBlockId) {
+            setElements(elements.map(el =>
+              el.id === editingChainBlockId
+                ? { ...el, chainBlockConfig: newConfig }
+                : el
+            ))
+            setEditingChainBlockId(null)
+          }
         }}
       />
 

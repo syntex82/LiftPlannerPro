@@ -22,11 +22,23 @@ interface ChainBlockConfigDialogProps {
   isOpen: boolean
   onClose: () => void
   onInsert: (element: any) => void
+  editingConfig?: ChainBlockConfig | null
+  onUpdate?: (config: ChainBlockConfig) => void
 }
 
-export default function ChainBlockConfigDialog({ isOpen, onClose, onInsert }: ChainBlockConfigDialogProps) {
+export default function ChainBlockConfigDialog({ isOpen, onClose, onInsert, editingConfig, onUpdate }: ChainBlockConfigDialogProps) {
   const [config, setConfig] = useState<ChainBlockConfig>({ ...DEFAULT_CHAIN_BLOCK_CONFIG })
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const isEditing = !!editingConfig
+
+  // Load existing config when editing
+  useEffect(() => {
+    if (editingConfig) {
+      setConfig({ ...editingConfig })
+    } else {
+      setConfig({ ...DEFAULT_CHAIN_BLOCK_CONFIG })
+    }
+  }, [editingConfig, isOpen])
 
   // Update preview when config changes
   useEffect(() => {
@@ -46,8 +58,12 @@ export default function ChainBlockConfigDialog({ isOpen, onClose, onInsert }: Ch
   if (!isOpen) return null
 
   const handleInsert = () => {
-    const element = createChainBlockElement(config, { x: 300, y: 300 })
-    onInsert(element)
+    if (isEditing && onUpdate) {
+      onUpdate(config)
+    } else {
+      const element = createChainBlockElement(config, { x: 300, y: 300 })
+      onInsert(element)
+    }
     onClose()
   }
 
@@ -178,11 +194,11 @@ export default function ChainBlockConfigDialog({ isOpen, onClose, onInsert }: Ch
             />
           </div>
 
-          {/* Insert Button */}
+          {/* Insert/Update Button */}
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-700">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={handleInsert} className="bg-orange-600 hover:bg-orange-700">
-              Insert Chain Block
+              {isEditing ? 'Update Chain Block' : 'Insert Chain Block'}
             </Button>
           </div>
         </CardContent>
