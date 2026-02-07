@@ -27,6 +27,7 @@ import ProfessionalFeaturesPanel from "@/components/cad/ProfessionalFeaturesPane
 import CADExportDialog from "@/components/cad/CADExportDialog"
 import CADImportDialog from "@/components/cad/CADImportDialog"
 import LiftingScenarioLibrary from "@/components/cad/LiftingScenarioLibrary"
+import PersonnelLibrary from "@/components/cad/PersonnelLibrary"
 import { useAutoSave } from "@/hooks/useAutoSave"
 import { RecoveryDialog } from "@/components/cad/RecoveryDialog"
 import { TemplateLibrary } from "@/components/cad/TemplateLibrary"
@@ -312,6 +313,7 @@ function CADEditorContent() {
   const [showConfigurableCraneDialog, setShowConfigurableCraneDialog] = useState(false)
   const [showCraneBuilderDialog, setShowCraneBuilderDialog] = useState(false)
   const [showScenarioLibrary, setShowScenarioLibrary] = useState(false)
+  const [showPersonnelLibrary, setShowPersonnelLibrary] = useState(false)
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false)
   const [showGroundBearingCalc, setShowGroundBearingCalc] = useState(false)
   const [showGoogleMapsImport, setShowGoogleMapsImport] = useState(false)
@@ -7104,6 +7106,7 @@ function CADEditorContent() {
         onShowConfigurableCrane={() => setShowConfigurableCraneDialog(true)}
         onShowCraneBuilder={() => setShowCraneBuilderDialog(true)}
         onShowScenarioLibrary={() => setShowScenarioLibrary(true)}
+        onShowPersonnelLibrary={() => setShowPersonnelLibrary(true)}
         showGrid={showGrid}
         setShowGrid={setShowGrid}
         snapToGrid={snapToGrid}
@@ -11005,6 +11008,16 @@ function CADEditorContent() {
         onInsertObject={(element: any) => {
           setElements([...elements, element as DrawingElement])
           setShowScenarioLibrary(false)
+        }}
+      />
+
+      {/* Personnel Library */}
+      <PersonnelLibrary
+        isOpen={showPersonnelLibrary}
+        onClose={() => setShowPersonnelLibrary(false)}
+        onInsertPersonnel={(element: any) => {
+          setElements([...elements, element as DrawingElement])
+          setShowPersonnelLibrary(false)
         }}
       />
 
