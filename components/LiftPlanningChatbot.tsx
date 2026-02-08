@@ -111,21 +111,21 @@ export default function LiftPlanningChatbot({
       const greeting: ChatMessage = {
         id: 'greeting',
         role: 'assistant',
-        content: `👋 Hello! I'm your AI Lift Planning Assistant.
+        content: `👋 **AI Lift Planning Assistant Ready**
 
-I'll help you create a comprehensive, safety-compliant lift plan. Let's start with the basics:
+Just describe your lift and I'll generate a **complete lift plan immediately**.
 
-**What would you like to lift?**
-Please describe the load (e.g., "5 tonne steel beam, 8m long" or "HVAC unit, approximately 2.5 tonnes").
+**Example:**
+_"Lifting a 5 tonne steel beam, 8m long, from ground level to 12m height on a construction site. Using a mobile crane."_
 
-I'll guide you through:
-• Load specifications & weight verification
-• Equipment selection & capacity checks
-• Rigging configuration & sling calculations
-• Site hazards & safety measures
-• Complete RAMS documentation
+I'll create a full plan including:
+✅ Equipment selection & capacity checks
+✅ Rigging configuration & sling calculations
+✅ Hazard assessment & control measures
+✅ Personnel requirements
+✅ BS 7121 & LOLER compliance
 
-Feel free to ask questions at any point!`,
+**Go ahead - describe your lift!**`,
         timestamp: new Date()
       }
       setMessages([greeting])
