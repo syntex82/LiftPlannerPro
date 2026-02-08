@@ -62,16 +62,10 @@ WEATHER: Wind ${formData.windSpeed || '?'} ${formData.windSpeedUnit || 'km/h'}, 
 
 NOTES: ${formData.additionalNotes || 'None'}`
 
-    const systemPrompt = `You are a professional crane lift planning engineer. Generate a COMPLETE HTML lift plan document.
+    // Short system prompt to save tokens
+    const systemPrompt = `Generate HTML lift plan. Return ONLY <!DOCTYPE html>... Use provided data. Generate: Hazards table, Method Statement, Emergency Procedures, Checklist. BS 7121/LOLER.`
 
-The user has provided their project details. You MUST:
-1. Use ALL the data they provided exactly as given
-2. GENERATE detailed AI content for: Hazards Table (10+ hazards with risk ratings and controls), Method Statement (15+ steps), Emergency Procedures, Pre-lift Checklist (15+ items)
-3. Calculate rigging requirements if data is provided
-
-Return ONLY valid HTML starting with <!DOCTYPE html>. Include professional CSS styling.`
-
-    const userPrompt = `Generate a complete HTML lift plan using this data:\n\n${userDataSummary}\n\nCreate professional sections for: Header, Project Details, Load Info, Equipment, Rigging, Lift Geometry, Ground Conditions, HAZARDS TABLE (generate 10+ specific hazards with risk levels and control measures), Exclusion Zone, Personnel Roles, Communications, METHOD STATEMENT (generate 15+ detailed steps), EMERGENCY PROCEDURES, PRE-LIFT CHECKLIST (generate 15+ items), Signatures.`
+    const userPrompt = `Create HTML lift plan:\n${userDataSummary}\n\nInclude: Header, Project, Load, Equipment, Rigging, Geometry, Ground, Hazards (8+ with controls), Personnel, Method (12+ steps), Emergency, Checklist (10+ items), Signatures.`
 
     let htmlContent: string | null = null
 
@@ -84,7 +78,7 @@ Return ONLY valid HTML starting with <!DOCTYPE html>. Include professional CSS s
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          max_tokens: 6000,
+          max_tokens: 4000,
           temperature: 0.3
         })
         htmlContent = response.choices[0]?.message?.content || null
@@ -98,7 +92,7 @@ Return ONLY valid HTML starting with <!DOCTYPE html>. Include professional CSS s
     if (!htmlContent) {
       const client = model === 'deepseek' && deepseek ? deepseek : openai
       const modelName = model === 'deepseek' && deepseek ? 'deepseek-chat' : 'gpt-4'
-      
+
       if (!client) {
         return NextResponse.json({ error: 'No AI provider configured' }, { status: 500 })
       }
@@ -109,7 +103,7 @@ Return ONLY valid HTML starting with <!DOCTYPE html>. Include professional CSS s
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        max_tokens: 6000,
+        max_tokens: 4000,
         temperature: 0.3
       })
       htmlContent = completion.choices[0]?.message?.content
