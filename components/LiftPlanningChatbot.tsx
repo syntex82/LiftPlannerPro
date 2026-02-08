@@ -88,11 +88,21 @@ export default function LiftPlanningChatbot({
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [liftPlanData, setLiftPlanData] = useState<LiftPlanData>({})
-  const [aiModel, setAiModel] = useState<'openai' | 'deepseek'>('openai')
+  const [aiModel, setAiModel] = useState<'openai' | 'deepseek' | 'huggingface'>('openai')
+  const [huggingfaceModel, setHuggingfaceModel] = useState('mistralai/Mixtral-8x7B-Instruct-v0.1')
   const [showSettings, setShowSettings] = useState(false)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Available Hugging Face models for lift planning
+  const huggingfaceModels = [
+    { id: 'mistralai/Mixtral-8x7B-Instruct-v0.1', name: 'Mixtral 8x7B (Recommended)' },
+    { id: 'meta-llama/Llama-3.3-70B-Instruct', name: 'Llama 3.3 70B' },
+    { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B' },
+    { id: 'microsoft/Phi-3-medium-128k-instruct', name: 'Phi-3 Medium' },
+    { id: 'google/gemma-2-27b-it', name: 'Gemma 2 27B' }
+  ]
 
   // Initial greeting message
   useEffect(() => {
@@ -164,6 +174,7 @@ Feel free to ask questions at any point!`,
             content: m.content
           })),
           model: aiModel,
+          huggingfaceModel: aiModel === 'huggingface' ? huggingfaceModel : undefined,
           context: {
             cadElements,
             projectInfo,
@@ -267,7 +278,7 @@ Feel free to ask questions at any point!`,
     pdf.setFont('Helvetica', 'normal')
     pdf.text(`Generated: ${new Date().toLocaleString()}`, margin, y)
     y += 5
-    pdf.text(`AI Model: ${aiModel === 'deepseek' ? 'DeepSeek' : 'OpenAI GPT-4'}`, margin, y)
+    pdf.text(`AI Model: ${aiModel === 'huggingface' ? `HuggingFace (${huggingfaceModel.split('/')[1]})` : aiModel === 'deepseek' ? 'DeepSeek' : 'OpenAI GPT-4'}`, margin, y)
     y += 10
 
     // Add sections from lift plan data
@@ -385,10 +396,10 @@ Feel free to ask questions at any point!`,
 
           {/* Settings Panel */}
           {showSettings && (
-            <div className="mt-3 p-3 bg-slate-800 rounded-lg border border-slate-700">
-              <div className="flex items-center gap-4">
-                <span className="text-slate-300 text-sm">AI Model:</span>
-                <div className="flex gap-2">
+            <div className="mt-3 p-3 bg-slate-800 rounded-lg border border-slate-700 space-y-3">
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="text-slate-300 text-sm">AI Provider:</span>
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     size="sm"
                     variant={aiModel === 'openai' ? 'default' : 'outline'}
@@ -405,8 +416,32 @@ Feel free to ask questions at any point!`,
                   >
                     <Bot className="w-3 h-3 mr-1" /> DeepSeek
                   </Button>
+                  <Button
+                    size="sm"
+                    variant={aiModel === 'huggingface' ? 'default' : 'outline'}
+                    onClick={() => setAiModel('huggingface')}
+                    className={aiModel === 'huggingface' ? 'bg-yellow-600' : 'border-slate-600'}
+                  >
+                    🤗 Hugging Face
+                  </Button>
                 </div>
               </div>
+
+              {/* Hugging Face Model Selection */}
+              {aiModel === 'huggingface' && (
+                <div className="flex items-center gap-4">
+                  <span className="text-slate-300 text-sm">Model:</span>
+                  <select
+                    value={huggingfaceModel}
+                    onChange={(e) => setHuggingfaceModel(e.target.value)}
+                    className="bg-slate-700 text-white text-sm rounded px-2 py-1 border border-slate-600 focus:border-yellow-500 focus:outline-none"
+                  >
+                    {huggingfaceModels.map(model => (
+                      <option key={model.id} value={model.id}>{model.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
         </DialogHeader>

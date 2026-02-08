@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import OpenAI from 'openai'
+import { InferenceClient } from '@huggingface/inference'
 
 // Initialize OpenAI if API key is available
 const openai = process.env.OPENAI_API_KEY
@@ -16,6 +17,11 @@ const deepseek = process.env.DEEPSEEK_API_KEY
     })
   : null
 
+// Hugging Face Inference Client
+const huggingface = process.env.HUGGINGFACE_API_KEY
+  ? new InferenceClient(process.env.HUGGINGFACE_API_KEY)
+  : null
+
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
@@ -23,7 +29,8 @@ export interface ChatMessage {
 
 export interface ChatRequest {
   messages: ChatMessage[]
-  model?: 'openai' | 'deepseek'
+  model?: 'openai' | 'deepseek' | 'huggingface'
+  huggingfaceModel?: string // e.g., 'deepseek-ai/DeepSeek-R1-Distill-Qwen-32B', 'mistralai/Mixtral-8x7B-v0.1'
   context?: {
     cadElements?: unknown[]
     projectInfo?: Record<string, unknown>
@@ -54,26 +61,15 @@ For calculations, show your working. Reference relevant safety standards where a
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user?.id && process.env.NODE_ENV === 'production') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { messages, model = 'openai', context }: ChatRequest = await req.json()
+    const { messages, model = 'openai', huggingfaceModel, context }: ChatRequest = await req.json()
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages array required' }, { status: 400 })
-    }
-
-    // Select AI provider
-    const selectedModel = model === 'deepseek' && deepseek ? deepseek : openai
-    const modelName = model === 'deepseek' && deepseek ? 'deepseek-chat' : 'gpt-4'
-
-    if (!selectedModel) {
-      return NextResponse.json(
-        { error: `${model === 'deepseek' ? 'DeepSeek' : 'OpenAI'} API not configured` },
-        { status: 500 }
-      )
     }
 
     // Build context-aware system prompt
@@ -85,32 +81,83 @@ export async function POST(req: NextRequest) {
       systemPrompt += `\n\nCurrent Lift Plan Data:\n${JSON.stringify(context.liftPlanData, null, 2)}`
     }
 
-    const completion = await selectedModel.chat.completions.create({
-      model: modelName,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages
-      ],
-      max_tokens: 2000,
-      temperature: 0.4,
-      stream: false
-    })
+    let aiResponse: string | null = null
+    let usedModel = model
 
-    const aiResponse = completion.choices[0]?.message?.content
+    // Handle Hugging Face models
+    if (model === 'huggingface' && huggingface) {
+      const hfModel = huggingfaceModel || 'mistralai/Mixtral-8x7B-Instruct-v0.1'
+
+      try {
+        const chatMessages = [
+          { role: 'system' as const, content: systemPrompt },
+          ...messages.map(m => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content }))
+        ]
+
+        const response = await huggingface.chatCompletion({
+          model: hfModel,
+          messages: chatMessages,
+          max_tokens: 2000,
+          temperature: 0.4
+        })
+
+        aiResponse = response.choices[0]?.message?.content || null
+        usedModel = 'huggingface'
+      } catch (hfError) {
+        console.error('Hugging Face API error:', hfError)
+        // Fall back to OpenAI if available
+        if (openai) {
+          console.log('Falling back to OpenAI...')
+          usedModel = 'openai'
+        } else {
+          throw hfError
+        }
+      }
+    }
+
+    // Handle OpenAI/DeepSeek if not using Hugging Face or as fallback
+    if (!aiResponse) {
+      const selectedModel = model === 'deepseek' && deepseek ? deepseek : openai
+      const modelName = model === 'deepseek' && deepseek ? 'deepseek-chat' : 'gpt-4'
+
+      if (!selectedModel) {
+        const providerName = model === 'huggingface' ? 'Hugging Face' :
+                            model === 'deepseek' ? 'DeepSeek' : 'OpenAI'
+        return NextResponse.json(
+          { error: `${providerName} API not configured. Add ${model === 'huggingface' ? 'HUGGINGFACE_API_KEY' : model === 'deepseek' ? 'DEEPSEEK_API_KEY' : 'OPENAI_API_KEY'} to your .env file.` },
+          { status: 500 }
+        )
+      }
+
+      const completion = await selectedModel.chat.completions.create({
+        model: modelName,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages
+        ],
+        max_tokens: 2000,
+        temperature: 0.4,
+        stream: false
+      })
+
+      aiResponse = completion.choices[0]?.message?.content
+      usedModel = model === 'deepseek' && deepseek ? 'deepseek' : 'openai'
+    }
 
     if (!aiResponse) {
       return NextResponse.json({ error: 'Failed to generate response' }, { status: 500 })
     }
 
     // Check if AI is ready to generate a report
-    const readyToGenerate = aiResponse.toLowerCase().includes('generate') && 
-                           (aiResponse.toLowerCase().includes('report') || 
+    const readyToGenerate = aiResponse.toLowerCase().includes('generate') &&
+                           (aiResponse.toLowerCase().includes('report') ||
                             aiResponse.toLowerCase().includes('lift plan'))
 
     return NextResponse.json({
       success: true,
       message: aiResponse,
-      model: model === 'deepseek' && deepseek ? 'deepseek' : 'openai',
+      model: usedModel,
+      huggingfaceModel: model === 'huggingface' ? huggingfaceModel : undefined,
       readyToGenerate,
       timestamp: new Date().toISOString()
     })
