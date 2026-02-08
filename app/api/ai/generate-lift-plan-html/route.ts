@@ -19,23 +19,45 @@ const huggingface = process.env.HUGGINGFACE_API_KEY
   ? new InferenceClient(process.env.HUGGINGFACE_API_KEY)
   : null
 
-const HTML_LIFT_PLAN_PROMPT = `You are an expert lift planner. Generate a COMPLETE HTML lift plan with REAL DATA - NO "to be determined" or placeholders.
+const HTML_LIFT_PLAN_PROMPT = `Generate a PROFESSIONAL HTML lift plan. Return ONLY valid HTML starting with <!DOCTYPE html>.
 
-CRITICAL RULES:
-1. Return ONLY valid HTML starting with <!DOCTYPE html>
-2. NEVER write "to be determined" - make professional assumptions
-3. Generate SPECIFIC crane models, rigging specs, hazards, method steps
-4. Include professional CSS styling with colors #1e3a5f (blue) and #f97316 (orange)
+NEVER write "to be determined" or "TBD" - make professional assumptions.
 
-For a 1000kg load, assume: 50t mobile crane at 12m radius, 4-leg chain sling 2t SWL each leg, 60° sling angle, concrete hardstanding.
+USE THIS EXACT CSS in <style>:
+body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#f5f5f5}
+.container{max-width:900px;margin:0 auto;background:white;padding:30px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+.header{background:linear-gradient(135deg,#1e3a5f,#2d5a87);color:white;padding:20px;margin:-30px -30px 20px;text-align:center}
+.header h1{margin:0;font-size:24px}
+.header p{margin:5px 0 0;opacity:0.9}
+h2{color:#1e3a5f;border-left:4px solid #f97316;padding-left:12px;margin-top:25px}
+table{width:100%;border-collapse:collapse;margin:15px 0;font-size:14px}
+th{background:#1e3a5f;color:white;padding:12px;text-align:left;font-weight:600}
+td{border:1px solid #ddd;padding:10px}
+tr:nth-child(even){background:#f9f9f9}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:15px 0}
+.info-box{background:#f0f4f8;padding:15px;border-radius:8px;border-left:3px solid #f97316}
+.info-box label{font-weight:bold;color:#1e3a5f;display:block;margin-bottom:5px}
+.risk-high{background:#fee2e2;color:#991b1b}
+.risk-medium{background:#fef3c7;color:#92400e}
+.risk-low{background:#d1fae5;color:#065f46}
+.checklist{list-style:none;padding:0}
+.checklist li{padding:8px 0;border-bottom:1px solid #eee}
+.checklist li:before{content:"☐";margin-right:10px;color:#f97316}
+.signature-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.sig-box{border:2px solid #1e3a5f;padding:15px;text-align:center}
+.sig-box p{margin:0 0 30px;font-weight:bold}
+.sig-line{border-top:1px solid #333;margin-top:40px;padding-top:5px}
+.warning{background:#fff3cd;border-left:4px solid #f97316;padding:15px;margin:15px 0}
+@media print{body{background:white}.container{box-shadow:none}}
 
-MUST INCLUDE with REAL content:
-- 8+ specific hazards with risk levels (H/M/L) and control measures in a table
-- 12+ numbered method statement steps
-- 10+ pre-lift checklist items with checkboxes
-- Specific crane config, rigging calcs, exclusion zone radius
-- Emergency procedures with actual steps
-- Signature boxes with borders`
+STRUCTURE: Use .container div, .header for title, .info-grid with .info-box for data pairs, TABLES for hazards/personnel, .checklist for checkboxes, .signature-grid with .sig-box for signatures.
+
+REQUIRED TABLES:
+1. Hazards table: columns Hazard|Risk Level|Control Measures - 8+ rows, use .risk-high/.risk-medium/.risk-low classes
+2. Personnel table: columns Role|Name|Responsibilities
+3. Equipment table: columns Item|Specification|SWL/Capacity
+
+Generate 12+ method statement steps as numbered list, 10+ checklist items.`
 
 export async function POST(req: NextRequest) {
   try {

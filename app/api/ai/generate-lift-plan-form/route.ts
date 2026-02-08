@@ -62,23 +62,29 @@ WEATHER: Wind ${formData.windSpeed || '?'} ${formData.windSpeedUnit || 'km/h'}, 
 
 NOTES: ${formData.additionalNotes || 'None'}`
 
-    // Explicit prompt demanding real content - NO placeholders
-    const systemPrompt = `You are an expert lift planner. Generate COMPLETE HTML lift plan with REAL DATA.
+    // Professional styling prompt with exact CSS
+    const systemPrompt = `Generate PROFESSIONAL HTML lift plan. Return ONLY <!DOCTYPE html>. NEVER write "to be determined".
 
-CRITICAL: NEVER write "to be determined" or "TBD" - make professional assumptions based on the data provided.
-Return ONLY valid HTML starting with <!DOCTYPE html>. Include professional CSS with colors #1e3a5f (blue) and #f97316 (orange).`
+USE THIS CSS in <style>:
+body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#f5f5f5}
+.container{max-width:900px;margin:0 auto;background:white;padding:30px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+.header{background:linear-gradient(135deg,#1e3a5f,#2d5a87);color:white;padding:20px;margin:-30px -30px 20px;text-align:center}
+h2{color:#1e3a5f;border-left:4px solid #f97316;padding-left:12px}
+table{width:100%;border-collapse:collapse;margin:15px 0}
+th{background:#1e3a5f;color:white;padding:12px;text-align:left}
+td{border:1px solid #ddd;padding:10px}
+tr:nth-child(even){background:#f9f9f9}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.info-box{background:#f0f4f8;padding:15px;border-radius:8px;border-left:3px solid #f97316}
+.risk-high{background:#fee2e2;color:#991b1b}
+.risk-medium{background:#fef3c7;color:#92400e}
+.risk-low{background:#d1fae5;color:#065f46}
+.checklist li:before{content:"☐";margin-right:10px;color:#f97316}
+.sig-box{border:2px solid #1e3a5f;padding:15px;text-align:center}
 
-    const userPrompt = `Create HTML lift plan using this EXACT data:\n${userDataSummary}\n\nGENERATE REAL CONTENT FOR:
-- 8+ SPECIFIC hazards with risk levels (H/M/L) and control measures in a styled table
-- 12+ numbered method statement steps with actual instructions
-- 10+ pre-lift checklist items with checkbox styling
-- Specific crane config based on load weight (if 1000kg, assume 50t mobile crane at 12m radius)
-- Rigging calculations (4-leg chain sling, 60° angle, SWL per leg)
-- Exclusion zone radius calculation
-- Emergency procedures with actual numbered steps
-- Signature boxes with CSS borders
+Use tables for hazards (8+ rows with risk classes), personnel, equipment. Numbered method steps (12+). Checklist (10+). Signature boxes.`
 
-NO PLACEHOLDERS. Make professional engineering assumptions for anything not specified.`
+    const userPrompt = `Create professional HTML lift plan:\n${userDataSummary}\n\nUse .container, .header, .info-grid, tables with th/td styling, .risk-high/medium/low classes, .checklist, .sig-box. Generate REAL specific content - no placeholders.`
 
     let htmlContent: string | null = null
 
