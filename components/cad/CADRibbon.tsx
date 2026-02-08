@@ -10,7 +10,7 @@ import {
   ChevronDown, Upload, Image, X, Library, Truck, ChevronRight, Zap, Magnet,
   Terminal, FileText, Scissors, Repeat2, Link, ArrowRight, Radius, Zap as ZapIcon,
   Hexagon, Droplet, Slash, Expand, AlignLeft, Pipette, Download as DownloadIcon,
-  Network, MapPin, Users, Link2, Factory
+  Network, MapPin, Users, Link2, Factory, Package
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -61,6 +61,7 @@ interface CADRibbonProps {
   onShowPersonnelLibrary?: () => void
   onShowRiggingLibrary?: () => void
   onShowSiteObjectsLibrary?: () => void
+  onShowLiftPackGenerator?: () => void
   onShowChainBlockDialog?: () => void
   // Google Maps integration
   onImportLocation?: () => void
@@ -109,6 +110,7 @@ export default function CADRibbon({
   onShowPersonnelLibrary,
   onShowRiggingLibrary,
   onShowSiteObjectsLibrary,
+  onShowLiftPackGenerator,
   onShowChainBlockDialog,
   onImportLocation,
 }: CADRibbonProps) {
@@ -182,6 +184,13 @@ export default function CADRibbon({
               label="Export"
               onClick={() => onExport('png')}
               title="Export drawing"
+            />
+            <div className="border-r border-slate-700 h-12 mx-1"></div>
+            <RibbonButton
+              icon={<Package className="w-5 h-5" />}
+              label="Lift Pack"
+              onClick={() => onShowLiftPackGenerator?.()}
+              title="Generate complete lift pack (Drawing + Lift Plan + RAMS + Step Plan)"
             />
           </>
         )}

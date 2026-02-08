@@ -30,6 +30,7 @@ import LiftingScenarioLibrary from "@/components/cad/LiftingScenarioLibrary"
 import PersonnelLibrary from "@/components/cad/PersonnelLibrary"
 import RiggingLibrary from "@/components/cad/RiggingLibrary"
 import SiteObjectsLibrary from "@/components/cad/SiteObjectsLibrary"
+import LiftPackGenerator from "@/components/cad/LiftPackGenerator"
 import ChainBlockConfigDialog from "@/components/cad/ChainBlockConfigDialog"
 import LiftPlanningChatbot from "@/components/LiftPlanningChatbot"
 import { drawChainBlock } from "@/lib/chain-blocks"
@@ -336,6 +337,7 @@ function CADEditorContent() {
   const [showPersonnelLibrary, setShowPersonnelLibrary] = useState(false)
   const [showRiggingLibrary, setShowRiggingLibrary] = useState(false)
   const [showSiteObjectsLibrary, setShowSiteObjectsLibrary] = useState(false)
+  const [showLiftPackGenerator, setShowLiftPackGenerator] = useState(false)
   const [showChainBlockDialog, setShowChainBlockDialog] = useState(false)
   const [editingChainBlockId, setEditingChainBlockId] = useState<string | null>(null)
   const [showLiftPlanningChatbot, setShowLiftPlanningChatbot] = useState(false)
@@ -7188,6 +7190,7 @@ function CADEditorContent() {
         onShowPersonnelLibrary={() => setShowPersonnelLibrary(true)}
         onShowRiggingLibrary={() => setShowRiggingLibrary(true)}
         onShowSiteObjectsLibrary={() => setShowSiteObjectsLibrary(true)}
+        onShowLiftPackGenerator={() => setShowLiftPackGenerator(true)}
         onShowChainBlockDialog={() => setShowChainBlockDialog(true)}
         showGrid={showGrid}
         setShowGrid={setShowGrid}
@@ -11121,6 +11124,14 @@ function CADEditorContent() {
           setElements([...elements, element as DrawingElement])
           setShowSiteObjectsLibrary(false)
         }}
+      />
+
+      {/* Lift Pack Generator */}
+      <LiftPackGenerator
+        isOpen={showLiftPackGenerator}
+        onClose={() => setShowLiftPackGenerator(false)}
+        projectName={projectName}
+        canvasRef={canvasRef}
       />
 
       {/* Chain Block Config Dialog */}
