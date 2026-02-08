@@ -400,7 +400,8 @@ I'll create a full plan including:
       }
     } catch (error) {
       console.error('HTML lift plan generation failed:', error)
-      alert('Failed to generate HTML lift plan. Please try again.')
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+      alert(`Failed to generate HTML lift plan: ${errorMsg}`)
     } finally {
       setIsGeneratingReport(false)
     }

@@ -99,7 +99,15 @@ export async function POST(req: NextRequest) {
       const modelName = model === 'deepseek' && deepseek ? 'deepseek-chat' : 'gpt-4'
 
       if (!selectedModel) {
-        return NextResponse.json({ error: 'No AI provider configured' }, { status: 500 })
+        const missingKey = model === 'deepseek' ? 'DEEPSEEK_API_KEY' : 'OPENAI_API_KEY'
+        return NextResponse.json({
+          error: `No AI provider configured. Please add ${missingKey} to your environment variables.`,
+          availableProviders: {
+            openai: !!openai,
+            deepseek: !!deepseek,
+            huggingface: !!huggingface
+          }
+        }, { status: 500 })
       }
 
       const completion = await selectedModel.chat.completions.create({
@@ -143,7 +151,11 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Lift plan generation error:', error)
-    return NextResponse.json({ error: 'Failed to generate lift plan' }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate lift plan'
+    return NextResponse.json({
+      error: errorMessage,
+      details: error instanceof Error ? error.stack : undefined
+    }, { status: 500 })
   }
 }
 
