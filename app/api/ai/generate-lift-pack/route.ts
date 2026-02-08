@@ -33,70 +33,16 @@ interface LiftPackRequest {
   model?: 'openai' | 'deepseek'
 }
 
-const LIFT_PACK_SYSTEM_PROMPT = `You are an expert lift planning engineer creating a COMPLETE LIFT PACK document.
-Generate a comprehensive, professional HTML document that combines ALL sections into ONE complete pack.
+const LIFT_PACK_SYSTEM_PROMPT = `You are an expert lift planning engineer. Generate a professional HTML lift pack document.
 
-The document MUST include these sections in order:
-1. COVER PAGE - Project title, document number, revision, date, company details
-2. TABLE OF CONTENTS - Numbered sections with page references
-3. LIFT PLAN - Complete lift plan with load details, crane selection, rigging, calculations
-4. RISK ASSESSMENT - Hazard identification, risk matrix, control measures
-5. METHOD STATEMENT - Step-by-step procedure with safety checks
-6. STEP-BY-STEP PLAN - Detailed timeline with responsibilities
-7. EQUIPMENT CHECKLIST - All equipment with inspection requirements
-8. PERSONNEL BRIEFING - Roles, responsibilities, competency requirements
-9. EMERGENCY PROCEDURES - What to do if things go wrong
-10. APPROVAL & SIGNATURES - Sign-off boxes for all key personnel
+Include sections: Cover Page, Lift Plan, Risk Assessment, Method Statement, Step Plan, Equipment Checklist, Personnel, Emergency Procedures, Signatures.
 
-Use this EXACT CSS styling for professional appearance:
+Use this CSS:
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #1a1a2e; line-height: 1.6; }
-  .document { max-width: 210mm; margin: 20px auto; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
-  .cover-page { min-height: 297mm; display: flex; flex-direction: column; justify-content: center; align-items: center; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; text-align: center; padding: 40px; page-break-after: always; }
-  .cover-title { font-size: 42px; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 3px; }
-  .cover-subtitle { font-size: 24px; margin-bottom: 40px; opacity: 0.9; }
-  .cover-info { background: rgba(255,255,255,0.1); padding: 30px 50px; border-radius: 10px; margin-top: 40px; }
-  .cover-info p { font-size: 16px; margin: 10px 0; }
-  .page { padding: 25mm 20mm; page-break-after: always; min-height: 297mm; }
-  .section-header { background: linear-gradient(90deg, #1a1a2e, #16213e); color: white; padding: 15px 25px; margin: 25px -20mm 20px; font-size: 20px; font-weight: 600; }
-  .subsection { background: #e8f4f8; padding: 10px 15px; margin: 15px 0 10px; font-weight: 600; color: #0f3460; border-left: 4px solid #e94560; }
-  table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-  th { background: #1a1a2e; color: white; padding: 12px; text-align: left; font-weight: 600; }
-  td { padding: 10px 12px; border: 1px solid #ddd; }
-  tr:nth-child(even) { background: #f8f9fa; }
-  .risk-high { background: #ffebee !important; color: #c62828; font-weight: 600; }
-  .risk-medium { background: #fff8e1 !important; color: #f57f17; font-weight: 600; }
-  .risk-low { background: #e8f5e9 !important; color: #2e7d32; font-weight: 600; }
-  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
-  .info-box { background: #f8f9fa; padding: 15px; border-left: 4px solid #e94560; }
-  .info-label { font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px; }
-  .info-value { font-size: 16px; font-weight: 600; color: #1a1a2e; }
-  .checklist { list-style: none; }
-  .checklist li { padding: 8px 0; border-bottom: 1px solid #eee; display: flex; align-items: center; }
-  .checklist li::before { content: '☐'; margin-right: 12px; font-size: 18px; color: #e94560; }
-  .sig-box { border: 2px solid #1a1a2e; padding: 20px; margin: 10px 0; background: #fafafa; }
-  .sig-box .role { font-weight: 600; color: #1a1a2e; margin-bottom: 30px; }
-  .sig-box .sig-line { border-bottom: 1px solid #333; height: 30px; margin-bottom: 10px; }
-  .sig-box .date-line { font-size: 14px; color: #666; }
-  .warning-box { background: #fff3cd; border: 2px solid #ffc107; padding: 15px; margin: 15px 0; border-radius: 5px; }
-  .danger-box { background: #f8d7da; border: 2px solid #dc3545; padding: 15px; margin: 15px 0; border-radius: 5px; }
-  .step-number { display: inline-block; width: 30px; height: 30px; background: #e94560; color: white; border-radius: 50%; text-align: center; line-height: 30px; margin-right: 10px; font-weight: 600; }
-  .toc { padding: 20px; }
-  .toc-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dotted #ccc; }
-  .drawing-placeholder { border: 2px dashed #ccc; padding: 40px; text-align: center; background: #f9f9f9; margin: 20px 0; min-height: 200px; display: flex; align-items: center; justify-content: center; color: #666; }
-  @media print { .document { box-shadow: none; margin: 0; } .page { page-break-after: always; } }
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f5;color:#1a1a2e;line-height:1.6}.document{max-width:210mm;margin:20px auto;background:white;box-shadow:0 4px 20px rgba(0,0,0,0.15)}.cover-page{min-height:297mm;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);color:white;text-align:center;padding:40px;page-break-after:always}.cover-title{font-size:42px;font-weight:700;margin-bottom:20px;text-transform:uppercase;letter-spacing:3px}.cover-subtitle{font-size:24px;margin-bottom:40px;opacity:0.9}.cover-info{background:rgba(255,255,255,0.1);padding:30px 50px;border-radius:10px;margin-top:40px}.page{padding:25mm 20mm;page-break-after:always}.section-header{background:linear-gradient(90deg,#1a1a2e,#16213e);color:white;padding:15px 25px;margin:25px -20mm 20px;font-size:20px;font-weight:600}.subsection{background:#e8f4f8;padding:10px 15px;margin:15px 0 10px;font-weight:600;color:#0f3460;border-left:4px solid #e94560}table{width:100%;border-collapse:collapse;margin:15px 0}th{background:#1a1a2e;color:white;padding:12px;text-align:left}td{padding:10px 12px;border:1px solid #ddd}tr:nth-child(even){background:#f8f9fa}.risk-high{background:#ffebee!important;color:#c62828;font-weight:600}.risk-medium{background:#fff8e1!important;color:#f57f17;font-weight:600}.risk-low{background:#e8f5e9!important;color:#2e7d32;font-weight:600}.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:15px 0}.info-box{background:#f8f9fa;padding:15px;border-left:4px solid #e94560}.info-label{font-size:12px;color:#666;text-transform:uppercase;margin-bottom:5px}.info-value{font-size:16px;font-weight:600;color:#1a1a2e}.checklist{list-style:none}.checklist li{padding:8px 0;border-bottom:1px solid #eee}.checklist li::before{content:'☐';margin-right:12px;font-size:18px;color:#e94560}.sig-box{border:2px solid #1a1a2e;padding:20px;margin:10px 0;background:#fafafa}.sig-box .role{font-weight:600;margin-bottom:30px}.sig-box .sig-line{border-bottom:1px solid #333;height:30px;margin-bottom:10px}.warning-box{background:#fff3cd;border:2px solid #ffc107;padding:15px;margin:15px 0;border-radius:5px}.danger-box{background:#f8d7da;border:2px solid #dc3545;padding:15px;margin:15px 0;border-radius:5px}.step-number{display:inline-block;width:30px;height:30px;background:#e94560;color:white;border-radius:50%;text-align:center;line-height:30px;margin-right:10px;font-weight:600}.drawing-placeholder{border:2px dashed #ccc;padding:40px;text-align:center;background:#f9f9f9;margin:20px 0;min-height:200px}@media print{.document{box-shadow:none;margin:0}}
 </style>
 
-Generate REAL, SPECIFIC content based on the lift details provided. Include:
-- Actual calculations for load weight, crane capacity, rigging factors
-- Specific hazards relevant to the described lift
-- Detailed step-by-step procedures
-- Realistic timelines
-- Proper risk assessments with likelihood/severity ratings
-
-SIGNATURE BOXES: Include role title + empty signature line + Date:___ - NO FAKE NAMES.
-`
+Generate specific content with real calculations. Signature boxes: role title + empty line + Date:___ (NO fake names).`
 
 export async function POST(req: NextRequest) {
   try {
@@ -113,7 +59,8 @@ export async function POST(req: NextRequest) {
 
     const model = data.model || 'openai'
     const client = model === 'deepseek' && deepseek ? deepseek : openai
-    const modelName = model === 'deepseek' && deepseek ? 'deepseek-chat' : 'gpt-4'
+    // Use gpt-4o for larger context window (128K tokens)
+    const modelName = model === 'deepseek' && deepseek ? 'deepseek-chat' : 'gpt-4o'
 
     if (!client) {
       return NextResponse.json({ error: 'No AI provider configured' }, { status: 500 })
@@ -128,7 +75,7 @@ export async function POST(req: NextRequest) {
         { role: 'system', content: LIFT_PACK_SYSTEM_PROMPT },
         { role: 'user', content: userPrompt }
       ],
-      max_tokens: 8000,
+      max_tokens: 4096,
       temperature: 0.3
     })
 
