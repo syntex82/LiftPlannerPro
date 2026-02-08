@@ -165,6 +165,7 @@ export default function VideoPlayerPage() {
 
   // Helper function to render the appropriate video player
   function renderVideoPlayer() {
+    if (!video) return null
     const url = video.videoUrl
 
     // YouTube
