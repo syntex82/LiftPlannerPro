@@ -54,8 +54,10 @@ STRUCTURE: Use .container div, .header for title, .info-grid with .info-box for 
 
 REQUIRED TABLES:
 1. Hazards table: columns Hazard|Risk Level|Control Measures - 8+ rows, use .risk-high/.risk-medium/.risk-low classes
-2. Personnel table: columns Role|Name|Responsibilities
+2. Personnel table: columns Role|Name|Responsibilities - leave Name column BLANK for filling in
 3. Equipment table: columns Item|Specification|SWL/Capacity
+
+SIGNATURE BOXES: Create 4 boxes (Appointed Person, Crane Supervisor, Slinger/Signaller, Crane Operator). Each box has ONLY the role title, then an EMPTY signature line, then "Date: ___________". DO NOT put fake names like "John Doe" - leave them BLANK for signing.
 
 Generate 12+ method statement steps as numbered list, 10+ checklist items.`
 

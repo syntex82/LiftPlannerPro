@@ -82,9 +82,9 @@ tr:nth-child(even){background:#f9f9f9}
 .checklist li:before{content:"☐";margin-right:10px;color:#f97316}
 .sig-box{border:2px solid #1e3a5f;padding:15px;text-align:center}
 
-Use tables for hazards (8+ rows with risk classes), personnel, equipment. Numbered method steps (12+). Checklist (10+). Signature boxes.`
+Use tables for hazards (8+ rows with risk classes), personnel (leave Name column BLANK), equipment. Numbered method steps (12+). Checklist (10+). Signature boxes with EMPTY lines - NO fake names like "John Doe".`
 
-    const userPrompt = `Create professional HTML lift plan:\n${userDataSummary}\n\nUse .container, .header, .info-grid, tables with th/td styling, .risk-high/medium/low classes, .checklist, .sig-box. Generate REAL specific content - no placeholders.`
+    const userPrompt = `Create professional HTML lift plan:\n${userDataSummary}\n\nUse .container, .header, .info-grid, tables with th/td styling, .risk-high/medium/low classes, .checklist, .sig-box. Generate REAL specific content. SIGNATURE BOXES: Just role title + empty signature line + Date:___ - NO FAKE NAMES.`
 
     let htmlContent: string | null = null
 
