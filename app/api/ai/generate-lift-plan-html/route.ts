@@ -73,7 +73,8 @@ export async function POST(req: NextRequest) {
 
     // Try Hugging Face first if selected
     if (model === 'huggingface' && huggingface) {
-      const hfModel = huggingfaceModel || 'deepseek-ai/DeepSeek-R1'
+      // Use Mixtral by default as it has 32k context window (DeepSeek R1 only has 8k)
+      const hfModel = huggingfaceModel || 'mistralai/Mixtral-8x7B-Instruct-v0.1'
       try {
         const response = await huggingface.chatCompletion({
           model: hfModel,
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
             { role: 'system', content: HTML_LIFT_PLAN_PROMPT },
             { role: 'user', content: `Generate a complete HTML lift plan for: ${prompt}` }
           ],
-          max_tokens: 8000,
+          max_tokens: 4000,
           temperature: 0.3
         })
         htmlContent = response.choices[0]?.message?.content || null
