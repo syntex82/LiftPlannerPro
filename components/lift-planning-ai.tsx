@@ -122,6 +122,7 @@ export default function LiftPlanningAI({ isOpen, onClose }: LiftPlanningAIProps)
   })
 
   const [report, setReport] = useState('')
+  const [aiModel, setAiModel] = useState<'huggingface' | 'openai' | 'deepseek'>('huggingface')
 
   const handleMethodSelect = (methodId: string) => {
     setSelectedMethod(methodId)
@@ -131,6 +132,46 @@ export default function LiftPlanningAI({ isOpen, onClose }: LiftPlanningAIProps)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  // NEW: Generate HTML lift plan with AI
+  const generateAILiftPlan = async () => {
+    setIsGenerating(true)
+    try {
+      const response = await fetch('/api/ai/generate-lift-plan-form', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formData, model: aiModel })
+      })
+
+      const data = await response.json()
+      if (data.success && data.html) {
+        // Open HTML in new window
+        const newWindow = window.open('', '_blank')
+        if (newWindow) {
+          newWindow.document.write(data.html)
+          newWindow.document.close()
+        } else {
+          // Fallback: download as file
+          const blob = new Blob([data.html], { type: 'text/html' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `lift-plan-${formData.jobName?.replace(/\s+/g, '_') || 'document'}-${Date.now()}.html`
+          a.click()
+          URL.revokeObjectURL(url)
+        }
+        setReport('HTML Generated Successfully')
+        setStep('report')
+      } else {
+        throw new Error(data.error || 'Failed to generate lift plan')
+      }
+    } catch (error) {
+      console.error('AI generation failed:', error)
+      alert(`Failed to generate lift plan: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const generateReport = async () => {
@@ -917,22 +958,47 @@ export default function LiftPlanningAI({ isOpen, onClose }: LiftPlanningAIProps)
             </Button>
           )}
 
-          <div className="flex gap-2 ml-auto">
+          <div className="flex gap-2 ml-auto flex-wrap">
             {step === 'details' && (
-              <Button
-                onClick={generateReport}
-                disabled={isGenerating || !formData.jobName || !formData.loadWeight || !formData.equipmentType}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating PDF...
-                  </>
-                ) : (
-                  '📄 Generate PDF Report'
-                )}
-              </Button>
+              <>
+                {/* AI Model Selector */}
+                <Select value={aiModel} onValueChange={(v: 'huggingface' | 'openai' | 'deepseek') => setAiModel(v)}>
+                  <SelectTrigger className="w-[140px] bg-slate-700 border-slate-600 text-white text-sm h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-700 border-slate-600">
+                    <SelectItem value="huggingface">🤗 Hugging Face</SelectItem>
+                    <SelectItem value="openai">✨ OpenAI</SelectItem>
+                    <SelectItem value="deepseek">🔮 DeepSeek</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* AI Generate Button - Main action */}
+                <Button
+                  onClick={generateAILiftPlan}
+                  disabled={isGenerating || !formData.jobName || !formData.loadWeight}
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      AI Generating...
+                    </>
+                  ) : (
+                    '🤖 Generate with AI'
+                  )}
+                </Button>
+
+                {/* PDF Button - Secondary */}
+                <Button
+                  onClick={generateReport}
+                  disabled={isGenerating || !formData.jobName || !formData.loadWeight || !formData.equipmentType}
+                  variant="outline"
+                  className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                >
+                  📄 PDF Only
+                </Button>
+              </>
             )}
 
             <Button

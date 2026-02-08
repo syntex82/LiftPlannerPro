@@ -19,13 +19,58 @@ const huggingface = process.env.HUGGINGFACE_API_KEY
   ? new InferenceClient(process.env.HUGGINGFACE_API_KEY)
   : null
 
-const HTML_LIFT_PLAN_PROMPT = `Generate a professional HTML lift plan. Return ONLY HTML starting with <!DOCTYPE html>.
+const HTML_LIFT_PLAN_PROMPT = `You are an expert crane lift planning engineer. Generate a COMPLETE, DETAILED HTML lift plan document.
 
-Include CSS styling (colors: #1e3a5f blue, #f97316 orange), tables, print styles.
+CRITICAL: Return ONLY valid HTML starting with <!DOCTYPE html>. No markdown, no code blocks.
 
-Sections: Header, Project Details, Load Info, Equipment, Rigging Calculations, Lift Geometry, Ground Conditions, Hazards Table, Exclusion Zone, Personnel, Method Statement, Emergency Procedures, Checklist, Signatures.
+Based on the user's description, generate a FULLY POPULATED lift plan with REALISTIC, SPECIFIC data:
+- Calculate actual SWL, rigging requirements, sling angles
+- Specify real crane models with actual capacities at given radii
+- Include specific rigging gear (sling sizes, shackle ratings, spreader beams)
+- Calculate ground bearing pressures for outriggers
+- List specific hazards relevant to the described lift
+- Write detailed step-by-step method statement
+- Include proper exclusion zone calculations
 
-Reference BS 7121/LOLER 1998. Make professional assumptions for missing details.`
+HTML STRUCTURE:
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    h1 { color: #1e3a5f; border-bottom: 3px solid #f97316; }
+    h2 { color: #1e3a5f; background: #f0f4f8; padding: 8px; margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th { background: #1e3a5f; color: white; padding: 10px; text-align: left; }
+    td { border: 1px solid #ddd; padding: 8px; }
+    .warning { background: #fff3cd; border-left: 4px solid #f97316; padding: 10px; }
+    .signature-box { border: 1px solid #333; height: 60px; margin: 5px 0; }
+    @media print { .no-print { display: none; } }
+  </style>
+</head>
+<body>
+  [FULL CONTENT WITH ALL SECTIONS POPULATED]
+</body>
+</html>
+
+REQUIRED SECTIONS (all must have REAL DATA, not placeholders):
+1. HEADER - Title, Document Ref, Date, Revision
+2. PROJECT DETAILS - Client, Site, Lift Supervisor, AP name
+3. LOAD DETAILS - Description, Weight (kg), Dimensions (LxWxH), CoG location
+4. CRANE SELECTION - Make/Model, Configuration, Capacity at radius, % utilization
+5. RIGGING GEAR - Slings (type, SWL, length), Shackles (size, SWL), Spreader beams
+6. LIFT GEOMETRY - Pick radius, Set radius, Boom length, Hook height, Slew angle
+7. GROUND CONDITIONS - Surface type, Bearing capacity, Outrigger loads, Mat sizes
+8. HAZARDS & CONTROLS - Table with 8+ specific hazards, risk ratings, control measures
+9. EXCLUSION ZONE - Radius calculation, Barrier requirements, Signage
+10. PERSONNEL - Roles table: AP, Lift Supervisor, Crane Operator, Slinger, Banksman
+11. COMMUNICATIONS - Radio channel, Hand signals, Emergency signals
+12. METHOD STATEMENT - 15+ numbered steps from setup to completion
+13. EMERGENCY PROCEDURES - Abort procedure, Emergency contacts, Muster point
+14. PRE-LIFT CHECKLIST - 12+ checkbox items
+15. SIGNATURES - Boxes for AP, Lift Supervisor, Crane Operator, Client Rep
+
+Reference BS 7121 and LOLER 1998. Make professional engineering assumptions for any missing details.`
 
 export async function POST(req: NextRequest) {
   try {
