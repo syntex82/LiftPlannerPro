@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
     // Handle Hugging Face models
     if (model === 'huggingface' && huggingface) {
-      const hfModel = huggingfaceModel || 'mistralai/Mixtral-8x7B-Instruct-v0.1'
+      const hfModel = huggingfaceModel || 'deepseek-ai/DeepSeek-R1'
 
       try {
         const chatMessages = [

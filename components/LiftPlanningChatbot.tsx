@@ -89,7 +89,7 @@ export default function LiftPlanningChatbot({
   const [isLoading, setIsLoading] = useState(false)
   const [liftPlanData, setLiftPlanData] = useState<LiftPlanData>({})
   const [aiModel, setAiModel] = useState<'openai' | 'deepseek' | 'huggingface'>('openai')
-  const [huggingfaceModel, setHuggingfaceModel] = useState('mistralai/Mixtral-8x7B-Instruct-v0.1')
+  const [huggingfaceModel, setHuggingfaceModel] = useState('deepseek-ai/DeepSeek-R1')
   const [showSettings, setShowSettings] = useState(false)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -97,11 +97,12 @@ export default function LiftPlanningChatbot({
 
   // Available Hugging Face models for lift planning
   const huggingfaceModels = [
-    { id: 'mistralai/Mixtral-8x7B-Instruct-v0.1', name: 'Mixtral 8x7B (Recommended)' },
+    { id: 'deepseek-ai/DeepSeek-R1', name: 'DeepSeek R1 (Recommended)' },
+    { id: 'deepseek-ai/DeepSeek-R1-Distill-Qwen-32B', name: 'DeepSeek R1 Distill 32B' },
+    { id: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'DeepSeek R1 Distill 70B' },
+    { id: 'mistralai/Mixtral-8x7B-Instruct-v0.1', name: 'Mixtral 8x7B' },
     { id: 'meta-llama/Llama-3.3-70B-Instruct', name: 'Llama 3.3 70B' },
-    { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B' },
-    { id: 'microsoft/Phi-3-medium-128k-instruct', name: 'Phi-3 Medium' },
-    { id: 'google/gemma-2-27b-it', name: 'Gemma 2 27B' }
+    { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B' }
   ]
 
   // Initial greeting message
