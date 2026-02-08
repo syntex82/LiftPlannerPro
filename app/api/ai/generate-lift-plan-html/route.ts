@@ -19,8 +19,23 @@ const huggingface = process.env.HUGGINGFACE_API_KEY
   ? new InferenceClient(process.env.HUGGINGFACE_API_KEY)
   : null
 
-// Short prompt to save tokens - the user message contains all the detail
-const HTML_LIFT_PLAN_PROMPT = `Generate HTML lift plan. Return ONLY <!DOCTYPE html>... with CSS styling. Include: Project, Load, Crane, Rigging, Hazards table, Method Statement, Emergency, Checklist, Signatures. BS 7121/LOLER 1998.`
+const HTML_LIFT_PLAN_PROMPT = `You are an expert lift planner. Generate a COMPLETE HTML lift plan with REAL DATA - NO "to be determined" or placeholders.
+
+CRITICAL RULES:
+1. Return ONLY valid HTML starting with <!DOCTYPE html>
+2. NEVER write "to be determined" - make professional assumptions
+3. Generate SPECIFIC crane models, rigging specs, hazards, method steps
+4. Include professional CSS styling with colors #1e3a5f (blue) and #f97316 (orange)
+
+For a 1000kg load, assume: 50t mobile crane at 12m radius, 4-leg chain sling 2t SWL each leg, 60° sling angle, concrete hardstanding.
+
+MUST INCLUDE with REAL content:
+- 8+ specific hazards with risk levels (H/M/L) and control measures in a table
+- 12+ numbered method statement steps
+- 10+ pre-lift checklist items with checkboxes
+- Specific crane config, rigging calcs, exclusion zone radius
+- Emergency procedures with actual steps
+- Signature boxes with borders`
 
 export async function POST(req: NextRequest) {
   try {

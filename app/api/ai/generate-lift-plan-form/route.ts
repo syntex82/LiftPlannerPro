@@ -62,10 +62,23 @@ WEATHER: Wind ${formData.windSpeed || '?'} ${formData.windSpeedUnit || 'km/h'}, 
 
 NOTES: ${formData.additionalNotes || 'None'}`
 
-    // Short system prompt to save tokens
-    const systemPrompt = `Generate HTML lift plan. Return ONLY <!DOCTYPE html>... Use provided data. Generate: Hazards table, Method Statement, Emergency Procedures, Checklist. BS 7121/LOLER.`
+    // Explicit prompt demanding real content - NO placeholders
+    const systemPrompt = `You are an expert lift planner. Generate COMPLETE HTML lift plan with REAL DATA.
 
-    const userPrompt = `Create HTML lift plan:\n${userDataSummary}\n\nInclude: Header, Project, Load, Equipment, Rigging, Geometry, Ground, Hazards (8+ with controls), Personnel, Method (12+ steps), Emergency, Checklist (10+ items), Signatures.`
+CRITICAL: NEVER write "to be determined" or "TBD" - make professional assumptions based on the data provided.
+Return ONLY valid HTML starting with <!DOCTYPE html>. Include professional CSS with colors #1e3a5f (blue) and #f97316 (orange).`
+
+    const userPrompt = `Create HTML lift plan using this EXACT data:\n${userDataSummary}\n\nGENERATE REAL CONTENT FOR:
+- 8+ SPECIFIC hazards with risk levels (H/M/L) and control measures in a styled table
+- 12+ numbered method statement steps with actual instructions
+- 10+ pre-lift checklist items with checkbox styling
+- Specific crane config based on load weight (if 1000kg, assume 50t mobile crane at 12m radius)
+- Rigging calculations (4-leg chain sling, 60° angle, SWL per leg)
+- Exclusion zone radius calculation
+- Emergency procedures with actual numbered steps
+- Signature boxes with CSS borders
+
+NO PLACEHOLDERS. Make professional engineering assumptions for anything not specified.`
 
     let htmlContent: string | null = null
 
