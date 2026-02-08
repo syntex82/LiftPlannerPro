@@ -55,7 +55,8 @@ export default function CourseDetailPage() {
     try {
       const res = await fetch(`/api/lms/courses/${courseId}`)
       const data = await res.json()
-      setCourse(data.course)
+      // Merge isEnrolled into course object
+      setCourse({ ...data.course, isEnrolled: data.isEnrolled, progress: data.progress })
       if (data.course?.lessons?.[0]) {
         setActiveLesson(data.course.lessons[0].id)
       }
