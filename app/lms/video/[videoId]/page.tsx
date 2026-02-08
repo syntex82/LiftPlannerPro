@@ -153,15 +153,7 @@ export default function VideoPlayerPage() {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         <Card className="bg-slate-800/50 border-slate-700 overflow-hidden">
-          <video
-            ref={videoRef}
-            src={video.videoUrl}
-            controls
-            className="w-full aspect-video bg-black"
-            onTimeUpdate={handleTimeUpdate}
-            onEnded={handleVideoEnd}
-            onLoadedMetadata={handleLoadedMetadata}
-          />
+          {renderVideoPlayer()}
           <div className="p-6">
             <h2 className="text-xl font-bold text-white mb-2">{video.title}</h2>
             {video.description && <p className="text-slate-400">{video.description}</p>}
@@ -170,5 +162,70 @@ export default function VideoPlayerPage() {
       </div>
     </div>
   )
+
+  // Helper function to render the appropriate video player
+  function renderVideoPlayer() {
+    const url = video.videoUrl
+
+    // YouTube
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      const videoId = extractYouTubeId(url)
+      if (videoId) {
+        return (
+          <iframe
+            src={`https://www.youtube.com/embed/${videoId}?rel=0`}
+            className="w-full aspect-video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        )
+      }
+    }
+
+    // Vimeo
+    if (url.includes('vimeo.com')) {
+      const vimeoId = extractVimeoId(url)
+      if (vimeoId) {
+        return (
+          <iframe
+            src={`https://player.vimeo.com/video/${vimeoId}`}
+            className="w-full aspect-video"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+          />
+        )
+      }
+    }
+
+    // Direct video file (mp4, webm, etc.)
+    return (
+      <video
+        ref={videoRef}
+        src={url}
+        controls
+        className="w-full aspect-video bg-black"
+        onTimeUpdate={handleTimeUpdate}
+        onEnded={handleVideoEnd}
+        onLoadedMetadata={handleLoadedMetadata}
+      />
+    )
+  }
+
+  function extractYouTubeId(url: string): string | null {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+      /youtube\.com\/v\/([^&\n?#]+)/
+    ]
+    for (const pattern of patterns) {
+      const match = url.match(pattern)
+      if (match) return match[1]
+    }
+    return null
+  }
+
+  function extractVimeoId(url: string): string | null {
+    const match = url.match(/vimeo\.com\/(\d+)/)
+    return match ? match[1] : null
+  }
 }
 
