@@ -29,6 +29,7 @@ import CADImportDialog from "@/components/cad/CADImportDialog"
 import LiftingScenarioLibrary from "@/components/cad/LiftingScenarioLibrary"
 import PersonnelLibrary from "@/components/cad/PersonnelLibrary"
 import RiggingLibrary from "@/components/cad/RiggingLibrary"
+import SiteObjectsLibrary from "@/components/cad/SiteObjectsLibrary"
 import ChainBlockConfigDialog from "@/components/cad/ChainBlockConfigDialog"
 import LiftPlanningChatbot from "@/components/LiftPlanningChatbot"
 import { drawChainBlock } from "@/lib/chain-blocks"
@@ -334,6 +335,7 @@ function CADEditorContent() {
   const [showScenarioLibrary, setShowScenarioLibrary] = useState(false)
   const [showPersonnelLibrary, setShowPersonnelLibrary] = useState(false)
   const [showRiggingLibrary, setShowRiggingLibrary] = useState(false)
+  const [showSiteObjectsLibrary, setShowSiteObjectsLibrary] = useState(false)
   const [showChainBlockDialog, setShowChainBlockDialog] = useState(false)
   const [editingChainBlockId, setEditingChainBlockId] = useState<string | null>(null)
   const [showLiftPlanningChatbot, setShowLiftPlanningChatbot] = useState(false)
@@ -7185,6 +7187,7 @@ function CADEditorContent() {
         onShowScenarioLibrary={() => setShowScenarioLibrary(true)}
         onShowPersonnelLibrary={() => setShowPersonnelLibrary(true)}
         onShowRiggingLibrary={() => setShowRiggingLibrary(true)}
+        onShowSiteObjectsLibrary={() => setShowSiteObjectsLibrary(true)}
         onShowChainBlockDialog={() => setShowChainBlockDialog(true)}
         showGrid={showGrid}
         setShowGrid={setShowGrid}
@@ -11107,6 +11110,16 @@ function CADEditorContent() {
         onInsertEquipment={(element: any) => {
           setElements([...elements, element as DrawingElement])
           setShowRiggingLibrary(false)
+        }}
+      />
+
+      {/* Site Objects Library */}
+      <SiteObjectsLibrary
+        isOpen={showSiteObjectsLibrary}
+        onClose={() => setShowSiteObjectsLibrary(false)}
+        onInsertObject={(element: any) => {
+          setElements([...elements, element as DrawingElement])
+          setShowSiteObjectsLibrary(false)
         }}
       />
 

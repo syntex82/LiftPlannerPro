@@ -10,7 +10,7 @@ import {
   ChevronDown, Upload, Image, X, Library, Truck, ChevronRight, Zap, Magnet,
   Terminal, FileText, Scissors, Repeat2, Link, ArrowRight, Radius, Zap as ZapIcon,
   Hexagon, Droplet, Slash, Expand, AlignLeft, Pipette, Download as DownloadIcon,
-  Network, MapPin, Users, Link2
+  Network, MapPin, Users, Link2, Factory
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -60,6 +60,7 @@ interface CADRibbonProps {
   onShowScenarioLibrary?: () => void
   onShowPersonnelLibrary?: () => void
   onShowRiggingLibrary?: () => void
+  onShowSiteObjectsLibrary?: () => void
   onShowChainBlockDialog?: () => void
   // Google Maps integration
   onImportLocation?: () => void
@@ -107,6 +108,7 @@ export default function CADRibbon({
   onShowScenarioLibrary,
   onShowPersonnelLibrary,
   onShowRiggingLibrary,
+  onShowSiteObjectsLibrary,
   onShowChainBlockDialog,
   onImportLocation,
 }: CADRibbonProps) {
@@ -489,6 +491,12 @@ export default function CADRibbon({
               label="Rigging"
               onClick={() => onShowRiggingLibrary?.()}
               title="Insert rigging equipment (shackles, hooks, slings)"
+            />
+            <RibbonButton
+              icon={<Factory className="w-5 h-5" />}
+              label="Site Objects"
+              onClick={() => onShowSiteObjectsLibrary?.()}
+              title="Insert industrial equipment (vessels, exchangers, pumps, etc.)"
             />
             <RibbonButton
               icon={<Link className="w-5 h-5" />}
