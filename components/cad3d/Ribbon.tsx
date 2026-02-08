@@ -333,6 +333,9 @@ export default function Ribbon() {
                   <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add load (50t)" onClick={()=>fire({action:'add-load', data:{mass:50, dimensions:[2,2,2]}})}>
                     <BoxIcon className="w-3 h-3 mb-0.5" /> Load
                   </button>
+                  <button className="p-1 rounded hover:bg-yellow-700/60 w-12 h-12 text-[8px] text-yellow-300 flex flex-col items-center justify-center" title="Open rigging equipment library" onClick={()=>fire({action:'show-rigging-library'})}>
+                    <Link2 className="w-3 h-3 mb-0.5" /> Library
+                  </button>
                 </div>
               </div>
               <div className="flex flex-col border-r border-gray-600 px-2 py-2">

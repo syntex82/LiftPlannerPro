@@ -28,6 +28,7 @@ import CADExportDialog from "@/components/cad/CADExportDialog"
 import CADImportDialog from "@/components/cad/CADImportDialog"
 import LiftingScenarioLibrary from "@/components/cad/LiftingScenarioLibrary"
 import PersonnelLibrary from "@/components/cad/PersonnelLibrary"
+import RiggingLibrary from "@/components/cad/RiggingLibrary"
 import ChainBlockConfigDialog from "@/components/cad/ChainBlockConfigDialog"
 import LiftPlanningChatbot from "@/components/LiftPlanningChatbot"
 import { drawChainBlock } from "@/lib/chain-blocks"
@@ -332,6 +333,7 @@ function CADEditorContent() {
   const [showCraneBuilderDialog, setShowCraneBuilderDialog] = useState(false)
   const [showScenarioLibrary, setShowScenarioLibrary] = useState(false)
   const [showPersonnelLibrary, setShowPersonnelLibrary] = useState(false)
+  const [showRiggingLibrary, setShowRiggingLibrary] = useState(false)
   const [showChainBlockDialog, setShowChainBlockDialog] = useState(false)
   const [editingChainBlockId, setEditingChainBlockId] = useState<string | null>(null)
   const [showLiftPlanningChatbot, setShowLiftPlanningChatbot] = useState(false)
@@ -7182,6 +7184,7 @@ function CADEditorContent() {
         onShowCraneBuilder={() => setShowCraneBuilderDialog(true)}
         onShowScenarioLibrary={() => setShowScenarioLibrary(true)}
         onShowPersonnelLibrary={() => setShowPersonnelLibrary(true)}
+        onShowRiggingLibrary={() => setShowRiggingLibrary(true)}
         onShowChainBlockDialog={() => setShowChainBlockDialog(true)}
         showGrid={showGrid}
         setShowGrid={setShowGrid}
@@ -11094,6 +11097,16 @@ function CADEditorContent() {
         onInsertPersonnel={(element: any) => {
           setElements([...elements, element as DrawingElement])
           setShowPersonnelLibrary(false)
+        }}
+      />
+
+      {/* Rigging Equipment Library */}
+      <RiggingLibrary
+        isOpen={showRiggingLibrary}
+        onClose={() => setShowRiggingLibrary(false)}
+        onInsertEquipment={(element: any) => {
+          setElements([...elements, element as DrawingElement])
+          setShowRiggingLibrary(false)
         }}
       />
 

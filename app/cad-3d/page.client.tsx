@@ -7,6 +7,7 @@ import QuadViewport from "@/components/cad3d/QuadViewport"
 import SingleViewport from "@/components/cad3d/SingleViewport"
 import Ribbon from "@/components/cad3d/Ribbon"
 import LayerPanel from "@/components/cad3d/LayerPanel"
+import RiggingLibrary3D from "@/components/cad3d/RiggingLibrary3D"
 import { ArrowLeft, Grid3X3, Box, Layers, Eye, MousePointer, Move, RotateCw, Maximize2 } from "lucide-react"
 import "../../styles/cad-cursors.css"
 
@@ -21,6 +22,7 @@ export default function CAD3DClient() {
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [gridEnabled, setGridEnabled] = useState(true)
   const [objectCount, setObjectCount] = useState(0)
+  const [showRiggingLibrary, setShowRiggingLibrary] = useState(false)
 
   // Check authentication
   useEffect(() => {
@@ -42,11 +44,14 @@ export default function CAD3DClient() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Listen for tool changes
+  // Listen for tool changes and other modeler events
   useEffect(() => {
     const handleModeler = (e: CustomEvent) => {
       if (e.detail?.action === 'tool') {
         setCurrentTool(e.detail.data)
+      }
+      if (e.detail?.action === 'show-rigging-library') {
+        setShowRiggingLibrary(true)
       }
     }
     window.addEventListener('cad3d:modeler', handleModeler as EventListener)
@@ -213,6 +218,12 @@ export default function CAD3DClient() {
 
         {/* Layer management panel */}
         <LayerPanel />
+
+        {/* Rigging Equipment Library */}
+        <RiggingLibrary3D
+          isOpen={showRiggingLibrary}
+          onClose={() => setShowRiggingLibrary(false)}
+        />
       </div>
     </div>
   )
