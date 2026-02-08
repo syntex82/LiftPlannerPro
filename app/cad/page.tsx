@@ -29,6 +29,7 @@ import CADImportDialog from "@/components/cad/CADImportDialog"
 import LiftingScenarioLibrary from "@/components/cad/LiftingScenarioLibrary"
 import PersonnelLibrary from "@/components/cad/PersonnelLibrary"
 import ChainBlockConfigDialog from "@/components/cad/ChainBlockConfigDialog"
+import LiftPlanningChatbot from "@/components/LiftPlanningChatbot"
 import { drawChainBlock } from "@/lib/chain-blocks"
 import { useAutoSave } from "@/hooks/useAutoSave"
 import { RecoveryDialog } from "@/components/cad/RecoveryDialog"
@@ -93,7 +94,8 @@ import {
   Truck,
   Magnet,
   Repeat2,
-  Terminal
+  Terminal,
+  MessageSquare
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import NextImage from "next/image"
@@ -332,6 +334,7 @@ function CADEditorContent() {
   const [showPersonnelLibrary, setShowPersonnelLibrary] = useState(false)
   const [showChainBlockDialog, setShowChainBlockDialog] = useState(false)
   const [editingChainBlockId, setEditingChainBlockId] = useState<string | null>(null)
+  const [showLiftPlanningChatbot, setShowLiftPlanningChatbot] = useState(false)
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false)
   const [showGroundBearingCalc, setShowGroundBearingCalc] = useState(false)
   const [showGoogleMapsImport, setShowGoogleMapsImport] = useState(false)
@@ -7082,6 +7085,14 @@ function CADEditorContent() {
               </>
             )}
           </Button>
+          <Button
+            onClick={() => setShowLiftPlanningChatbot(true)}
+            size="sm"
+            className="bg-indigo-600 hover:bg-indigo-700"
+          >
+            <MessageSquare className="w-4 h-4 mr-2" />
+            AI Chatbot
+          </Button>
 
           <Button
             variant="ghost"
@@ -11108,6 +11119,18 @@ function CADEditorContent() {
             ))
             setEditingChainBlockId(null)
           }
+        }}
+      />
+
+      {/* AI Lift Planning Chatbot */}
+      <LiftPlanningChatbot
+        isOpen={showLiftPlanningChatbot}
+        onClose={() => setShowLiftPlanningChatbot(false)}
+        cadElements={elements}
+        projectInfo={{
+          name: projectName,
+          elements: elements.length,
+          layers: layers.length
         }}
       />
 

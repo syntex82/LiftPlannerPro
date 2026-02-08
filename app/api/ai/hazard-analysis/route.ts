@@ -3,37 +3,44 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import OpenAI from 'openai'
 
-// Only initialize OpenAI if API key is available
+// Initialize OpenAI if API key is available
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null
 
+// Initialize DeepSeek (uses OpenAI-compatible API)
+const deepseek = process.env.DEEPSEEK_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      baseURL: 'https://api.deepseek.com'
+    })
+  : null
+
 export async function POST(req: NextRequest) {
   try {
-    // Check for OpenAI API key first
-    if (!openai) {
-      console.error('OPENAI_API_KEY not configured')
-      return NextResponse.json(
-        { error: 'AI service not configured. Please add OPENAI_API_KEY to .env' },
-        { status: 500 }
-      )
-    }
-
     // Check authentication (optional in development)
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.id) {
-      console.warn('No authenticated session for AI analysis')
-      // Allow in development, require in production
-      if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        )
-      }
+    if (!session?.user?.id && process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
-    const { cadElements, projectInfo } = await req.json()
+    const { cadElements, projectInfo, model = 'openai' } = await req.json()
+
+    // Select AI provider
+    const selectedModel = model === 'deepseek' && deepseek ? deepseek : openai
+    const modelName = model === 'deepseek' && deepseek ? 'deepseek-chat' : 'gpt-4'
+
+    if (!selectedModel) {
+      console.error(`${model === 'deepseek' ? 'DEEPSEEK' : 'OPENAI'}_API_KEY not configured`)
+      return NextResponse.json(
+        { error: `AI service not configured. Please add ${model === 'deepseek' ? 'DEEPSEEK' : 'OPENAI'}_API_KEY to .env` },
+        { status: 500 }
+      )
+    }
 
     console.log('AI Analysis Request:', {
       elementsCount: cadElements?.length || 0,
@@ -91,19 +98,19 @@ For each identified hazard, provide:
 Format as a structured JSON response with hazard categories and specific recommendations.
 `
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+    const completion = await selectedModel.chat.completions.create({
+      model: modelName,
       messages: [
         {
           role: "system",
-          content: "You are an expert safety engineer who can analyze technical drawings and identify potential hazards in lifting operations. You have extensive knowledge of crane operations, rigging, and construction site safety."
+          content: "You are an expert safety engineer who can analyze technical drawings and identify potential hazards in lifting operations. You have extensive knowledge of crane operations, rigging, construction site safety, and UK/EU regulations including BS 7121, LOLER 1998, and PUWER."
         },
         {
           role: "user",
           content: analysisPrompt
         }
       ],
-      max_tokens: 2000,
+      max_tokens: 2500,
       temperature: 0.2,
     })
 
@@ -134,6 +141,7 @@ Format as a structured JSON response with hazard categories and specific recomme
       success: true,
       analysis: structuredAnalysis,
       cadElementsAnalyzed: cadElements.length,
+      model: model === 'deepseek' && deepseek ? 'deepseek' : 'openai',
       timestamp: new Date().toISOString()
     })
 

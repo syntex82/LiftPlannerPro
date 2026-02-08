@@ -22,6 +22,7 @@ import TensionCalculator from "@/components/tension-calculator"
 import ProjectCreationModal from "@/components/project-creation-modal"
 import ProjectCategories from "@/components/project-categories"
 import LiftPlanningAI from "@/components/lift-planning-ai"
+import LiftPlanningChatbot from "@/components/LiftPlanningChatbot"
 import { DesktopRecommendedBadge } from "@/components/ui/universal-desktop-wrapper"
 import {
   Plus,
@@ -71,6 +72,7 @@ export default function DashboardPage() {
   const [showDeviceNotification, setShowDeviceNotification] = useState<string | null>(null)
   const [showProjectModal, setShowProjectModal] = useState(false)
   const [showLiftPlanningAI, setShowLiftPlanningAI] = useState(false)
+  const [showLiftPlanningChatbot, setShowLiftPlanningChatbot] = useState(false)
 
   // Admin email list
   const adminEmails = [
@@ -725,7 +727,7 @@ export default function DashboardPage() {
               </div>
             </Link>
 
-            {/* Lift Planning AI */}
+            {/* Lift Planning AI - Form Based */}
             <div
               className="group cursor-pointer"
               onClick={() => setShowLiftPlanningAI(true)}
@@ -734,9 +736,24 @@ export default function DashboardPage() {
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-white font-semibold mb-1">AI Planner</h3>
-                <p className="text-slate-400 text-xs">Generate plans</p>
+                <h3 className="text-white font-semibold mb-1">Quick Plan</h3>
+                <p className="text-slate-400 text-xs">Form-based planner</p>
                 <Badge className="mt-2 bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-xs">AI</Badge>
+              </div>
+            </div>
+
+            {/* AI Chatbot - Conversational */}
+            <div
+              className="group cursor-pointer"
+              onClick={() => setShowLiftPlanningChatbot(true)}
+            >
+              <div className="dashboard-card p-5 h-full bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-500/30">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <MessageSquare className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-white font-semibold mb-1">AI Chatbot</h3>
+                <p className="text-slate-400 text-xs">Chat with AI</p>
+                <Badge className="mt-2 bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">NEW</Badge>
               </div>
             </div>
           </div>
@@ -925,6 +942,12 @@ export default function DashboardPage() {
       <LiftPlanningAI
         isOpen={showLiftPlanningAI}
         onClose={() => setShowLiftPlanningAI(false)}
+      />
+
+      {/* AI Lift Planning Chatbot */}
+      <LiftPlanningChatbot
+        isOpen={showLiftPlanningChatbot}
+        onClose={() => setShowLiftPlanningChatbot(false)}
       />
     </div>
   )

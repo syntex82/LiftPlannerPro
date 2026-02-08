@@ -3,30 +3,42 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import OpenAI from 'openai'
 
-// Only initialize OpenAI if API key is available
+// Initialize OpenAI if API key is available
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null
+
+// Initialize DeepSeek (uses OpenAI-compatible API)
+const deepseek = process.env.DEEPSEEK_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      baseURL: 'https://api.deepseek.com'
+    })
   : null
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
+
+    if (!session?.user?.id && process.env.NODE_ENV === 'production') {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    if (!openai) {
+    const { projectData, liftType, environment, equipment, model = 'openai' } = await req.json()
+
+    // Select AI provider
+    const selectedModel = model === 'deepseek' && deepseek ? deepseek : openai
+    const modelName = model === 'deepseek' && deepseek ? 'deepseek-chat' : 'gpt-4'
+
+    if (!selectedModel) {
       return NextResponse.json(
-        { error: 'AI service not configured' },
+        { error: `${model === 'deepseek' ? 'DeepSeek' : 'OpenAI'} API not configured. Please add the API key to .env` },
         { status: 500 }
       )
     }
-
-    const { projectData, liftType, environment, equipment } = await req.json()
 
     const prompt = `
 You are an expert safety engineer specializing in lifting operations. Generate a comprehensive Risk Assessment and Method Statement (RAMS) based on the following project details:
@@ -52,20 +64,20 @@ Format the response as a structured document with clear sections. Be specific to
 Focus on practical, actionable safety measures that can be implemented on-site.
 `
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+    const completion = await selectedModel.chat.completions.create({
+      model: modelName,
       messages: [
         {
           role: "system",
-          content: "You are an expert safety engineer with 20+ years of experience in lifting operations, crane safety, and risk assessment. You provide detailed, practical safety guidance that complies with UK and international lifting standards."
+          content: "You are an expert safety engineer with 20+ years of experience in lifting operations, crane safety, and risk assessment. You provide detailed, practical safety guidance that complies with UK and international lifting standards including BS 7121 (Safe use of cranes), LOLER 1998 (Lifting Operations and Lifting Equipment Regulations), and PUWER (Provision and Use of Work Equipment Regulations)."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      max_tokens: 3000,
-      temperature: 0.3, // Lower temperature for more consistent, safety-focused responses
+      max_tokens: 3500,
+      temperature: 0.3
     })
 
     const aiResponse = completion.choices[0]?.message?.content
@@ -85,6 +97,7 @@ Focus on practical, actionable safety measures that can be implemented on-site.
       aiGenerated: true,
       sections,
       rawResponse: aiResponse,
+      model: model === 'deepseek' && deepseek ? 'deepseek' : 'openai',
       timestamp: new Date().toISOString()
     })
 
