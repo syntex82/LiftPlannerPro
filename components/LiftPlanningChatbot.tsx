@@ -361,10 +361,55 @@ I'll create a full plan including:
     pdf.save(`lift-plan-${liftPlanData.jobName?.replace(/\s+/g, '_') || 'report'}-${Date.now()}.pdf`)
   }
 
+  const generateHTMLLiftPlan = async () => {
+    // Get the last user message as the prompt, or use conversation context
+    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user')
+    const prompt = lastUserMessage?.content || 'Generate a standard lift plan'
+
+    setIsGeneratingReport(true)
+    try {
+      const response = await fetch('/api/ai/generate-lift-plan-html', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          model: aiModel,
+          huggingfaceModel: aiModel === 'huggingface' ? huggingfaceModel : undefined
+        })
+      })
+
+      const data = await response.json()
+      if (data.success && data.html) {
+        // Open HTML in new window
+        const newWindow = window.open('', '_blank')
+        if (newWindow) {
+          newWindow.document.write(data.html)
+          newWindow.document.close()
+        } else {
+          // Fallback: download as file
+          const blob = new Blob([data.html], { type: 'text/html' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `lift-plan-${Date.now()}.html`
+          a.click()
+          URL.revokeObjectURL(url)
+        }
+      } else {
+        throw new Error(data.error || 'Failed to generate lift plan')
+      }
+    } catch (error) {
+      console.error('HTML lift plan generation failed:', error)
+      alert('Failed to generate HTML lift plan. Please try again.')
+    } finally {
+      setIsGeneratingReport(false)
+    }
+  }
+
   const quickActions = [
-    { label: '📊 Generate Report', action: generateReport, disabled: isGeneratingReport },
+    { label: '📄 Generate HTML Lift Plan', action: generateHTMLLiftPlan, disabled: isGeneratingReport },
+    { label: '📊 Generate PDF', action: generateReport, disabled: isGeneratingReport },
     { label: '⚠️ List Hazards', action: () => setInputValue('What are the main hazards for this lift?') },
-    { label: '🔧 Rigging Calc', action: () => setInputValue('Calculate the rigging requirements') },
     { label: '✅ Safety Checklist', action: () => setInputValue('Generate a pre-lift safety checklist') }
   ]
 
@@ -381,7 +426,7 @@ I'll create a full plan including:
                 <DialogTitle className="text-white text-lg">AI Lift Planning Assistant</DialogTitle>
                 <p className="text-slate-400 text-xs flex items-center gap-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  {aiModel === 'deepseek' ? 'DeepSeek' : 'GPT-4'} • Ready to help
+                  {aiModel === 'huggingface' ? `🤗 ${huggingfaceModel.split('/')[1]}` : aiModel === 'deepseek' ? 'DeepSeek' : 'GPT-4'} • Ready to help
                 </p>
               </div>
             </div>
