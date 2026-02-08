@@ -19,37 +19,13 @@ const huggingface = process.env.HUGGINGFACE_API_KEY
   ? new InferenceClient(process.env.HUGGINGFACE_API_KEY)
   : null
 
-const HTML_LIFT_PLAN_PROMPT = `You are an expert lift planning engineer. Generate a COMPLETE, PROFESSIONAL HTML lift plan document.
+const HTML_LIFT_PLAN_PROMPT = `Generate a professional HTML lift plan. Return ONLY HTML starting with <!DOCTYPE html>.
 
-IMPORTANT: Return ONLY the HTML content, no markdown, no code blocks, just pure HTML starting with <!DOCTYPE html>.
+Include CSS styling (colors: #1e3a5f blue, #f97316 orange), tables, print styles.
 
-The HTML should be:
-- Professional, print-ready design
-- Clean modern styling with CSS included in <style> tags
-- Company branding colors (dark blue #1e3a5f, safety orange #f97316)
-- Clear section headers with icons/emojis
-- Tables for data presentation
-- Signature boxes at the bottom
-- Print-friendly (@media print styles)
+Sections: Header, Project Details, Load Info, Equipment, Rigging Calculations, Lift Geometry, Ground Conditions, Hazards Table, Exclusion Zone, Personnel, Method Statement, Emergency Procedures, Checklist, Signatures.
 
-Include these sections:
-1. HEADER - Company logo area, document title, reference number, date
-2. PROJECT DETAILS - Client, location, lift supervisor, date/time
-3. LOAD INFORMATION - Description, weight, dimensions, CoG
-4. EQUIPMENT - Crane type, capacity, model, configuration
-5. RIGGING - Slings, shackles, spreader beams, calculations
-6. LIFT GEOMETRY - Pick/set positions, radii, heights, boom config
-7. GROUND CONDITIONS - Surface type, bearing capacity, outrigger setup
-8. HAZARDS & CONTROLS - Table with hazard, risk level, control measure
-9. EXCLUSION ZONE - Radius, barriers, signage
-10. PERSONNEL - Table with role, name field, responsibilities
-11. COMMUNICATIONS - Radio channels, signals
-12. METHOD STATEMENT - Numbered step-by-step procedure
-13. EMERGENCY PROCEDURES - Abort signal, emergency contacts
-14. PRE-LIFT CHECKLIST - Checkbox items
-15. APPROVAL SIGNATURES - Lift Supervisor, Crane Operator, Client Rep
-
-Reference BS 7121 and LOLER 1998. Make reasonable professional assumptions for any missing details.`
+Reference BS 7121/LOLER 1998. Make professional assumptions for missing details.`
 
 export async function POST(req: NextRequest) {
   try {
@@ -73,16 +49,17 @@ export async function POST(req: NextRequest) {
 
     // Try Hugging Face first if selected
     if (model === 'huggingface' && huggingface) {
-      // Use Mixtral by default as it has 32k context window (DeepSeek R1 only has 8k)
       const hfModel = huggingfaceModel || 'mistralai/Mixtral-8x7B-Instruct-v0.1'
+      // Adjust max_tokens based on model context size
+      const maxTokens = hfModel.includes('DeepSeek') ? 3000 : 6000
       try {
         const response = await huggingface.chatCompletion({
           model: hfModel,
           messages: [
             { role: 'system', content: HTML_LIFT_PLAN_PROMPT },
-            { role: 'user', content: `Generate a complete HTML lift plan for: ${prompt}` }
+            { role: 'user', content: `Create HTML lift plan: ${prompt}` }
           ],
-          max_tokens: 4000,
+          max_tokens: maxTokens,
           temperature: 0.3
         })
         htmlContent = response.choices[0]?.message?.content || null

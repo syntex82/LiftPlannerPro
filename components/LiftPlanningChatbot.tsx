@@ -10,17 +10,20 @@ import {
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { 
-  Send, 
-  Bot, 
-  User, 
-  FileText, 
-  Download, 
+import {
+  Send,
+  Bot,
+  User,
+  FileText,
+  Download,
   Settings,
   Loader2,
   AlertTriangle,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Plus,
+  Trash2,
+  MessageSquare
 } from 'lucide-react'
 
 interface ChatMessage {
@@ -89,21 +92,90 @@ export default function LiftPlanningChatbot({
   const [isLoading, setIsLoading] = useState(false)
   const [liftPlanData, setLiftPlanData] = useState<LiftPlanData>({})
   const [aiModel, setAiModel] = useState<'openai' | 'deepseek' | 'huggingface'>('openai')
-  const [huggingfaceModel, setHuggingfaceModel] = useState('deepseek-ai/DeepSeek-R1')
+  const [huggingfaceModel, setHuggingfaceModel] = useState('mistralai/Mixtral-8x7B-Instruct-v0.1')
   const [showSettings, setShowSettings] = useState(false)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
+  const [savedChats, setSavedChats] = useState<{id: string, name: string, messages: ChatMessage[], date: string}[]>([])
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null)
+  const [showChatList, setShowChatList] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // Load saved chats from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('liftplanner-chats')
+    if (saved) {
+      try {
+        setSavedChats(JSON.parse(saved))
+      } catch { /* ignore */ }
+    }
+  }, [])
+
+  // Save chats to localStorage when they change
+  useEffect(() => {
+    if (savedChats.length > 0) {
+      localStorage.setItem('liftplanner-chats', JSON.stringify(savedChats))
+    }
+  }, [savedChats])
+
   // Available Hugging Face models for lift planning
   const huggingfaceModels = [
-    { id: 'deepseek-ai/DeepSeek-R1', name: 'DeepSeek R1 (Recommended)' },
+    { id: 'mistralai/Mixtral-8x7B-Instruct-v0.1', name: 'Mixtral 8x7B (Recommended)' },
+    { id: 'deepseek-ai/DeepSeek-R1', name: 'DeepSeek R1' },
     { id: 'deepseek-ai/DeepSeek-R1-Distill-Qwen-32B', name: 'DeepSeek R1 Distill 32B' },
-    { id: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B', name: 'DeepSeek R1 Distill 70B' },
-    { id: 'mistralai/Mixtral-8x7B-Instruct-v0.1', name: 'Mixtral 8x7B' },
     { id: 'meta-llama/Llama-3.3-70B-Instruct', name: 'Llama 3.3 70B' },
     { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B' }
   ]
+
+  // Start new chat
+  const startNewChat = () => {
+    // Save current chat if it has messages
+    if (messages.length > 1 && !currentChatId) {
+      const firstUserMsg = messages.find(m => m.role === 'user')
+      const chatName = firstUserMsg?.content.slice(0, 50) || 'New Chat'
+      const newChat = {
+        id: `chat-${Date.now()}`,
+        name: chatName,
+        messages: messages,
+        date: new Date().toISOString()
+      }
+      setSavedChats(prev => [newChat, ...prev])
+    }
+    setMessages([])
+    setCurrentChatId(null)
+    setLiftPlanData({})
+    setShowChatList(false)
+  }
+
+  // Load a saved chat
+  const loadChat = (chatId: string) => {
+    const chat = savedChats.find(c => c.id === chatId)
+    if (chat) {
+      setMessages(chat.messages)
+      setCurrentChatId(chatId)
+      setShowChatList(false)
+    }
+  }
+
+  // Delete a saved chat
+  const deleteChat = (chatId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSavedChats(prev => prev.filter(c => c.id !== chatId))
+    if (currentChatId === chatId) {
+      setMessages([])
+      setCurrentChatId(null)
+    }
+  }
+
+  // Clear all chats
+  const clearAllChats = () => {
+    if (confirm('Delete all saved chats?')) {
+      setSavedChats([])
+      localStorage.removeItem('liftplanner-chats')
+      setMessages([])
+      setCurrentChatId(null)
+    }
+  }
 
   // Initial greeting message
   useEffect(() => {
@@ -431,15 +503,79 @@ I'll create a full plan including:
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSettings(!showSettings)}
-              className="text-slate-400 hover:text-white"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={startNewChat}
+                className="text-slate-400 hover:text-white"
+                title="New Chat"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowChatList(!showChatList)}
+                className="text-slate-400 hover:text-white"
+                title="Chat History"
+              >
+                <MessageSquare className="w-4 h-4" />
+                {savedChats.length > 0 && (
+                  <span className="ml-1 text-xs bg-blue-600 px-1 rounded">{savedChats.length}</span>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSettings(!showSettings)}
+                className="text-slate-400 hover:text-white"
+                title="Settings"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
+
+          {/* Chat History Panel */}
+          {showChatList && (
+            <div className="mt-3 p-3 bg-slate-800 rounded-lg border border-slate-700 max-h-48 overflow-y-auto">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-slate-300 text-sm font-medium">Saved Chats</span>
+                {savedChats.length > 0 && (
+                  <Button size="sm" variant="ghost" onClick={clearAllChats} className="text-red-400 hover:text-red-300 text-xs h-6 px-2">
+                    Clear All
+                  </Button>
+                )}
+              </div>
+              {savedChats.length === 0 ? (
+                <p className="text-slate-500 text-sm">No saved chats yet</p>
+              ) : (
+                <div className="space-y-1">
+                  {savedChats.map(chat => (
+                    <div
+                      key={chat.id}
+                      onClick={() => loadChat(chat.id)}
+                      className={`flex items-center justify-between p-2 rounded cursor-pointer hover:bg-slate-700 ${currentChatId === chat.id ? 'bg-slate-700' : ''}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm truncate">{chat.name}</p>
+                        <p className="text-slate-500 text-xs">{new Date(chat.date).toLocaleDateString()}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => deleteChat(chat.id, e)}
+                        className="text-red-400 hover:text-red-300 h-6 w-6 p-0"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Settings Panel */}
           {showSettings && (
