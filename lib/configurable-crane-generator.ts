@@ -1,55 +1,99 @@
 // Configurable Crane Generator - Creates dynamic crane models based on user parameters
 import { CraneSpecifications, Point } from './crane-models'
 
+export type OutriggerPattern = 'H-pattern' | 'X-pattern' | 'box-pattern'
+
 export interface ConfigurableCraneParams {
   name: string
   capacity: number // tonnes (30-300)
   axleCount: number // 2-6 axles
-  wheelbase: number // mm
+  wheelbase: number // mm - total distance from first to last axle
   boomBaseLength: number // meters
   boomMaxLength: number // meters
   boomSections: number // 3-8 sections
-  craneLength: number // mm
-  craneWidth: number // mm
-  craneHeight: number // mm
-  craneWeight: number // tonnes
+  craneLength: number // mm - overall chassis length
+  craneWidth: number // mm - chassis width
+  craneHeight: number // mm - transport height
+  craneWeight: number // tonnes - base weight without counterweight
   counterweightMass: number // tonnes
+  // Outrigger configuration
+  outriggerSpan: number // mm - distance outriggers extend from chassis edge
+  outriggerPattern: OutriggerPattern // pattern of outrigger deployment
+  // Wheel configuration
+  wheelDiameter: number // mm - tire diameter for CAD accuracy
+  dualTires: boolean // whether axles have dual tires (common on heavy cranes)
 }
 
 /**
  * Generate a configurable crane specification based on parameters
  */
 export const generateConfigurableCrane = (params: ConfigurableCraneParams): CraneSpecifications => {
+  // Apply defaults for optional parameters
+  const fullParams: ConfigurableCraneParams = {
+    ...params,
+    outriggerSpan: params.outriggerSpan || 4000,
+    outriggerPattern: params.outriggerPattern || 'X-pattern',
+    wheelDiameter: params.wheelDiameter || 1200,
+    dualTires: params.dualTires ?? (params.capacity >= 100) // Default to dual tires for heavier cranes
+  }
+
   // Calculate derived values
-  const maxRadius = calculateMaxRadius(params.capacity, params.boomMaxLength)
-  const maxHeight = calculateMaxHeight(params.boomMaxLength)
-  const enginePower = calculateEnginePower(params.capacity)
-  const loadChart = generateLoadChart(params.capacity, params.boomMaxLength)
-  const cadData = generateCADData(params)
+  const maxRadius = calculateMaxRadius(fullParams.capacity, fullParams.boomMaxLength)
+  const maxHeight = calculateMaxHeight(fullParams.boomMaxLength)
+  const enginePower = calculateEnginePower(fullParams.capacity)
+  const loadChart = generateLoadChart(fullParams.capacity, fullParams.boomMaxLength)
+  const cadData = generateCADData(fullParams)
+
+  // Calculate axle positions for use in rendering
+  const axlePositions: number[] = []
+  const wheelbaseMeters = fullParams.wheelbase / 1000 // Convert mm to meters
+  if (fullParams.axleCount === 1) {
+    axlePositions.push(0)
+  } else {
+    const spacing = wheelbaseMeters / (fullParams.axleCount - 1)
+    const startPos = -wheelbaseMeters / 2
+    for (let i = 0; i < fullParams.axleCount; i++) {
+      axlePositions.push(startPos + (i * spacing))
+    }
+  }
 
   return {
     id: `custom-crane-${Date.now()}`,
     manufacturer: 'Custom',
-    model: params.name,
-    type: params.axleCount >= 4 ? 'all-terrain' : 'truck',
+    model: fullParams.name,
+    type: fullParams.axleCount >= 4 ? 'all-terrain' : 'truck',
     category: 'mobile',
 
-    maxCapacity: params.capacity,
+    maxCapacity: fullParams.capacity,
     maxRadius,
     maxHeight,
 
     dimensions: {
-      length: params.craneLength,
-      width: params.craneWidth,
-      height: params.craneHeight,
-      weight: params.craneWeight,
-      wheelbase: params.wheelbase
+      length: fullParams.craneLength,
+      width: fullParams.craneWidth,
+      height: fullParams.craneHeight,
+      weight: fullParams.craneWeight,
+      wheelbase: fullParams.wheelbase
+    },
+
+    // Axle configuration for CAD drawing
+    axles: {
+      count: fullParams.axleCount,
+      positions: axlePositions, // Positions in meters relative to chassis center
+      wheelDiameter: fullParams.wheelDiameter,
+      dualTires: fullParams.dualTires
+    },
+
+    // Outrigger configuration
+    outriggers: {
+      span: fullParams.outriggerSpan,
+      pattern: fullParams.outriggerPattern
     },
 
     boom: {
-      baseLength: params.boomBaseLength,
-      maxLength: params.boomMaxLength,
-      sections: params.boomSections,
+      baseLength: fullParams.boomBaseLength,
+      maxLength: fullParams.boomMaxLength,
+      sections: fullParams.boomSections,
       luffingAngle: { min: 0, max: 85 },
       telescopic: true
     },
@@ -58,7 +102,7 @@ export const generateConfigurableCrane = (params: ConfigurableCraneParams): Cran
 
     engine: {
       manufacturer: 'Custom',
-      model: `${params.capacity}t Engine`,
+      model: `${fullParams.capacity}t Engine`,
       power: enginePower,
       fuelType: 'diesel',
       emissions: 'EU Stage V'
@@ -66,13 +110,13 @@ export const generateConfigurableCrane = (params: ConfigurableCraneParams): Cran
 
     operational: {
       workingSpeed: {
-        hoist: 100 + (params.capacity / 3),
-        boom: 2.5 + (params.capacity / 100),
-        swing: 2.0 + (params.capacity / 150),
-        travel: 80 + (params.capacity / 10)
+        hoist: 100 + (fullParams.capacity / 3),
+        boom: 2.5 + (fullParams.capacity / 100),
+        swing: 2.0 + (fullParams.capacity / 150),
+        travel: 80 + (fullParams.capacity / 10)
       },
-      gradeability: 65 + (params.axleCount * 0.5),
-      groundPressure: 0
+      gradeability: 65 + (fullParams.axleCount * 0.5),
+      groundPressure: calculateGroundPressure(fullParams)
     },
 
     safety: {
@@ -90,6 +134,18 @@ export const generateConfigurableCrane = (params: ConfigurableCraneParams): Cran
       certificationBody: 'TÜV Rheinland'
     }
   }
+}
+
+/**
+ * Calculate ground pressure based on crane weight and footprint
+ */
+const calculateGroundPressure = (params: ConfigurableCraneParams): number => {
+  // Approximate ground pressure in kg/cm²
+  // Based on total weight distributed over outrigger pads
+  const totalWeight = (params.craneWeight + params.counterweightMass) * 1000 // kg
+  const padSize = 60 * 60 // 60cm x 60cm pad, typical
+  const numPads = 4
+  return Math.round((totalWeight / (padSize * numPads)) * 10) / 10
 }
 
 /**
@@ -145,13 +201,17 @@ const generateLoadChart = (capacity: number, boomMaxLength: number): Array<{ rad
 
 /**
  * Generate CAD drawing data based on parameters
+ * Creates dynamic axle/wheel positions based on axle count and wheelbase
  */
 const generateCADData = (params: ConfigurableCraneParams) => {
-  const baseLength = params.craneLength / 10 // Convert mm to drawing units
-  const baseWidth = params.craneWidth / 10
-  const axleSpacing = params.wheelbase / (params.axleCount - 1) / 10
+  // Convert mm to drawing units (1:10 scale)
+  const baseLength = params.craneLength / 100
+  const baseWidth = params.craneWidth / 100
+  const wheelbase = params.wheelbase / 100
+  const outriggerSpan = (params.outriggerSpan || 4000) / 100
+  const wheelRadius = (params.wheelDiameter || 1200) / 200 // Radius in drawing units
 
-  // Base points (chassis)
+  // Base points (chassis rectangle)
   const basePoints: Point[] = [
     { x: -baseLength / 2, y: -baseWidth / 2 },
     { x: baseLength / 2, y: -baseWidth / 2 },
@@ -159,50 +219,146 @@ const generateCADData = (params: ConfigurableCraneParams) => {
     { x: -baseLength / 2, y: baseWidth / 2 }
   ]
 
-  // Axle/wheel points
+  // Generate dynamic axle/wheel positions based on axle count
+  // Axles are evenly distributed across the wheelbase
   const wheelPoints: Point[] = []
-  const startX = -params.wheelbase / 20
-  for (let i = 0; i < params.axleCount; i++) {
-    wheelPoints.push({
-      x: startX + (i * axleSpacing),
-      y: -baseWidth / 2 - 5
-    })
+  const axlePositions: number[] = []
+
+  if (params.axleCount === 1) {
+    // Single axle at center
+    axlePositions.push(0)
+  } else {
+    // Distribute axles evenly across wheelbase
+    const axleSpacing = wheelbase / (params.axleCount - 1)
+    const startX = -wheelbase / 2
+    for (let i = 0; i < params.axleCount; i++) {
+      axlePositions.push(startX + (i * axleSpacing))
+    }
   }
 
-  // Counterweight points
+  // Generate wheel points for each axle (left and right wheels)
+  axlePositions.forEach(axleX => {
+    // Left wheel
+    wheelPoints.push({
+      x: axleX,
+      y: -baseWidth / 2 - wheelRadius
+    })
+    // Right wheel
+    wheelPoints.push({
+      x: axleX,
+      y: baseWidth / 2 + wheelRadius
+    })
+
+    // Add dual tire positions if enabled
+    if (params.dualTires) {
+      wheelPoints.push({
+        x: axleX,
+        y: -baseWidth / 2 - wheelRadius * 2.5
+      })
+      wheelPoints.push({
+        x: axleX,
+        y: baseWidth / 2 + wheelRadius * 2.5
+      })
+    }
+  })
+
+  // Counterweight at rear of crane
+  const cwWidth = baseLength * 0.25
+  const cwDepth = baseWidth * 0.8
   const counterweightPoints: Point[] = [
-    { x: -baseLength / 2 + 10, y: -baseWidth / 2 + 5 },
-    { x: -baseLength / 2 + 30, y: -baseWidth / 2 + 5 },
-    { x: -baseLength / 2 + 30, y: baseWidth / 2 - 5 },
-    { x: -baseLength / 2 + 10, y: baseWidth / 2 - 5 }
+    { x: -baseLength / 2 + 2, y: -cwDepth / 2 },
+    { x: -baseLength / 2 + cwWidth, y: -cwDepth / 2 },
+    { x: -baseLength / 2 + cwWidth, y: cwDepth / 2 },
+    { x: -baseLength / 2 + 2, y: cwDepth / 2 }
   ]
 
-  // Cab points
+  // Cab at front-right of crane
+  const cabWidth = baseLength * 0.18
+  const cabDepth = baseWidth * 0.65
   const cabPoints: Point[] = [
-    { x: baseLength / 2 - 30, y: -baseWidth / 2 + 5 },
-    { x: baseLength / 2 - 5, y: -baseWidth / 2 + 5 },
-    { x: baseLength / 2 - 5, y: baseWidth / 2 - 5 },
-    { x: baseLength / 2 - 30, y: baseWidth / 2 - 5 }
+    { x: baseLength / 2 - cabWidth - 2, y: -cabDepth / 2 },
+    { x: baseLength / 2 - 2, y: -cabDepth / 2 },
+    { x: baseLength / 2 - 2, y: cabDepth / 2 },
+    { x: baseLength / 2 - cabWidth - 2, y: cabDepth / 2 }
   ]
 
-  // Outrigger points
-  const outriggerPoints: Point[] = [
-    { x: -baseLength / 2 - 5, y: -baseWidth / 2 - 10 },
-    { x: baseLength / 2 + 5, y: -baseWidth / 2 - 10 },
-    { x: baseLength / 2 + 5, y: baseWidth / 2 + 10 },
-    { x: -baseLength / 2 - 5, y: baseWidth / 2 + 10 }
-  ]
+  // Generate outrigger positions based on pattern
+  const outriggerPoints: Point[] = generateOutriggerPoints(
+    baseLength,
+    baseWidth,
+    outriggerSpan,
+    params.outriggerPattern || 'X-pattern'
+  )
 
   return {
     basePoints,
-    boomPoints: [{ x: 0, y: 0 }],
+    boomPoints: [{ x: 0, y: 0 }], // Boom pivot at center
     counterweightPoints,
     cabPoints,
-    trackPoints: wheelPoints,
+    trackPoints: wheelPoints, // Using trackPoints for wheel positions
     outriggerPoints,
+    // Additional data for enhanced rendering
+    axleCount: params.axleCount,
+    axlePositions,
+    wheelRadius,
+    dualTires: params.dualTires,
+    outriggerSpan,
+    outriggerPattern: params.outriggerPattern,
     scale: 1.0,
     color: '#FF6B35', // Orange for custom cranes
     lineWeight: 2
   }
+}
+
+/**
+ * Generate outrigger points based on pattern
+ */
+const generateOutriggerPoints = (
+  baseLength: number,
+  baseWidth: number,
+  outriggerSpan: number,
+  pattern: OutriggerPattern
+): Point[] => {
+  const points: Point[] = []
+  const halfLength = baseLength / 2
+  const halfWidth = baseWidth / 2
+  const spanOffset = outriggerSpan / 2
+
+  switch (pattern) {
+    case 'H-pattern':
+      // H-pattern: outriggers extend straight out from sides
+      // Front pair
+      points.push({ x: halfLength - 10, y: -halfWidth - spanOffset })
+      points.push({ x: halfLength - 10, y: halfWidth + spanOffset })
+      // Rear pair
+      points.push({ x: -halfLength + 10, y: -halfWidth - spanOffset })
+      points.push({ x: -halfLength + 10, y: halfWidth + spanOffset })
+      break
+
+    case 'box-pattern':
+      // Box pattern: outriggers at corners extend straight out
+      // Front-left, Front-right, Rear-right, Rear-left
+      points.push({ x: halfLength - 5, y: -halfWidth - spanOffset })
+      points.push({ x: halfLength - 5, y: halfWidth + spanOffset })
+      points.push({ x: -halfLength + 5, y: halfWidth + spanOffset })
+      points.push({ x: -halfLength + 5, y: -halfWidth - spanOffset })
+      break
+
+    case 'X-pattern':
+    default:
+      // X-pattern: outriggers extend diagonally from corners (most common)
+      const diagOffset = spanOffset * 0.7 // 45-degree diagonal
+      // Front-left (extends forward-left)
+      points.push({ x: halfLength + diagOffset, y: -halfWidth - diagOffset })
+      // Front-right (extends forward-right)
+      points.push({ x: halfLength + diagOffset, y: halfWidth + diagOffset })
+      // Rear-right (extends back-right)
+      points.push({ x: -halfLength - diagOffset, y: halfWidth + diagOffset })
+      // Rear-left (extends back-left)
+      points.push({ x: -halfLength - diagOffset, y: -halfWidth - diagOffset })
+      break
+  }
+
+  return points
 }
 

@@ -22,6 +22,20 @@ export interface CraneSpecifications {
     wheelbase?: number // mm (for truck cranes)
   }
 
+  // Axle Configuration (for custom/configurable cranes)
+  axles?: {
+    count: number // number of axles (2-6)
+    positions: number[] // axle positions in meters relative to chassis center
+    wheelDiameter: number // mm - tire diameter
+    dualTires: boolean // whether axles have dual tires
+  }
+
+  // Outrigger Configuration (for custom/configurable cranes)
+  outriggers?: {
+    span: number // mm - distance outriggers extend from chassis
+    pattern: 'H-pattern' | 'X-pattern' | 'box-pattern'
+  }
+
   // Boom Specifications
   boom: {
     baseLength: number // meters
