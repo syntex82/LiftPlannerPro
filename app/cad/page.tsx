@@ -2581,12 +2581,19 @@ function CADEditorContent() {
         const craneConfig: Partial<CraneDrawingConfig> = {
           boomAngle,
           boomLength: boomLenPixels,
-          boomSections: element.craneData?.boomSections || 5,
+          boomSections: element.craneData?.boomSections || crane.boom.sections || 5,
           outriggerExtension: element.craneData?.outriggerExtension || 1.0,
           counterweightTons: element.craneData?.counterweightTons || 12,
           loadLineLength: loadLineLength * 3,  // Scale up load line too
           showDimensions: element.craneData?.showDimensions !== false,
-          scale
+          scale,
+          // Custom crane axle configuration - pass from crane specification
+          axleCount: crane.axles?.count,
+          axlePositions: crane.axles?.positions,
+          wheelDiameter: crane.axles?.wheelDiameter,
+          dualTires: crane.axles?.dualTires,
+          // Custom chassis length from crane dimensions
+          chassisLengthM: crane.dimensions?.length ? crane.dimensions.length / 1000 : undefined
         }
         switch (crane.wireframeType) {
           case 'mobile':

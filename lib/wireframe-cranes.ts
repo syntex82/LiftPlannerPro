@@ -14,6 +14,13 @@ export interface CraneDrawingConfig {
   loadLineLength: number      // Hook drop length in pixels
   showDimensions: boolean     // Show dimension lines
   scale: number               // Drawing scale
+  // Custom crane axle configuration
+  axleCount?: number          // Number of axles (2-6)
+  axlePositions?: number[]    // Axle positions in meters relative to chassis center
+  wheelDiameter?: number      // Wheel diameter in mm (for scaling)
+  dualTires?: boolean         // Whether to show dual tires on each axle
+  // Custom crane dimensions
+  chassisLengthM?: number     // Chassis length in meters (default 11.4m like LTM 1055)
 }
 
 // Default configuration
@@ -200,14 +207,15 @@ export function drawWireframeMobileCrane(
   // LTM 1055-3.1 carrier is ~11.4m = ~137 pixels
   // Ground level and base measurements
   const groundY = 70
-  const wheelRadius = 12  // ~1m wheels
+  // Use custom wheel diameter if provided, otherwise default to 1m (12px)
+  const wheelRadius = cfg.wheelDiameter ? (cfg.wheelDiameter / 1000) * 12 / 2 : 12  // Convert mm to pixels
   const wheelY = groundY - wheelRadius
 
-  // === CARRIER/CHASSIS (11.4m = 137px) ===
-  const carrierLengthM = 11.4
-  const carrierLengthPx = carrierLengthM * 12  // 137 pixels
-  const chassisLeft = -carrierLengthPx / 2  // -68.5
-  const chassisRight = carrierLengthPx / 2   // 68.5
+  // === CARRIER/CHASSIS - configurable length ===
+  const carrierLengthM = cfg.chassisLengthM || 11.4  // Default to LTM 1055 length
+  const carrierLengthPx = carrierLengthM * 12  // pixels
+  const chassisLeft = -carrierLengthPx / 2
+  const chassisRight = carrierLengthPx / 2
   const chassisLength = carrierLengthPx
   const chassisTop = groundY - 35
   const chassisBottom = groundY - 18
@@ -306,19 +314,51 @@ export function drawWireframeMobileCrane(
   ctx.textAlign = 'center'
   ctx.fillText(`${cfg.counterweightTons}t`, (cwLeft + cwRight) / 2, cwTop + cwHeight / 2 + 3)
 
-  // === AXLES AND WHEELS (5 axles for LTM 1055) ===
-  // Axle spacing ~1.5m apart
-  const axleSpacing = 1.5 * 12  // 18px
-  // Front axle group (2 axles)
-  const frontAxle1 = chassisLeft + 20
-  const frontAxle2 = frontAxle1 + axleSpacing
-  // Rear axle group (3 axles)
-  const rearAxle3 = chassisRight - 15
-  const rearAxle2 = rearAxle3 - axleSpacing
-  const rearAxle1 = rearAxle2 - axleSpacing
+  // === AXLES AND WHEELS - Configurable ===
+  // Use custom axle positions if provided, otherwise default to 5 axles like LTM 1055
+  let allAxles: number[] = []
 
-  const allAxles = [frontAxle1, frontAxle2, rearAxle1, rearAxle2, rearAxle3]
+  if (cfg.axlePositions && cfg.axlePositions.length > 0) {
+    // Convert axle positions from meters to pixels (relative to chassis center)
+    allAxles = cfg.axlePositions.map(posM => posM * 12)
+  } else if (cfg.axleCount && cfg.axleCount > 0) {
+    // Generate axle positions based on count if no positions provided
+    const axleCount = cfg.axleCount
+    const axleSpacing = 1.5 * 12  // 18px (~1.5m spacing)
+    if (axleCount === 1) {
+      allAxles = [0]
+    } else if (axleCount === 2) {
+      allAxles = [chassisLeft + 25, chassisRight - 25]
+    } else if (axleCount === 3) {
+      allAxles = [chassisLeft + 25, 0, chassisRight - 25]
+    } else if (axleCount === 4) {
+      allAxles = [chassisLeft + 25, chassisLeft + 25 + axleSpacing, chassisRight - 25 - axleSpacing, chassisRight - 25]
+    } else {
+      // 5+ axles - distribute evenly with front/rear grouping
+      const frontAxle1 = chassisLeft + 20
+      const frontAxle2 = frontAxle1 + axleSpacing
+      const rearAxleN = chassisRight - 15
+      const rearAxleNm1 = rearAxleN - axleSpacing
+      const rearAxleNm2 = rearAxleNm1 - axleSpacing
+      if (axleCount === 5) {
+        allAxles = [frontAxle1, frontAxle2, rearAxleNm2, rearAxleNm1, rearAxleN]
+      } else {
+        // 6 axles
+        allAxles = [frontAxle1, frontAxle2, frontAxle2 + axleSpacing, rearAxleNm2, rearAxleNm1, rearAxleN]
+      }
+    }
+  } else {
+    // Default 5 axles like LTM 1055
+    const axleSpacing = 1.5 * 12
+    const frontAxle1 = chassisLeft + 20
+    const frontAxle2 = frontAxle1 + axleSpacing
+    const rearAxle3 = chassisRight - 15
+    const rearAxle2 = rearAxle3 - axleSpacing
+    const rearAxle1 = rearAxle2 - axleSpacing
+    allAxles = [frontAxle1, frontAxle2, rearAxle1, rearAxle2, rearAxle3]
+  }
 
+  // Draw each axle with wheels
   for (const axleX of allAxles) {
     // Tire outer
     ctx.beginPath()
@@ -332,13 +372,26 @@ export function drawWireframeMobileCrane(
     ctx.beginPath()
     ctx.arc(axleX, wheelY, 4, 0, Math.PI * 2)
     ctx.fill()
+
+    // Dual tires (second tire behind if enabled) - draw smaller inner circles to indicate dual
+    if (cfg.dualTires) {
+      ctx.lineWidth = 0.8
+      ctx.beginPath()
+      ctx.arc(axleX, wheelY, wheelRadius * 0.35, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.lineWidth = 1.2
+    }
   }
 
   // === OUTRIGGERS (extend ~3.5m each side) ===
   const outriggerExtend = 3.5 * 12 * cfg.outriggerExtension  // 42px at full extension
 
+  // Get front and rear axle positions for outrigger placement
+  const frontAxleForOutrigger = allAxles.length >= 2 ? allAxles[1] : allAxles[0] || chassisLeft + 40
+  const rearAxleForOutrigger = allAxles.length >= 3 ? allAxles[allAxles.length - 3] : allAxles[allAxles.length - 1] || chassisRight - 40
+
   // Front outrigger (near front axle group)
-  const frontOutX = frontAxle2 + 5
+  const frontOutX = frontAxleForOutrigger + 5
   if (cfg.outriggerExtension > 0) {
     ctx.beginPath()
     ctx.moveTo(frontOutX, chassisBottom)
@@ -350,7 +403,7 @@ export function drawWireframeMobileCrane(
   }
 
   // Rear outrigger (near rear axle group)
-  const rearOutX = rearAxle1 - 5
+  const rearOutX = rearAxleForOutrigger - 5
   if (cfg.outriggerExtension > 0) {
     ctx.beginPath()
     ctx.moveTo(rearOutX, chassisBottom)

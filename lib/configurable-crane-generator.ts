@@ -64,6 +64,10 @@ export const generateConfigurableCrane = (params: ConfigurableCraneParams): Cran
     type: fullParams.axleCount >= 4 ? 'all-terrain' : 'truck',
     category: 'mobile',
 
+    // Use wireframe drawing system for professional technical drawing like LTM 1055
+    wireframe: true,
+    wireframeType: 'mobile' as const,
+
     maxCapacity: fullParams.capacity,
     maxRadius,
     maxHeight,
