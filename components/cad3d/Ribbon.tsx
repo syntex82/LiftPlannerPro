@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { FilePlus, FolderOpen, Save, MousePointer, Move, RotateCw, Expand, Copy, Trash2, Settings, Terminal, Grid, Magnet, Box as BoxIcon, Circle, PenLine, Square, PenTool, Zap, Minus, Plus, RotateCcw, Layers, Eye, EyeOff, Scissors, Maximize2, Slash, Radius, Cog, Anchor, Hexagon, Link2, Package } from "lucide-react"
+import { FilePlus, FolderOpen, Save, MousePointer, Move, RotateCw, Expand, Copy, Trash2, Settings, Terminal, Grid, Magnet, Box as BoxIcon, Circle, PenLine, Square, PenTool, Zap, Minus, Plus, RotateCcw, Layers, Eye, EyeOff, Scissors, Maximize2, Slash, Radius, Cog, Anchor, Hexagon, Link2, Package, Truck } from "lucide-react"
 
 export default function Ribbon() {
   const [activeTab, setActiveTab] = useState<'file'|'modeling'|'insert'|'profiles'|'view'>('file')
@@ -293,6 +293,17 @@ export default function Ribbon() {
                   </button>
                   <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Vessel" onClick={()=>fire({action:'add-primitive', data:'vessel'})}>
                     <Circle className="w-3 h-3 mb-0.5" /> Vessel
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-col border-r border-gray-600 px-2 py-2">
+                <div className="text-xs font-semibold text-green-400 mb-1 uppercase tracking-wide">3D Cranes</div>
+                <div className="flex gap-1">
+                  <button className="p-1 rounded hover:bg-green-700/60 w-14 h-12 text-[8px] text-green-300 flex flex-col items-center justify-center" title="Liebherr LTM 1055-3.1 (55t)" onClick={()=>fire({action:'add-ltm1055-crane'})}>
+                    <Truck className="w-3 h-3 mb-0.5" /> LTM 1055
+                  </button>
+                  <button className="p-1 rounded hover:bg-green-700/60 w-14 h-12 text-[8px] text-green-300 flex flex-col items-center justify-center" title="Liebherr LTM 1300-6.2 (300t)" onClick={()=>fire({action:'add-ltm1300-crane'})}>
+                    <Truck className="w-3 h-3 mb-0.5" /> LTM 1300
                   </button>
                 </div>
               </div>
