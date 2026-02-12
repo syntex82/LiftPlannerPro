@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type ModelerObjectType = "box" | "cylinder" | "sphere" | "tube" | "lathe" | "sweep" | "union" | "pipe" | "ibeam" | "hbeam" | "cchannel" | "tank" | "vessel" | "column" | "exchanger" | "crane" | "crane-plan" | "ltm-1055-3d" | "ltm-1300-3d" | "window" | "hook-block" | "scaffolding" | "scaffold-tower" | "scaffold-bay" | "scaffold-stair" | "steel-beam" | "steel-column" | "handrail" | "ladder" | "platform" | "single-pole" | "unit-beam" | "gltf" | "editable-mesh" | "terrain" | "distillation-column" | "cooling-tower" | "flare-stack" | "pipe-rack" | "storage-sphere" | "reactor" | "furnace" | "compressor" | "pump" | "drum"
+export type ModelerObjectType = "box" | "cylinder" | "sphere" | "tube" | "cone" | "torus" | "pyramid" | "wedge" | "dome" | "lathe" | "sweep" | "union" | "pipe" | "ibeam" | "hbeam" | "cchannel" | "tank" | "vessel" | "column" | "exchanger" | "crane" | "crane-plan" | "ltm-1055-3d" | "ltm-1300-3d" | "window" | "hook-block" | "scaffolding" | "scaffold-tower" | "scaffold-bay" | "scaffold-stair" | "steel-beam" | "steel-column" | "handrail" | "ladder" | "platform" | "single-pole" | "unit-beam" | "gltf" | "editable-mesh" | "terrain" | "distillation-column" | "cooling-tower" | "flare-stack" | "pipe-rack" | "storage-sphere" | "reactor" | "furnace" | "compressor" | "pump" | "drum"
 
 export interface ModelerObject {
   id: string
@@ -20,6 +20,19 @@ export interface ModelerObject {
   radius?: number
   height?: number
   thickness?: number // for pipe wall
+  // cone params
+  radiusTop?: number
+  radiusBottom?: number
+  // torus params
+  tubeRadius?: number
+  arc?: number // partial torus (in radians, default 2*PI)
+  // pyramid params
+  sides?: number // number of sides (3 = triangular, 4 = square, 5 = pentagonal, etc.)
+  // wedge params (triangular prism)
+  wedgeAngle?: number // angle in degrees
+  // dome params
+  phiStart?: number
+  phiLength?: number
   // beam/channel params
   length?: number
   width?: number // flange width (x)

@@ -532,6 +532,11 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
           case 'sphere': addSphere(); break
           case 'cylinder': addCylinder(); break
           case 'tube': addTube(); break
+          case 'cone': addCone(); break
+          case 'torus': addTorus(); break
+          case 'pyramid': addPyramid(); break
+          case 'wedge': addWedge(); break
+          case 'dome': addDome(); break
           case 'hbeam': addHBeam(); break
           case 'ibeam': addIBeam(); break
           case 'cchannel': addCChannel(); break
@@ -1439,6 +1444,57 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
     ])
     setSelectedId(id)
     log("addCylinder", { id })
+  }
+
+  // ========== ADVANCED PRIMITIVES ==========
+  const addCone = (radiusBottom: number = 1, radiusTop: number = 0, height: number = 2) => {
+    const id = `cone-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type: 'cone' as any, name: 'Cone', position: [0, height / 2, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      color: '#93c5fd', radiusBottom, radiusTop, height
+    }]))
+    setSelectedId(id)
+    log('addCone', { id, radiusBottom, radiusTop, height })
+  }
+
+  const addTorus = (radius: number = 1, tubeRadius: number = 0.3, arc: number = Math.PI * 2) => {
+    const id = `torus-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type: 'torus' as any, name: 'Torus', position: [0, tubeRadius + 0.1, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      color: '#f0abfc', radius, tubeRadius, arc
+    }]))
+    setSelectedId(id)
+    log('addTorus', { id, radius, tubeRadius, arc })
+  }
+
+  const addPyramid = (radius: number = 1, height: number = 2, sides: number = 4) => {
+    const id = `pyramid-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type: 'pyramid' as any, name: 'Pyramid', position: [0, height / 2, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      color: '#fcd34d', radius, height, sides
+    }]))
+    setSelectedId(id)
+    log('addPyramid', { id, radius, height, sides })
+  }
+
+  const addWedge = (width: number = 1, height: number = 1, depth: number = 2) => {
+    const id = `wedge-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type: 'wedge' as any, name: 'Wedge', position: [0, height / 2, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      color: '#a78bfa', width, height, depth
+    }]))
+    setSelectedId(id)
+    log('addWedge', { id, width, height, depth })
+  }
+
+  const addDome = (radius: number = 1, phiLength: number = Math.PI / 2) => {
+    const id = `dome-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type: 'dome' as any, name: 'Dome', position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      color: '#6ee7b7', radius, phiLength
+    }]))
+    setSelectedId(id)
+    log('addDome', { id, radius, phiLength })
   }
 
   const addScaffolding = (height: number = 10, width: number = 3, depth: number = 2, levels: number = 4) => {
@@ -3552,6 +3608,129 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
             <meshStandardMaterial color={color} metalness={0.2} roughness={0.8} side={THREE.BackSide} wireframe={wireframe} />
           </mesh>
         </group>
+      )
+    }
+
+    // ========== ADVANCED PRIMITIVES RENDERING ==========
+    if (o.type === 'cone') {
+      const rb = o.radiusBottom ?? 1
+      const rt = o.radiusTop ?? 0
+      const h = o.height ?? 2
+      return (
+        <mesh
+          key={o.id}
+          position={o.position}
+          rotation={o.rotation}
+          scale={o.scale}
+          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+          castShadow receiveShadow
+          onPointerDown={(e) => { e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}
+        >
+          <coneGeometry args={[rb, h, 32]} />
+          <primitive object={texMat ?? mat} attach="material" />
+        </mesh>
+      )
+    }
+
+    if (o.type === 'torus') {
+      const r = o.radius ?? 1
+      const tr = o.tubeRadius ?? 0.3
+      const arc = o.arc ?? Math.PI * 2
+      return (
+        <mesh
+          key={o.id}
+          position={o.position}
+          rotation={o.rotation}
+          scale={o.scale}
+          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+          castShadow receiveShadow
+          onPointerDown={(e) => { e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}
+        >
+          <torusGeometry args={[r, tr, 16, 48, arc]} />
+          <primitive object={texMat ?? mat} attach="material" />
+        </mesh>
+      )
+    }
+
+    if (o.type === 'pyramid') {
+      const r = o.radius ?? 1
+      const h = o.height ?? 2
+      const sides = o.sides ?? 4
+      return (
+        <mesh
+          key={o.id}
+          position={o.position}
+          rotation={o.rotation}
+          scale={o.scale}
+          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+          castShadow receiveShadow
+          onPointerDown={(e) => { e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}
+        >
+          <coneGeometry args={[r, h, sides]} />
+          <primitive object={texMat ?? mat} attach="material" />
+        </mesh>
+      )
+    }
+
+    if (o.type === 'wedge') {
+      const w = o.width ?? 1
+      const h = o.height ?? 1
+      const d = o.depth ?? 2
+      // Create wedge geometry using BufferGeometry
+      const wedgeGeom = useMemo(() => {
+        const geom = new THREE.BufferGeometry()
+        // Wedge: triangle prism - right triangle cross-section
+        const vertices = new Float32Array([
+          // Front face (triangle)
+          -w/2, -h/2, d/2,   w/2, -h/2, d/2,   -w/2, h/2, d/2,
+          // Back face (triangle)
+          -w/2, -h/2, -d/2,  -w/2, h/2, -d/2,  w/2, -h/2, -d/2,
+          // Bottom face (rectangle)
+          -w/2, -h/2, -d/2,  w/2, -h/2, -d/2,  w/2, -h/2, d/2,
+          -w/2, -h/2, -d/2,  w/2, -h/2, d/2,   -w/2, -h/2, d/2,
+          // Slope face (rectangle)
+          w/2, -h/2, d/2,    w/2, -h/2, -d/2,  -w/2, h/2, -d/2,
+          w/2, -h/2, d/2,    -w/2, h/2, -d/2,  -w/2, h/2, d/2,
+          // Left face (rectangle)
+          -w/2, -h/2, -d/2,  -w/2, -h/2, d/2,  -w/2, h/2, d/2,
+          -w/2, -h/2, -d/2,  -w/2, h/2, d/2,   -w/2, h/2, -d/2,
+        ])
+        geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3))
+        geom.computeVertexNormals()
+        return geom
+      }, [w, h, d])
+      return (
+        <mesh
+          key={o.id}
+          position={o.position}
+          rotation={o.rotation}
+          scale={o.scale}
+          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+          castShadow receiveShadow
+          onPointerDown={(e) => { e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}
+        >
+          <primitive object={wedgeGeom} attach="geometry" />
+          <primitive object={texMat ?? mat} attach="material" />
+        </mesh>
+      )
+    }
+
+    if (o.type === 'dome') {
+      const r = o.radius ?? 1
+      const phiLength = o.phiLength ?? Math.PI / 2
+      return (
+        <mesh
+          key={o.id}
+          position={o.position}
+          rotation={o.rotation}
+          scale={o.scale}
+          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+          castShadow receiveShadow
+          onPointerDown={(e) => { e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}
+        >
+          <sphereGeometry args={[r, 32, 16, 0, Math.PI * 2, 0, phiLength]} />
+          <primitive object={texMat ?? mat} attach="material" />
+        </mesh>
       )
     }
 
