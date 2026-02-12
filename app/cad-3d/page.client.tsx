@@ -11,6 +11,7 @@ import RiggingLibrary3D from "@/components/cad3d/RiggingLibrary3D"
 import PropertiesPanel from "@/components/cad3d/PropertiesPanel"
 import MeasurementTools3D from "@/components/cad3d/MeasurementTools3D"
 import KeyboardShortcuts from "@/components/cad3d/KeyboardShortcuts"
+import ArrayMirrorDialog from "@/components/cad3d/ArrayMirrorDialog"
 import { ArrowLeft, Grid3X3, Box, Layers, Eye, MousePointer, Move, RotateCw, Maximize2 } from "lucide-react"
 import "../../styles/cad-cursors.css"
 
@@ -26,6 +27,8 @@ export default function CAD3DClient() {
   const [gridEnabled, setGridEnabled] = useState(true)
   const [objectCount, setObjectCount] = useState(0)
   const [showRiggingLibrary, setShowRiggingLibrary] = useState(false)
+  const [showArrayMirror, setShowArrayMirror] = useState(false)
+  const [arrayMirrorTab, setArrayMirrorTab] = useState<'linear'|'radial'|'mirror'>('linear')
 
   // Check authentication
   useEffect(() => {
@@ -55,6 +58,14 @@ export default function CAD3DClient() {
       }
       if (e.detail?.action === 'show-rigging-library') {
         setShowRiggingLibrary(true)
+      }
+      if (e.detail?.action === 'show-array-dialog') {
+        setArrayMirrorTab(e.detail.data?.tab || 'linear')
+        setShowArrayMirror(true)
+      }
+      if (e.detail?.action === 'show-mirror-dialog') {
+        setArrayMirrorTab('mirror')
+        setShowArrayMirror(true)
       }
     }
     window.addEventListener('cad3d:modeler', handleModeler as EventListener)
@@ -232,6 +243,13 @@ export default function CAD3DClient() {
         <RiggingLibrary3D
           isOpen={showRiggingLibrary}
           onClose={() => setShowRiggingLibrary(false)}
+        />
+
+        {/* Array & Mirror Dialog */}
+        <ArrayMirrorDialog
+          isOpen={showArrayMirror}
+          onClose={() => setShowArrayMirror(false)}
+          initialTab={arrayMirrorTab}
         />
 
         {/* Keyboard Shortcuts Help */}

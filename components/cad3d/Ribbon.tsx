@@ -207,10 +207,10 @@ export default function Ribbon() {
                   <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Extrude selected face or sketch (1m)" onClick={()=>fire({action:'extrude', data:1})}>
                     <Plus className="w-3 h-3 mb-0.5" /> Extrude
                   </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Linear array (x5)" onClick={()=>fire({action:'array', data:{ type:'linear', count:5, offset:[2,0,0] }})}>
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Open Array Dialog (Linear/Radial)" onClick={()=>fire({action:'show-array-dialog', data:{ tab:'linear' }})}>
                     <Copy className="w-3 h-3 mb-0.5" /> Array
                   </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Mirror across YZ plane" onClick={()=>fire({action:'mirror', data:{ plane:'yz' }})}>
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Open Mirror Dialog" onClick={()=>fire({action:'show-mirror-dialog'})}>
                     <RotateCcw className="w-3 h-3 mb-0.5" /> Mirror
                   </button>
                 </div>
