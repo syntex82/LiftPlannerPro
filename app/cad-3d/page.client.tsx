@@ -10,6 +10,7 @@ import LayerPanel from "@/components/cad3d/LayerPanel"
 import RiggingLibrary3D from "@/components/cad3d/RiggingLibrary3D"
 import PropertiesPanel from "@/components/cad3d/PropertiesPanel"
 import MeasurementTools3D from "@/components/cad3d/MeasurementTools3D"
+import KeyboardShortcuts from "@/components/cad3d/KeyboardShortcuts"
 import { ArrowLeft, Grid3X3, Box, Layers, Eye, MousePointer, Move, RotateCw, Maximize2 } from "lucide-react"
 import "../../styles/cad-cursors.css"
 
@@ -232,6 +233,9 @@ export default function CAD3DClient() {
           isOpen={showRiggingLibrary}
           onClose={() => setShowRiggingLibrary(false)}
         />
+
+        {/* Keyboard Shortcuts Help */}
+        <KeyboardShortcuts />
       </div>
     </div>
   )

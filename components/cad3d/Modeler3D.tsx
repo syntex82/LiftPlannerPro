@@ -970,6 +970,7 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
 
 
 
+  // Comprehensive keyboard shortcuts system
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null
@@ -977,18 +978,128 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
       const isTyping = tag === "INPUT" || tag === "TEXTAREA" || (target as any)?.isContentEditable
       // Do not hijack keys while typing in inputs
       if (!isTyping) {
-        if (e.key.toLowerCase() === "g") { setMode("translate"); log("mode", { to: "translate" }) }
-        if (e.key.toLowerCase() === "r") { setMode("rotate"); log("mode", { to: "rotate" }) }
-        if (e.key.toLowerCase() === "s") { setMode("scale"); log("mode", { to: "scale" }) }
-        if (e.key === "Delete" || e.key === "Backspace") { const ids = selectedIds.length ? selectedIds : (selectedId ? [selectedId] : []); log("deleteShortcut", { ids, count: ids.length }); deleteSelected() }
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") { e.preventDefault(); e.stopPropagation(); const ids = selectedIds.length ? selectedIds : (selectedId ? [selectedId] : []); log("duplicateShortcut", { ids, count: ids.length }); duplicateSelected() }
-        // Fallback: Shift+D duplicates (for browsers that block Ctrl+D)
-        if (e.shiftKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "d") { e.preventDefault(); const ids = selectedIds.length ? selectedIds : (selectedId ? [selectedId] : []); log("duplicateShortcutShift", { ids, count: ids.length }); duplicateSelected() }
+        const key = e.key.toLowerCase()
+        const ctrl = e.ctrlKey || e.metaKey
+        const shift = e.shiftKey
+        const alt = e.altKey
+
+        // Transform mode shortcuts
+        if (key === "g" || key === "w") { setMode("translate"); log("shortcut:mode", { to: "translate" }) }
+        if (key === "r" || key === "e") { setMode("rotate"); log("shortcut:mode", { to: "rotate" }) }
+        if (key === "s" && !ctrl) { setMode("scale"); log("shortcut:mode", { to: "scale" }) }
+        if (key === "q") { setMode("select"); log("shortcut:mode", { to: "select" }) }
+
+        // Selection level shortcuts (1/2/3/4)
+        if (key === "1" && !ctrl && !alt) { setSelectLevel("object"); log("shortcut:selectLevel", { to: "object" }) }
+        if (key === "2" && !ctrl && !alt) { setSelectLevel("face"); log("shortcut:selectLevel", { to: "face" }) }
+        if (key === "3" && !ctrl && !alt) { setSelectLevel("vertex"); log("shortcut:selectLevel", { to: "vertex" }) }
+        if (key === "4" && !ctrl && !alt) { setSelectLevel("edge"); log("shortcut:selectLevel", { to: "edge" }) }
+
+        // Delete
+        if (e.key === "Delete" || e.key === "Backspace" || key === "x") {
+          log("shortcut:delete", {})
+          window.dispatchEvent(new CustomEvent('cad3d:modeler', { detail: { action: 'delete' } }))
+        }
+
+        // Duplicate (Ctrl+D or Shift+D)
+        if (ctrl && key === "d") {
+          e.preventDefault()
+          e.stopPropagation()
+          log("shortcut:duplicate", {})
+          window.dispatchEvent(new CustomEvent('cad3d:modeler', { detail: { action: 'duplicate' } }))
+        }
+        if (shift && !ctrl && key === "d") {
+          e.preventDefault()
+          log("shortcut:duplicateShift", {})
+          window.dispatchEvent(new CustomEvent('cad3d:modeler', { detail: { action: 'duplicate' } }))
+        }
+
+        // Select all (Ctrl+A)
+        if (ctrl && key === "a") {
+          e.preventDefault()
+          const allIds = objects.map(o => o.id)
+          setSelectedIds(allIds)
+          log("shortcut:selectAll", { count: allIds.length })
+        }
+
+        // Undo (Ctrl+Z) - fire event for undo system
+        if (ctrl && !shift && key === "z") {
+          e.preventDefault()
+          window.dispatchEvent(new CustomEvent('cad3d:modeler', { detail: { action: 'undo' } }))
+          log("shortcut:undo", {})
+        }
+
+        // Redo (Ctrl+Shift+Z or Ctrl+Y)
+        if ((ctrl && shift && key === "z") || (ctrl && key === "y")) {
+          e.preventDefault()
+          window.dispatchEvent(new CustomEvent('cad3d:modeler', { detail: { action: 'redo' } }))
+          log("shortcut:redo", {})
+        }
+
+        // Escape - deselect
+        if (e.key === "Escape") {
+          setSelectedId(null)
+          setSelectedIds([])
+          setDrawTool(null)
+          setDrawPoints([])
+          log("shortcut:deselect", {})
+        }
+
+        // Hide selected (H)
+        if (key === "h" && !ctrl && !alt) {
+          const ids = selectedIds.length ? selectedIds : (selectedId ? [selectedId] : [])
+          if (ids.length > 0) {
+            setObjects(prev => prev.map(o => ids.includes(o.id) ? { ...o, visible: false } : o))
+            log("shortcut:hide", { ids })
+          }
+        }
+
+        // Unhide all (Alt+H)
+        if (alt && key === "h") {
+          setObjects(prev => prev.map(o => ({ ...o, visible: true })))
+          log("shortcut:unhideAll", {})
+        }
+
+        // Frame/focus on selected (F)
+        if (key === "f" && !ctrl && selectedId) {
+          const obj = objects.find(o => o.id === selectedId)
+          if (obj) {
+            window.dispatchEvent(new CustomEvent('cad3d:modeler', { detail: { action: 'focus', data: { position: obj.position } } }))
+            log("shortcut:focus", { id: selectedId, position: obj.position })
+          }
+        }
+
+        // Save (Ctrl+S)
+        if (ctrl && key === "s") {
+          e.preventDefault()
+          window.dispatchEvent(new CustomEvent('cad3d:file', { detail: { action: 'save' } }))
+          log("shortcut:save", {})
+        }
+
+        // New primitive shortcuts (Shift+A opens add menu could be implemented)
+        // For now, provide quick access to common primitives
+        if (shift && key === "a") {
+          // Fire event to show add primitive menu (can be handled by UI)
+          window.dispatchEvent(new CustomEvent('cad3d:modeler', { detail: { action: 'show-add-menu' } }))
+          log("shortcut:addMenu", {})
+        }
+
+        // Toggle grid (Shift+G)
+        if (shift && key === "g") {
+          window.dispatchEvent(new CustomEvent('cad3d:modeler', { detail: { action: 'toggle-grid' } }))
+          log("shortcut:toggleGrid", {})
+        }
+
+        // Toggle snap (Shift+S)
+        if (shift && key === "s") {
+          window.dispatchEvent(new CustomEvent('cad3d:modeler', { detail: { action: 'toggle-snap' } }))
+          log("shortcut:toggleSnap", {})
+        }
       }
     }
     window.addEventListener("keydown", h, { capture: true })
     return () => window.removeEventListener("keydown", h, { capture: true } as any)
-  }, [])
+  }, [objects, selectedId, selectedIds, setSelectedId, setSelectedIds, setMode, setSelectLevel, setObjects, setDrawTool, setDrawPoints])
 
   const { size, camera, scene, gl } = useThree()
   useEffect(() => { rootRef.current = scene as any }, [scene])
