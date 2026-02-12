@@ -81,14 +81,14 @@ export default function LTM1055Crane3D({
   const superWidth = 2.4 * s
   const superLength = 3.2 * s
 
-  // Boom heel pin position - on top of A-frame, behind crane cab
-  const heelPinX = -1.2 * s  // Behind center of superstructure
-  const heelPinY = superY + superHeight + 1.5 * s  // Top of A-frame
+  // Boom heel pin position - at REAR of superstructure, on pivot mount
+  const heelPinX = -superLength / 2 - 0.3 * s  // At rear of superstructure (behind engine housing)
+  const heelPinY = superY + superHeight + 0.5 * s  // Just above superstructure top
 
-  // Luffing cylinder anchor points
-  const cylBaseX = -0.5 * s  // Base anchor on superstructure deck
-  const cylBaseY = superY + 0.3 * s  // Low on superstructure
-  const cylBoomAttachDist = 4 * s  // Distance along boom where cylinder attaches
+  // Luffing cylinder anchor points - cylinder goes from FRONT of superstructure UP to boom
+  const cylBaseX = superLength / 2 - 0.5 * s  // Base anchor FORWARD on superstructure deck
+  const cylBaseY = superY + 0.5 * s  // Low on superstructure
+  const cylBoomAttachDist = 5 * s  // Distance along boom where cylinder attaches
 
   return (
     <group position={position} rotation={rotation}>
@@ -251,45 +251,32 @@ export default function LTM1055Crane3D({
           </mesh>
         ))}
 
-        {/* ========== A-FRAME STRUCTURE ========== */}
+        {/* ========== BOOM PIVOT MOUNT (Rear of superstructure) ========== */}
         {(() => {
-          // A-frame legs - two angled beams from superstructure deck to heel pin
-          const aFrameBaseSpread = 1.2 * s  // How far apart the legs are at the base
-          const aFrameHeight = heelPinY - superY - 0.2 * s
-          const aFrameAngle = Math.atan2(aFrameHeight, aFrameBaseSpread / 2)
-          const aFrameLegLength = Math.sqrt(aFrameHeight * aFrameHeight + (aFrameBaseSpread / 2) * (aFrameBaseSpread / 2))
+          // Pivot mount - solid block at rear where boom connects
+          const pivotMountHeight = heelPinY - superY - 0.2 * s
+          const pivotMountWidth = 1.2 * s
+          const pivotMountDepth = 0.8 * s
 
           return (
             <group position={[heelPinX, 0.2 * s, 0]}>
-              {/* A-frame legs (both sides) */}
-              {[-1, 1].map(side => (
-                <mesh
-                  key={`aframe-leg-${side}`}
-                  position={[aFrameBaseSpread / 4, aFrameHeight / 2, side * 0.5 * s]}
-                  rotation={[0, 0, aFrameAngle - Math.PI / 2]}
-                  castShadow
-                >
-                  <boxGeometry args={[0.2 * s, aFrameLegLength, 0.15 * s]} />
-                  <primitive object={matGreen} attach="material" />
-                </mesh>
-              ))}
-              {/* A-frame cross beam at top (heel pin mount) */}
-              <mesh position={[0, aFrameHeight, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-                <cylinderGeometry args={[0.15 * s, 0.15 * s, 1.4 * s, 16]} />
-                <primitive object={matSteel} attach="material" />
+              {/* Main pivot mount block - solid pedestal */}
+              <mesh position={[0, pivotMountHeight / 2, 0]} castShadow>
+                <boxGeometry args={[pivotMountDepth, pivotMountHeight, pivotMountWidth]} />
+                <primitive object={matGreen} attach="material" />
               </mesh>
-              {/* Heel pin (boom pivot) */}
-              <mesh position={[0, aFrameHeight, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-                <cylinderGeometry args={[0.1 * s, 0.1 * s, 1.6 * s, 12]} />
-                <primitive object={matDarkGray} attach="material" />
-              </mesh>
-              {/* A-frame base plates */}
+              {/* Pivot mount side plates (bearing housings) */}
               {[-1, 1].map(side => (
-                <mesh key={`aframe-base-${side}`} position={[aFrameBaseSpread / 2, 0, side * 0.5 * s]} castShadow>
-                  <boxGeometry args={[0.4 * s, 0.15 * s, 0.3 * s]} />
+                <mesh key={`pivot-plate-${side}`} position={[0, pivotMountHeight, side * pivotMountWidth * 0.55]} castShadow>
+                  <boxGeometry args={[pivotMountDepth * 1.2, 0.4 * s, 0.15 * s]} />
                   <primitive object={matSteel} attach="material" />
                 </mesh>
               ))}
+              {/* Heel pin (boom pivot axle) */}
+              <mesh position={[0, pivotMountHeight, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                <cylinderGeometry args={[0.12 * s, 0.12 * s, pivotMountWidth * 1.3, 16]} />
+                <primitive object={matDarkGray} attach="material" />
+              </mesh>
             </group>
           )
         })()}
