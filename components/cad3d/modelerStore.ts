@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type ModelerObjectType = "box" | "cylinder" | "sphere" | "tube" | "lathe" | "sweep" | "union" | "pipe" | "ibeam" | "hbeam" | "cchannel" | "tank" | "vessel" | "column" | "exchanger" | "crane" | "crane-plan" | "ltm-1055-3d" | "ltm-1300-3d" | "window" | "hook-block" | "scaffolding" | "single-pole" | "unit-beam" | "gltf" | "editable-mesh" | "terrain"
+export type ModelerObjectType = "box" | "cylinder" | "sphere" | "tube" | "lathe" | "sweep" | "union" | "pipe" | "ibeam" | "hbeam" | "cchannel" | "tank" | "vessel" | "column" | "exchanger" | "crane" | "crane-plan" | "ltm-1055-3d" | "ltm-1300-3d" | "window" | "hook-block" | "scaffolding" | "single-pole" | "unit-beam" | "gltf" | "editable-mesh" | "terrain" | "distillation-column" | "cooling-tower" | "flare-stack" | "pipe-rack" | "storage-sphere" | "reactor" | "furnace" | "compressor" | "pump" | "drum"
 
 export interface ModelerObject {
   id: string
@@ -78,6 +78,16 @@ export interface ModelerObject {
   edges?: [number, number][]
   // gltf
   url?: string
+  // refinery equipment params (optional)
+  trayCount?: number // number of trays in distillation column
+  platformCount?: number // number of platforms/walkways
+  ladderSide?: 'left' | 'right' | 'both' | 'none'
+  flareHeight?: number // height of flare stack
+  rackLevels?: number // number of pipe rack levels
+  rackBays?: number // number of pipe rack bays
+  sphereLegs?: number // number of legs for storage sphere
+  tubeCount?: number // number of tubes in furnace/exchanger
+  fanCount?: number // number of fans in cooling tower
   // terrain params (optional)
   terrainWidth?: number // width in meters
   terrainHeight?: number // height/depth in meters (x-z plane)

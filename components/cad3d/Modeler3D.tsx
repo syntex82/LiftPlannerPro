@@ -341,6 +341,26 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
         addLTM1300Crane()
       } else if (action === 'insert-exchanger') {
         addExchanger()
+      } else if (action === 'insert-distillation-column') {
+        addDistillationColumn()
+      } else if (action === 'insert-cooling-tower') {
+        addCoolingTower()
+      } else if (action === 'insert-flare-stack') {
+        addFlareStack()
+      } else if (action === 'insert-pipe-rack') {
+        addPipeRack()
+      } else if (action === 'insert-storage-sphere') {
+        addStorageSphere()
+      } else if (action === 'insert-reactor') {
+        addReactor()
+      } else if (action === 'insert-furnace') {
+        addFurnace()
+      } else if (action === 'insert-compressor') {
+        addCompressor()
+      } else if (action === 'insert-pump') {
+        addPump()
+      } else if (action === 'insert-drum') {
+        addDrum()
       } else if (action === 'toggle-props') {
         setShowProps(s => !s)
       } else if (action === 'toggle-console') {
@@ -1243,9 +1263,108 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
     } as any]))
     setSelectedId(id)
     log('addExchanger', { id })
-
   }
 
+  // ========== OIL REFINERY PLANT OBJECTS ==========
+  const addDistillationColumn = () => {
+    const id = `distcol-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type:'distillation-column', name:'Distillation Column', position:[0,0,0], rotation:[0,0,0], scale:[1,1,1], color:'#b0b0b0',
+      diameter: 3, height: 25, trayCount: 30, platformCount: 5, ladderSide: 'right', supports: 'skirt'
+    } as any]))
+    setSelectedId(id)
+    log('addDistillationColumn', { id })
+  }
+
+  const addCoolingTower = () => {
+    const id = `cooltower-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type:'cooling-tower', name:'Cooling Tower', position:[0,0,0], rotation:[0,0,0], scale:[1,1,1], color:'#808080',
+      diameter: 8, height: 12, fanCount: 4
+    } as any]))
+    setSelectedId(id)
+    log('addCoolingTower', { id })
+  }
+
+  const addFlareStack = () => {
+    const id = `flare-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type:'flare-stack', name:'Flare Stack', position:[0,0,0], rotation:[0,0,0], scale:[1,1,1], color:'#606060',
+      diameter: 0.8, flareHeight: 40, ladderSide: 'right'
+    } as any]))
+    setSelectedId(id)
+    log('addFlareStack', { id })
+  }
+
+  const addPipeRack = () => {
+    const id = `piperack-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type:'pipe-rack', name:'Pipe Rack', position:[0,0,0], rotation:[0,0,0], scale:[1,1,1], color:'#707070',
+      length: 20, width: 4, height: 8, rackLevels: 3, rackBays: 5
+    } as any]))
+    setSelectedId(id)
+    log('addPipeRack', { id })
+  }
+
+  const addStorageSphere = () => {
+    const id = `sphere-tank-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type:'storage-sphere', name:'Storage Sphere', position:[0,0,0], rotation:[0,0,0], scale:[1,1,1], color:'#e0e0e0',
+      diameter: 12, sphereLegs: 8
+    } as any]))
+    setSelectedId(id)
+    log('addStorageSphere', { id })
+  }
+
+  const addReactor = () => {
+    const id = `reactor-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type:'reactor', name:'Reactor', position:[0,0,0], rotation:[0,0,0], scale:[1,1,1], color:'#a0a0a0',
+      diameter: 4, height: 8, headType: 'hemispherical', supports: 'skirt', nozzleCount: 6
+    } as any]))
+    setSelectedId(id)
+    log('addReactor', { id })
+  }
+
+  const addFurnace = () => {
+    const id = `furnace-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type:'furnace', name:'Furnace', position:[0,0,0], rotation:[0,0,0], scale:[1,1,1], color:'#8b4513',
+      length: 10, width: 6, height: 12, tubeCount: 20
+    } as any]))
+    setSelectedId(id)
+    log('addFurnace', { id })
+  }
+
+  const addCompressor = () => {
+    const id = `compressor-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type:'compressor', name:'Compressor', position:[0,0,0], rotation:[0,0,0], scale:[1,1,1], color:'#4a90d9',
+      length: 4, width: 2, height: 2.5
+    } as any]))
+    setSelectedId(id)
+    log('addCompressor', { id })
+  }
+
+  const addPump = () => {
+    const id = `pump-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type:'pump', name:'Pump', position:[0,0,0], rotation:[0,0,0], scale:[1,1,1], color:'#2e8b57',
+      length: 1.5, width: 0.8, height: 1.2
+    } as any]))
+    setSelectedId(id)
+    log('addPump', { id })
+  }
+
+  const addDrum = () => {
+    const id = `drum-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id, type:'drum', name:'Drum', position:[0,0,0], rotation:[0,0,0], scale:[1,1,1], color:'#9ca3af',
+      diameter: 2, length: 6, headType: 'elliptical', supports: 'saddles'
+    } as any]))
+    setSelectedId(id)
+    log('addDrum', { id })
+  }
 
   const addCChannel = () => {
     const id = `cchan-${cryptoRandom()}`
@@ -2976,6 +3095,324 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
         </mesh>
       )
     }
+
+    // ========== OIL REFINERY PLANT OBJECTS RENDERING ==========
+    if (o.type === 'distillation-column' || o.type === 'reactor' || o.type === 'drum' ||
+        o.type === 'storage-sphere' || o.type === 'cooling-tower' || o.type === 'flare-stack' ||
+        o.type === 'pipe-rack' || o.type === 'furnace' || o.type === 'compressor' || o.type === 'pump') {
+      const geoms: THREE.BufferGeometry[] = []
+      const r = (o.diameter ?? 2) / 2
+      const height = o.height ?? 10
+
+      const addCyl = (radius:number, h:number, pos:[number,number,number], rot:[number,number,number]) => {
+        const g = new THREE.CylinderGeometry(radius, radius, Math.max(0.01, h), 24)
+        const m = new THREE.Matrix4()
+        m.makeRotationFromEuler(new THREE.Euler(rot[0], rot[1], rot[2]))
+        g.applyMatrix4(m)
+        g.translate(pos[0], pos[1], pos[2])
+        geoms.push(g)
+      }
+      const addBox = (sx:number, sy:number, sz:number, pos:[number,number,number]) => {
+        const g = new THREE.BoxGeometry(sx, sy, sz)
+        g.translate(pos[0], pos[1], pos[2])
+        geoms.push(g)
+      }
+      const addSphere = (radius:number, pos:[number,number,number]) => {
+        const g = new THREE.SphereGeometry(radius, 32, 24)
+        g.translate(pos[0], pos[1], pos[2])
+        geoms.push(g)
+      }
+      const addHemisphere = (radius:number, pos:[number,number,number], rot:[number,number,number], scaleY=1) => {
+        const g = new THREE.SphereGeometry(radius, 24, 16, 0, Math.PI*2, 0, Math.PI/2)
+        g.scale(1, scaleY, 1)
+        const m = new THREE.Matrix4()
+        m.makeRotationFromEuler(new THREE.Euler(rot[0], rot[1], rot[2]))
+        g.applyMatrix4(m)
+        g.translate(pos[0], pos[1], pos[2])
+        geoms.push(g)
+      }
+      const addCone = (radius:number, h:number, pos:[number,number,number]) => {
+        const g = new THREE.ConeGeometry(radius, h, 24)
+        g.translate(pos[0], pos[1], pos[2])
+        geoms.push(g)
+      }
+      const addTorus = (radius:number, tube:number, pos:[number,number,number], rot:[number,number,number]) => {
+        const g = new THREE.TorusGeometry(radius, tube, 8, 24)
+        const m = new THREE.Matrix4()
+        m.makeRotationFromEuler(new THREE.Euler(rot[0], rot[1], rot[2]))
+        g.applyMatrix4(m)
+        g.translate(pos[0], pos[1], pos[2])
+        geoms.push(g)
+      }
+
+      if (o.type === 'distillation-column') {
+        // Main column body
+        addCyl(r, height, [0, 0, 0], [0,0,0])
+        // Top head (hemispherical)
+        addHemisphere(r, [0, height/2, 0], [0,0,0], 1)
+        // Bottom head
+        const g2 = new THREE.SphereGeometry(r, 24, 16, 0, Math.PI*2, 0, Math.PI/2)
+        g2.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI))
+        g2.translate(0, -height/2, 0)
+        geoms.push(g2)
+        // Skirt support
+        addCyl(r*0.8, height*0.15, [0, -height/2 - height*0.075, 0], [0,0,0])
+        // Trays (rings inside column)
+        const trayCount = (o as any).trayCount ?? 20
+        const traySpacing = height / (trayCount + 1)
+        for (let i = 1; i <= Math.min(trayCount, 30); i++) {
+          addTorus(r*0.9, 0.03, [0, -height/2 + i * traySpacing, 0], [Math.PI/2, 0, 0])
+        }
+        // Platforms
+        const platformCount = (o as any).platformCount ?? 4
+        const platformSpacing = height / (platformCount + 1)
+        for (let i = 1; i <= platformCount; i++) {
+          const py = -height/2 + i * platformSpacing
+          addTorus(r + 0.8, 0.4, [0, py, 0], [Math.PI/2, 0, 0])
+          // Handrail posts
+          for (let a = 0; a < 8; a++) {
+            const angle = (a / 8) * Math.PI * 2
+            const px = Math.cos(angle) * (r + 0.8)
+            const pz = Math.sin(angle) * (r + 0.8)
+            addCyl(0.03, 1.1, [px, py + 0.55, pz], [0,0,0])
+          }
+        }
+        // Ladder
+        const ladderSide = (o as any).ladderSide ?? 'right'
+        if (ladderSide !== 'none') {
+          const lx = ladderSide === 'left' ? -(r + 0.3) : (r + 0.3)
+          addCyl(0.04, height * 0.9, [lx - 0.15, 0, 0], [0,0,0])
+          addCyl(0.04, height * 0.9, [lx + 0.15, 0, 0], [0,0,0])
+          // Rungs
+          for (let i = 0; i < height * 2; i++) {
+            addCyl(0.02, 0.3, [lx, -height/2 + 0.5 + i * 0.5, 0], [0,0,Math.PI/2])
+          }
+        }
+        // Nozzles
+        for (let i = 0; i < 6; i++) {
+          const ny = -height/2 + height * (i + 1) / 7
+          addCyl(0.15, 0.4, [r + 0.2, ny, 0], [0,0,Math.PI/2])
+        }
+      }
+
+      if (o.type === 'reactor') {
+        // Main vessel body
+        addCyl(r, height, [0, 0, 0], [0,0,0])
+        // Top hemispherical head
+        addHemisphere(r, [0, height/2, 0], [0,0,0], 1)
+        // Bottom hemispherical head
+        const g2 = new THREE.SphereGeometry(r, 24, 16, 0, Math.PI*2, 0, Math.PI/2)
+        g2.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI))
+        g2.translate(0, -height/2, 0)
+        geoms.push(g2)
+        // Skirt
+        addCyl(r*0.7, height*0.2, [0, -height/2 - height*0.1, 0], [0,0,0])
+        // Nozzles
+        const nozzleCount = (o as any).nozzleCount ?? 6
+        for (let i = 0; i < nozzleCount; i++) {
+          const angle = (i / nozzleCount) * Math.PI * 2
+          const nx = Math.cos(angle) * (r + 0.2)
+          const nz = Math.sin(angle) * (r + 0.2)
+          addCyl(0.2, 0.5, [nx, height * 0.3, nz], [0,0,Math.PI/2])
+        }
+        // Top nozzle
+        addCyl(0.3, 0.6, [0, height/2 + r + 0.3, 0], [0,0,0])
+      }
+
+      if (o.type === 'drum') {
+        // Horizontal drum
+        const L = o.length ?? height
+        addCyl(r, L, [0,0,0], [0,0,Math.PI/2])
+        // Elliptical heads
+        addHemisphere(r, [L/2, 0, 0], [0,0,Math.PI/2], 0.75)
+        const g2 = new THREE.SphereGeometry(r, 24, 16, 0, Math.PI*2, 0, Math.PI/2)
+        g2.scale(1, 0.75, 1)
+        g2.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI/2))
+        g2.applyMatrix4(new THREE.Matrix4().makeRotationY(Math.PI))
+        g2.translate(-L/2, 0, 0)
+        geoms.push(g2)
+        // Saddle supports
+        addBox(0.6, 0.4, r*1.4, [L*0.3, -r - 0.2, 0])
+        addBox(0.6, 0.4, r*1.4, [-L*0.3, -r - 0.2, 0])
+        // Nozzles
+        addCyl(0.15, 0.4, [0, r + 0.2, 0], [0,0,0])
+        addCyl(0.15, 0.4, [L*0.3, r + 0.2, 0], [0,0,0])
+      }
+
+      if (o.type === 'storage-sphere') {
+        // Main sphere
+        addSphere(r, [0, r, 0])
+        // Support legs
+        const legCount = (o as any).sphereLegs ?? 8
+        for (let i = 0; i < legCount; i++) {
+          const angle = (i / legCount) * Math.PI * 2
+          const lx = Math.cos(angle) * r * 0.7
+          const lz = Math.sin(angle) * r * 0.7
+          // Angled leg
+          const legH = r * 1.2
+          addCyl(0.15, legH, [lx * 1.3, -legH/2 + r*0.3, lz * 1.3], [0, 0, Math.atan2(lx, legH) * 0.3])
+        }
+        // Equator ring
+        addTorus(r * 1.02, 0.08, [0, r, 0], [Math.PI/2, 0, 0])
+        // Access ladder
+        addCyl(0.04, r * 2.5, [r + 0.3, r * 0.5, 0], [0,0,0])
+        addCyl(0.04, r * 2.5, [r + 0.6, r * 0.5, 0], [0,0,0])
+      }
+
+      if (o.type === 'cooling-tower') {
+        // Hyperbolic shell (approximated with stacked cylinders)
+        const baseR = r
+        const topR = r * 0.6
+        const waistR = r * 0.5
+        const waistH = height * 0.7
+        // Lower section (expanding)
+        for (let i = 0; i < 10; i++) {
+          const t = i / 10
+          const y = t * waistH - height/2
+          const rad = baseR - (baseR - waistR) * t
+          addCyl(rad, waistH/10, [0, y + waistH/20, 0], [0,0,0])
+        }
+        // Upper section (contracting then expanding)
+        for (let i = 0; i < 5; i++) {
+          const t = i / 5
+          const y = waistH + t * (height - waistH) - height/2
+          const rad = waistR + (topR - waistR) * t
+          addCyl(rad, (height - waistH)/5, [0, y + (height - waistH)/10, 0], [0,0,0])
+        }
+        // Support columns
+        for (let i = 0; i < 12; i++) {
+          const angle = (i / 12) * Math.PI * 2
+          const cx = Math.cos(angle) * baseR * 0.9
+          const cz = Math.sin(angle) * baseR * 0.9
+          addCyl(0.3, height * 0.3, [cx, -height/2 + height*0.15, cz], [0,0,0])
+        }
+        // Basin
+        addCyl(baseR * 1.1, 0.5, [0, -height/2 - 0.25, 0], [0,0,0])
+      }
+
+      if (o.type === 'flare-stack') {
+        const flareH = (o as any).flareHeight ?? 40
+        // Main stack (tapered)
+        const g = new THREE.CylinderGeometry(r * 0.6, r, flareH, 16)
+        g.translate(0, flareH/2, 0)
+        geoms.push(g)
+        // Flare tip
+        addCone(r * 0.8, 1.5, [0, flareH + 0.75, 0])
+        // Guy wires attachment rings
+        for (let i = 1; i <= 3; i++) {
+          addTorus(r * 0.7, 0.05, [0, flareH * i / 4, 0], [Math.PI/2, 0, 0])
+        }
+        // Ladder
+        addCyl(0.04, flareH * 0.9, [r + 0.2, flareH * 0.45, 0], [0,0,0])
+        addCyl(0.04, flareH * 0.9, [r + 0.5, flareH * 0.45, 0], [0,0,0])
+        // Base
+        addCyl(r * 1.5, 0.5, [0, 0.25, 0], [0,0,0])
+      }
+
+      if (o.type === 'pipe-rack') {
+        const L = o.length ?? 20
+        const W = o.width ?? 4
+        const H = o.height ?? 8
+        const levels = (o as any).rackLevels ?? 3
+        const bays = (o as any).rackBays ?? 5
+        const baySpacing = L / bays
+        const levelSpacing = H / levels
+
+        // Vertical columns
+        for (let b = 0; b <= bays; b++) {
+          const x = -L/2 + b * baySpacing
+          addBox(0.3, H, 0.3, [x, H/2, -W/2])
+          addBox(0.3, H, 0.3, [x, H/2, W/2])
+        }
+        // Horizontal beams (levels)
+        for (let lv = 1; lv <= levels; lv++) {
+          const y = lv * levelSpacing
+          // Longitudinal beams
+          addBox(L, 0.2, 0.15, [0, y, -W/2])
+          addBox(L, 0.2, 0.15, [0, y, W/2])
+          // Cross beams
+          for (let b = 0; b <= bays; b++) {
+            const x = -L/2 + b * baySpacing
+            addBox(0.15, 0.2, W, [x, y, 0])
+          }
+        }
+        // Sample pipes on top level
+        for (let p = 0; p < 6; p++) {
+          const pz = -W/2 + 0.5 + p * (W - 1) / 5
+          addCyl(0.1, L * 0.9, [0, levels * levelSpacing + 0.2, pz], [0,0,Math.PI/2])
+        }
+      }
+
+      if (o.type === 'furnace') {
+        const L = o.length ?? 10
+        const W = o.width ?? 6
+        const H = o.height ?? 12
+        // Main box structure
+        addBox(L, H, W, [0, H/2, 0])
+        // Stack
+        addCyl(W * 0.15, H * 0.4, [0, H + H*0.2, 0], [0,0,0])
+        // Tube banks (visible through openings)
+        const tubeCount = (o as any).tubeCount ?? 20
+        for (let t = 0; t < Math.min(tubeCount, 20); t++) {
+          const tx = -L/2 + 0.5 + t * (L - 1) / 19
+          addCyl(0.08, H * 0.7, [tx, H * 0.4, 0], [0,0,0])
+        }
+        // Burners at bottom
+        for (let b = 0; b < 4; b++) {
+          const bx = -L/2 + L * (b + 1) / 5
+          addCyl(0.2, 0.3, [bx, 0.15, W/2 + 0.15], [Math.PI/2, 0, 0])
+        }
+        // Access platforms
+        addBox(L + 1, 0.1, 1.5, [0, H * 0.5, W/2 + 0.75])
+        addBox(L + 1, 0.1, 1.5, [0, H * 0.8, W/2 + 0.75])
+      }
+
+      if (o.type === 'compressor') {
+        const L = o.length ?? 4
+        const W = o.width ?? 2
+        const H = o.height ?? 2.5
+        // Main body
+        addBox(L, H, W, [0, H/2, 0])
+        // Motor
+        addCyl(W * 0.35, L * 0.4, [-L/2 - L*0.2, H * 0.6, 0], [0,0,Math.PI/2])
+        // Inlet/outlet flanges
+        addCyl(W * 0.2, 0.3, [L/2 + 0.15, H * 0.7, 0], [0,0,Math.PI/2])
+        addCyl(W * 0.2, 0.3, [L/2 + 0.15, H * 0.4, 0], [0,0,Math.PI/2])
+        // Base skid
+        addBox(L * 1.2, 0.15, W * 1.3, [0, 0.075, 0])
+        // Coupling guard
+        addCyl(W * 0.25, L * 0.15, [-L/2 + L*0.1, H * 0.6, 0], [0,0,Math.PI/2])
+      }
+
+      if (o.type === 'pump') {
+        const L = o.length ?? 1.5
+        const W = o.width ?? 0.8
+        const H = o.height ?? 1.2
+        // Pump casing (volute)
+        addCyl(W * 0.5, W * 0.6, [0, H * 0.4, 0], [Math.PI/2, 0, 0])
+        // Motor
+        addCyl(W * 0.35, L * 0.5, [-L * 0.4, H * 0.4, 0], [0,0,Math.PI/2])
+        // Suction flange
+        addCyl(W * 0.2, 0.15, [0, H * 0.4, W * 0.4], [Math.PI/2, 0, 0])
+        // Discharge flange
+        addCyl(W * 0.15, 0.15, [0, H * 0.7, 0], [0,0,0])
+        // Base plate
+        addBox(L, 0.1, W * 1.2, [0, 0.05, 0])
+        // Coupling guard
+        addBox(L * 0.2, W * 0.4, W * 0.5, [-L * 0.15, H * 0.4, 0])
+      }
+
+      const merged = mergeGeometries(geoms)
+      return (
+        <mesh key={o.id} position={o.position} rotation={o.rotation} scale={o.scale} ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+          castShadow receiveShadow
+          onPointerDown={(e)=>{ e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}>
+          <primitive object={merged} attach="geometry" />
+          <primitive object={texMat ?? mat} attach="material" />
+        </mesh>
+      )
+    }
+
     // Generic inline-geometry renderer: if object has __geom, render it as a mesh regardless of type
     if ((o as any).__geom) {
       const geom = (o as any).__geom as THREE.BufferGeometry
