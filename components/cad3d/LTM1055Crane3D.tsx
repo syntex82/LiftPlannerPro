@@ -135,29 +135,41 @@ export default function LTM1055Crane3D({
       ))}
 
       {/* ========== DRIVER CAB (Front) ========== */}
-      <group position={[chassisLength / 2 - 1.2 * s, groundClearance + chassisHeight, 0]}>
-        {/* Cab body */}
-        <mesh position={[0, 0.9 * s, 0]} castShadow receiveShadow>
-          <boxGeometry args={[2.0 * s, 1.8 * s, chassisWidth * 0.85]} />
+      <group position={[chassisLength / 2 - 1.4 * s, groundClearance + chassisHeight, 0]}>
+        {/* Cab body - lower section */}
+        <mesh position={[0, 0.5 * s, 0]} castShadow receiveShadow>
+          <boxGeometry args={[2.2 * s, 1.0 * s, chassisWidth * 0.9]} />
           <primitive object={matGreen} attach="material" />
         </mesh>
-        {/* Windshield */}
-        <mesh position={[0.85 * s, 1.1 * s, 0]} rotation={[0, 0, -0.25]}>
-          <boxGeometry args={[0.08 * s, 1.2 * s, chassisWidth * 0.75]} />
+        {/* Cab body - upper section (window area) */}
+        <mesh position={[0, 1.3 * s, 0]} castShadow receiveShadow>
+          <boxGeometry args={[2.0 * s, 0.6 * s, chassisWidth * 0.85]} />
+          <primitive object={matGreen} attach="material" />
+        </mesh>
+        {/* Windshield - large and visible */}
+        <mesh position={[1.0 * s, 1.2 * s, 0]} rotation={[0, 0, -0.2]}>
+          <boxGeometry args={[0.1 * s, 0.9 * s, chassisWidth * 0.7]} />
           <primitive object={matGlass} attach="material" />
         </mesh>
-        {/* Side windows */}
+        {/* Side windows - larger */}
         {[-1, 1].map(side => (
-          <mesh key={`side-win-${side}`} position={[0.2 * s, 1.1 * s, side * (chassisWidth * 0.42)]}>
-            <boxGeometry args={[1.2 * s, 1.0 * s, 0.06 * s]} />
+          <mesh key={`side-win-${side}`} position={[0, 1.2 * s, side * (chassisWidth * 0.44)]}>
+            <boxGeometry args={[1.5 * s, 0.7 * s, 0.08 * s]} />
             <primitive object={matGlass} attach="material" />
           </mesh>
         ))}
         {/* Roof */}
-        <mesh position={[0, 1.85 * s, 0]} castShadow>
-          <boxGeometry args={[2.1 * s, 0.1 * s, chassisWidth * 0.9]} />
+        <mesh position={[0, 1.65 * s, 0]} castShadow>
+          <boxGeometry args={[2.3 * s, 0.1 * s, chassisWidth * 0.92]} />
           <primitive object={matGreen} attach="material" />
         </mesh>
+        {/* Headlights */}
+        {[-1, 1].map(side => (
+          <mesh key={`headlight-${side}`} position={[1.1 * s, 0.4 * s, side * 0.8 * s]}>
+            <cylinderGeometry args={[0.12 * s, 0.12 * s, 0.08 * s, 12]} />
+            <primitive object={matGlass} attach="material" />
+          </mesh>
+        ))}
       </group>
 
       {/* ========== SUPERSTRUCTURE (Rotates) ========== */}
@@ -182,25 +194,35 @@ export default function LTM1055Crane3D({
         </mesh>
 
         {/* ========== CRANE CAB ========== */}
-        <group position={[superLength / 2 - 0.3 * s, superHeight + 0.2 * s, superWidth / 2 - 0.5 * s]}>
-          {/* Cab body */}
-          <mesh position={[0, 0.7 * s, 0]} castShadow receiveShadow>
-            <boxGeometry args={[1.4 * s, 1.4 * s, 1.2 * s]} />
+        <group position={[superLength / 2 + 0.2 * s, superHeight + 0.2 * s, superWidth / 2 - 0.6 * s]}>
+          {/* Cab body - larger and more prominent */}
+          <mesh position={[0, 0.85 * s, 0]} castShadow receiveShadow>
+            <boxGeometry args={[1.8 * s, 1.7 * s, 1.5 * s]} />
             <primitive object={matGreen} attach="material" />
           </mesh>
-          {/* Front window */}
-          <mesh position={[0.65 * s, 0.75 * s, 0]} rotation={[0, 0, -0.15]}>
-            <boxGeometry args={[0.06 * s, 1.0 * s, 1.0 * s]} />
+          {/* Front window - large panoramic */}
+          <mesh position={[0.85 * s, 0.95 * s, 0]} rotation={[0, 0, -0.12]}>
+            <boxGeometry args={[0.1 * s, 1.3 * s, 1.3 * s]} />
             <primitive object={matGlass} attach="material" />
           </mesh>
-          {/* Side window */}
-          <mesh position={[0.1 * s, 0.75 * s, 0.58 * s]}>
-            <boxGeometry args={[1.0 * s, 0.9 * s, 0.06 * s]} />
+          {/* Side window - right side (outer) */}
+          <mesh position={[0.1 * s, 0.95 * s, 0.73 * s]}>
+            <boxGeometry args={[1.4 * s, 1.2 * s, 0.08 * s]} />
             <primitive object={matGlass} attach="material" />
           </mesh>
-          {/* Top window (for looking up at boom) */}
-          <mesh position={[0.2 * s, 1.35 * s, 0]} rotation={[0, 0, 0.1]}>
-            <boxGeometry args={[0.8 * s, 0.06 * s, 0.9 * s]} />
+          {/* Side window - left side (inner) */}
+          <mesh position={[0.1 * s, 0.95 * s, -0.73 * s]}>
+            <boxGeometry args={[1.4 * s, 1.2 * s, 0.08 * s]} />
+            <primitive object={matGlass} attach="material" />
+          </mesh>
+          {/* Top window (skylight for boom visibility) */}
+          <mesh position={[0.2 * s, 1.68 * s, 0]} rotation={[0, 0, 0.08]}>
+            <boxGeometry args={[1.2 * s, 0.08 * s, 1.2 * s]} />
+            <primitive object={matGlass} attach="material" />
+          </mesh>
+          {/* Rear window */}
+          <mesh position={[-0.88 * s, 0.95 * s, 0]}>
+            <boxGeometry args={[0.08 * s, 1.0 * s, 1.2 * s]} />
             <primitive object={matGlass} attach="material" />
           </mesh>
         </group>
@@ -299,35 +321,39 @@ export default function LTM1055Crane3D({
       </group>
 
       {/* ========== OUTRIGGERS ========== */}
-      {[
-        { x: chassisLength * 0.35, z: 1 },
-        { x: chassisLength * 0.35, z: -1 },
-        { x: -chassisLength * 0.35, z: 1 },
-        { x: -chassisLength * 0.35, z: -1 }
-      ].map((pos, idx) => (
-        <group key={`outrigger-${idx}`} position={[pos.x, groundClearance + chassisHeight / 2, pos.z * chassisWidth / 2]}>
-          {/* Outrigger box (attached to chassis) */}
-          <mesh castShadow>
-            <boxGeometry args={[0.8 * s, chassisHeight * 0.8, 0.5 * s]} />
-            <primitive object={matGreen} attach="material" />
-          </mesh>
-          {/* Outrigger beam */}
-          <mesh position={[0, 0, pos.z * 2.5 * s]} castShadow>
-            <boxGeometry args={[0.2 * s, 0.2 * s, 5 * s]} />
-            <primitive object={matYellow} attach="material" />
-          </mesh>
-          {/* Jack cylinder */}
-          <mesh position={[0, -groundClearance / 2, pos.z * 5 * s]} castShadow>
-            <cylinderGeometry args={[0.1 * s, 0.1 * s, groundClearance + chassisHeight / 2, 12]} />
-            <primitive object={matSteel} attach="material" />
-          </mesh>
-          {/* Outrigger pad */}
-          <mesh position={[0, -groundClearance - 0.05 * s, pos.z * 5 * s]} castShadow receiveShadow>
-            <cylinderGeometry args={[0.5 * s, 0.5 * s, 0.1 * s, 16]} />
-            <primitive object={matDarkGray} attach="material" />
-          </mesh>
-        </group>
-      ))}
+      {(() => {
+        const beamLength = 3.5 * s  // How far the beam extends
+        const outriggerPositions = [
+          { x: chassisLength * 0.38, side: 1 },   // Front right
+          { x: chassisLength * 0.38, side: -1 },  // Front left
+          { x: -chassisLength * 0.38, side: 1 },  // Rear right
+          { x: -chassisLength * 0.38, side: -1 }  // Rear left
+        ]
+        return outriggerPositions.map((pos, idx) => (
+          <group key={`outrigger-${idx}`} position={[pos.x, groundClearance + chassisHeight / 2, 0]}>
+            {/* Outrigger box (attached to chassis side) */}
+            <mesh position={[0, 0, pos.side * (chassisWidth / 2 + 0.15 * s)]} castShadow>
+              <boxGeometry args={[0.6 * s, chassisHeight * 0.7, 0.3 * s]} />
+              <primitive object={matGreen} attach="material" />
+            </mesh>
+            {/* Outrigger beam - extends from box outward */}
+            <mesh position={[0, -0.1 * s, pos.side * (chassisWidth / 2 + beamLength / 2 + 0.3 * s)]} castShadow>
+              <boxGeometry args={[0.25 * s, 0.2 * s, beamLength]} />
+              <primitive object={matYellow} attach="material" />
+            </mesh>
+            {/* Jack cylinder - at end of beam, going down */}
+            <mesh position={[0, -groundClearance / 2 - 0.1 * s, pos.side * (chassisWidth / 2 + beamLength + 0.3 * s)]} castShadow>
+              <cylinderGeometry args={[0.08 * s, 0.08 * s, groundClearance + chassisHeight * 0.4, 12]} />
+              <primitive object={matSteel} attach="material" />
+            </mesh>
+            {/* Outrigger pad - at bottom of jack */}
+            <mesh position={[0, -groundClearance - chassisHeight * 0.1, pos.side * (chassisWidth / 2 + beamLength + 0.3 * s)]} castShadow receiveShadow>
+              <cylinderGeometry args={[0.45 * s, 0.45 * s, 0.12 * s, 16]} />
+              <primitive object={matDarkGray} attach="material" />
+            </mesh>
+          </group>
+        ))
+      })()}
     </group>
   )
 }
