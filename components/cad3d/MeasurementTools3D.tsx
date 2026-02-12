@@ -225,16 +225,18 @@ export default function MeasurementTools3D() {
 
   if (!isOpen) {
     return (
-      <button onClick={() => setIsOpen(true)}
-        className="absolute left-56 top-1/2 -translate-y-1/2 bg-gray-800 border border-gray-600 p-2 rounded-r-lg hover:bg-gray-700 z-10"
-        title="Show Measurements">
-        <Ruler className="w-4 h-4 text-gray-400" />
-      </button>
+      <div className="w-8 bg-gray-800 border-r border-gray-600 flex flex-col items-center py-2">
+        <button onClick={() => setIsOpen(true)}
+          className="p-1.5 hover:bg-gray-700 rounded"
+          title="Show Measurements">
+          <Ruler className="w-4 h-4 text-gray-400" />
+        </button>
+      </div>
     )
   }
 
   return (
-    <div className="w-52 bg-gray-850 border-l border-gray-700 flex flex-col overflow-hidden"
+    <div className="w-52 bg-gray-850 border-r border-gray-700 flex flex-col overflow-hidden"
       style={{ background: 'linear-gradient(to bottom, #1f2937, #111827)' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-700 bg-gray-800/50">

@@ -128,6 +128,9 @@ export default function CAD3DClient() {
 
       {/* Viewport content below ribbon */}
       <div className="w-full h-[calc(100vh-8rem)] relative bg-gray-900 flex">
+        {/* Left Panel - Measurement Tools */}
+        <MeasurementTools3D />
+
         {/* Main 3D viewport */}
         <div className="flex-1 relative">
           {mode === 'single' ? <SingleViewport /> : <QuadViewport />}
@@ -230,14 +233,13 @@ export default function CAD3DClient() {
           </div>
         </div>
 
-        {/* Measurement Tools */}
-        <MeasurementTools3D />
-
-        {/* Properties Panel */}
-        <PropertiesPanel />
-
-        {/* Layer management panel */}
-        <LayerPanel />
+        {/* Right Side Panels */}
+        <div className="flex flex-col">
+          {/* Properties Panel */}
+          <PropertiesPanel />
+          {/* Layer management panel */}
+          <LayerPanel />
+        </div>
 
         {/* Rigging Equipment Library */}
         <RiggingLibrary3D

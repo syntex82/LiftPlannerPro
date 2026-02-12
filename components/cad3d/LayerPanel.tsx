@@ -53,7 +53,7 @@ export default function LayerPanel() {
   }
 
   return (
-    <div className="w-64 bg-gray-800 border-l border-gray-600 flex flex-col">
+    <div className="w-56 bg-gray-800 border-l border-gray-600 flex flex-col flex-1 overflow-hidden">
       {/* Header */}
       <div className="p-3 border-b border-gray-600">
         <div className="flex items-center justify-between">
