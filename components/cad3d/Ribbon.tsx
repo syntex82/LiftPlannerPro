@@ -297,109 +297,56 @@ export default function Ribbon() {
                 </div>
               </div>
               <div className="flex flex-col border-r border-gray-600 px-2 py-2">
-                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">3D Cranes</div>
+                <div className="text-xs font-semibold text-orange-400 mb-1 uppercase tracking-wide">Oil Refinery</div>
                 <div className="flex gap-1">
-                  <button className="p-1 rounded hover:bg-yellow-700/60 w-14 h-12 text-[8px] text-yellow-300 flex flex-col items-center justify-center font-bold" title="Liebherr LTM 1055-3.1 (55t, 3-axle)" onClick={()=>fire({action:'insert-ltm1055'})}>
-                    <BoxIcon className="w-4 h-4 mb-0.5" /> LTM 1055
+                  <button className="p-1 rounded hover:bg-orange-700/60 w-14 h-12 text-[8px] text-orange-300 flex flex-col items-center justify-center" title="Distillation Column (25m tall)" onClick={()=>fire({action:'insert-distillation-column'})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Column
                   </button>
-                  <button className="p-1 rounded hover:bg-yellow-700/60 w-14 h-12 text-[8px] text-yellow-300 flex flex-col items-center justify-center font-bold" title="Liebherr LTM 1300-6.2 (300t, 6-axle)" onClick={()=>fire({action:'insert-ltm1300'})}>
-                    <BoxIcon className="w-4 h-4 mb-0.5" /> LTM 1300
+                  <button className="p-1 rounded hover:bg-orange-700/60 w-14 h-12 text-[8px] text-orange-300 flex flex-col items-center justify-center" title="Cooling Tower" onClick={()=>fire({action:'insert-cooling-tower'})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Cooling
+                  </button>
+                  <button className="p-1 rounded hover:bg-orange-700/60 w-14 h-12 text-[8px] text-orange-300 flex flex-col items-center justify-center" title="Flare Stack (40m)" onClick={()=>fire({action:'insert-flare-stack'})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Flare
+                  </button>
+                  <button className="p-1 rounded hover:bg-orange-700/60 w-14 h-12 text-[8px] text-orange-300 flex flex-col items-center justify-center" title="Pipe Rack" onClick={()=>fire({action:'insert-pipe-rack'})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Pipe Rack
+                  </button>
+                  <button className="p-1 rounded hover:bg-orange-700/60 w-14 h-12 text-[8px] text-orange-300 flex flex-col items-center justify-center" title="Storage Sphere (12m dia)" onClick={()=>fire({action:'insert-storage-sphere'})}>
+                    <Circle className="w-3 h-3 mb-0.5" /> Sphere
                   </button>
                 </div>
               </div>
               <div className="flex flex-col border-r border-gray-600 px-2 py-2">
-                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Crane Parts</div>
+                <div className="text-xs font-semibold text-orange-400 mb-1 uppercase tracking-wide">Process Equipment</div>
                 <div className="flex gap-1">
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Crane chassis with wheels" onClick={()=>fire({action:'add-crane-part', data:'base'})}>
-                    <BoxIcon className="w-3 h-3 mb-0.5" /> Chassis
+                  <button className="p-1 rounded hover:bg-orange-700/60 w-14 h-12 text-[8px] text-orange-300 flex flex-col items-center justify-center" title="Reactor Vessel" onClick={()=>fire({action:'insert-reactor'})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Reactor
                   </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Operator cab" onClick={()=>fire({action:'add-crane-part', data:'cab'})}>
-                    <BoxIcon className="w-3 h-3 mb-0.5" /> Cab
+                  <button className="p-1 rounded hover:bg-orange-700/60 w-14 h-12 text-[8px] text-orange-300 flex flex-col items-center justify-center" title="Furnace/Heater" onClick={()=>fire({action:'insert-furnace'})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Furnace
                   </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add wheel" onClick={()=>fire({action:'add-crane-part', data:'wheel'})}>
-                    <Circle className="w-3 h-3 mb-0.5" /> Wheel
+                  <button className="p-1 rounded hover:bg-orange-700/60 w-14 h-12 text-[8px] text-orange-300 flex flex-col items-center justify-center" title="Compressor" onClick={()=>fire({action:'insert-compressor'})}>
+                    <Cog className="w-3 h-3 mb-0.5" /> Compressor
+                  </button>
+                  <button className="p-1 rounded hover:bg-orange-700/60 w-14 h-12 text-[8px] text-orange-300 flex flex-col items-center justify-center" title="Pump" onClick={()=>fire({action:'insert-pump'})}>
+                    <Cog className="w-3 h-3 mb-0.5" /> Pump
+                  </button>
+                  <button className="p-1 rounded hover:bg-orange-700/60 w-14 h-12 text-[8px] text-orange-300 flex flex-col items-center justify-center" title="Horizontal Drum" onClick={()=>fire({action:'insert-drum'})}>
+                    <Circle className="w-3 h-3 mb-0.5" /> Drum
                   </button>
                 </div>
               </div>
               <div className="flex flex-col border-r border-gray-600 px-2 py-2">
-                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Boom & Jib</div>
+                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Site</div>
                 <div className="flex gap-1">
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add boom (30m, 45°)" onClick={()=>fire({action:'add-boom', data:{length:30, angle:45}})}>
-                    <BoxIcon className="w-3 h-3 mb-0.5" /> Boom
-                  </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add jib (10m)" onClick={()=>fire({action:'add-jib', data:{length:10, angle:0}})}>
-                    <BoxIcon className="w-3 h-3 mb-0.5" /> Jib
-                  </button>
-                </div>
-              </div>
-              <div className="flex flex-col border-r border-gray-600 px-2 py-2">
-                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Rigging</div>
-                <div className="flex gap-1">
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add hoist (50t)" onClick={()=>fire({action:'add-hoist', data:{capacity:50, ropeCount:4}})}>
-                    <Circle className="w-3 h-3 mb-0.5" /> Hoist
-                  </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add hook block" onClick={()=>fire({action:'add-hook', data:{size:1, sheaveCount:4}})}>
-                    <Circle className="w-3 h-3 mb-0.5" /> Hook
-                  </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add load (50t)" onClick={()=>fire({action:'add-load', data:{mass:50, dimensions:[2,2,2]}})}>
-                    <BoxIcon className="w-3 h-3 mb-0.5" /> Load
-                  </button>
-                  <button className="p-1 rounded hover:bg-yellow-700/60 w-12 h-12 text-[8px] text-yellow-300 flex flex-col items-center justify-center" title="Open rigging equipment library" onClick={()=>fire({action:'show-rigging-library'})}>
-                    <Link2 className="w-3 h-3 mb-0.5" /> Library
-                  </button>
-                </div>
-              </div>
-              <div className="flex flex-col border-r border-gray-600 px-2 py-2">
-                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Support</div>
-                <div className="flex gap-1">
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add counterweight (100t)" onClick={()=>fire({action:'add-counterweight', data:{mass:100}})}>
-                    <BoxIcon className="w-3 h-3 mb-0.5" /> CW
-                  </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add outriggers (4x)" onClick={()=>fire({action:'add-outrigger', data:{extension:5, count:4}})}>
-                    <BoxIcon className="w-3 h-3 mb-0.5" /> Outrigger
-                  </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add trolley (50t)" onClick={()=>fire({action:'add-trolley', data:{capacity:50}})}>
-                    <Circle className="w-3 h-3 mb-0.5" /> Trolley
-                  </button>
                   <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add scaffolding structure" onClick={()=>fire({action:'add-scaffolding', data:{height:10, width:3, depth:2, levels:4}})}>
                     <BoxIcon className="w-3 h-3 mb-0.5" /> Scaffold
                   </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add single pole (for cathead)" onClick={()=>fire({action:'add-single-pole', data:{height:10, diameter:0.1}})}>
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add single pole" onClick={()=>fire({action:'add-single-pole', data:{height:10, diameter:0.1}})}>
                     <BoxIcon className="w-3 h-3 mb-0.5" /> Pole
                   </button>
                   <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add unit beam" onClick={()=>fire({action:'add-unit-beam', data:{length:3, width:0.08, height:0.08}})}>
                     <BoxIcon className="w-3 h-3 mb-0.5" /> Beam
-                  </button>
-                </div>
-              </div>
-              <div className="flex flex-col border-r border-gray-600 px-2 py-2">
-                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Cab</div>
-                <div className="flex gap-1">
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add cab window (rectangular)" onClick={()=>fire({action:'add-window', data:{windowKind:'rect', paneSize:[1.2, 0.8, 0.02]}})}>
-                    <BoxIcon className="w-3 h-3 mb-0.5" /> Window
-                  </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add windshield (curved)" onClick={()=>fire({action:'add-window', data:{windowKind:'windshield', paneSize:[1.5, 0.9, 0.02], curvature:2}})}>
-                    <BoxIcon className="w-3 h-3 mb-0.5" /> Windshield
-                  </button>
-                </div>
-              </div>
-              <div className="flex flex-col border-r border-gray-600 px-2 py-2">
-                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Professional</div>
-                <div className="flex gap-1">
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Realistic wheel with tread (1.2m)" onClick={()=>fire({action:'add-professional', data:'wheel'})}>
-                    <Hexagon className="w-3 h-3 mb-0.5" /> Wheel
-                  </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="DIN-standard hook (100t)" onClick={()=>fire({action:'add-professional', data:'hook'})}>
-                    <Anchor className="w-3 h-3 mb-0.5" /> Hook
-                  </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Wire rope (5m)" onClick={()=>fire({action:'add-professional', data:'rope'})}>
-                    <Link2 className="w-3 h-3 mb-0.5" /> Rope
-                  </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Hoist drum with rope" onClick={()=>fire({action:'add-professional', data:'drum'})}>
-                    <Cog className="w-3 h-3 mb-0.5" /> Drum
-                  </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Boom head connection" onClick={()=>fire({action:'add-professional', data:'boom-head'})}>
-                    <Zap className="w-3 h-3 mb-0.5" /> Head
                   </button>
                 </div>
               </div>
