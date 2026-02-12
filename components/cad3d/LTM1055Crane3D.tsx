@@ -85,10 +85,10 @@ export default function LTM1055Crane3D({
   const heelPinX = -superLength / 2 - 0.3 * s  // At rear of superstructure (behind engine housing)
   const heelPinY = superY + superHeight + 0.5 * s  // Just above superstructure top
 
-  // Luffing cylinder anchor points - cylinder goes from FRONT of superstructure UP to boom
-  const cylBaseX = superLength / 2 - 0.5 * s  // Base anchor FORWARD on superstructure deck
-  const cylBaseY = superY + 0.5 * s  // Low on superstructure
-  const cylBoomAttachDist = 5 * s  // Distance along boom where cylinder attaches
+  // Luffing cylinder anchor points - cylinder goes from CENTER of superstructure UP to boom
+  const cylBaseX = 0  // Base anchor at CENTER of superstructure (not under cab)
+  const cylBaseY = superY + superHeight  // On TOP of superstructure deck
+  const cylBoomAttachDist = 4 * s  // Distance along boom where cylinder attaches
 
   return (
     <group position={position} rotation={rotation}>
