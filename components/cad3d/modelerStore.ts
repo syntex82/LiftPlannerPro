@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type ModelerObjectType = "box" | "cylinder" | "sphere" | "tube" | "lathe" | "sweep" | "union" | "pipe" | "ibeam" | "hbeam" | "cchannel" | "tank" | "vessel" | "column" | "exchanger" | "crane" | "crane-plan" | "window" | "hook-block" | "scaffolding" | "single-pole" | "unit-beam" | "gltf" | "editable-mesh" | "terrain"
+export type ModelerObjectType = "box" | "cylinder" | "sphere" | "tube" | "lathe" | "sweep" | "union" | "pipe" | "ibeam" | "hbeam" | "cchannel" | "tank" | "vessel" | "column" | "exchanger" | "crane" | "crane-plan" | "ltm-1055-3d" | "ltm-1300-3d" | "window" | "hook-block" | "scaffolding" | "single-pole" | "unit-beam" | "gltf" | "editable-mesh" | "terrain"
 
 export interface ModelerObject {
   id: string

@@ -14,10 +14,12 @@ import { Brush, Evaluator, ADDITION, SUBTRACTION, INTERSECTION } from 'three-bvh
 import { useThree } from "@react-three/fiber"
 import Crane3D from "./Crane3D"
 import RealisticCrane3D from "./RealisticCrane3D"
+import LTM1055Crane3D from "./LTM1055Crane3D"
 import { SaveToLibraryDialog } from "./SaveToLibraryDialog"
 import { LoadFromLibraryDialog } from "./LoadFromLibraryDialog"
 
 import { LTM1300_AXLE_POS_MM } from "@/lib/ltm1300"
+import { LTM_1055_3D_SPEC, LTM_1300_3D_SPEC, getCrane3DById } from "@/lib/crane-3d-models"
 import { createBoom, createJib, createTrolley, createHoist, createCounterweight, createOutrigger, createHook, createSling, createLoad, createCab, createChassis } from "@/lib/crane-modeling-tools"
 import { createRealisticWheel, createDINHook, createWireRope, createHoistDrum, createBoomHead } from "@/lib/professional-cad-tools"
 
@@ -236,6 +238,10 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
         addColumn()
       } else if (action === 'insert-crane') {
         addCrane()
+      } else if (action === 'insert-ltm1055') {
+        addLTM1055Crane()
+      } else if (action === 'insert-ltm1300') {
+        addLTM1300Crane()
       } else if (action === 'insert-exchanger') {
         addExchanger()
       } else if (action === 'toggle-props') {
@@ -1277,6 +1283,48 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
     } as any]))
     setSelectedId(id)
     log('addCrane', { id })
+  }
+
+  // Add realistic LTM 1055-3.1 3D crane
+  const addLTM1055Crane = () => {
+    const id = `ltm1055-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id,
+      type: 'ltm-1055-3d' as any,
+      name: 'Liebherr LTM 1055-3.1',
+      position: [0, 0, 0] as [number, number, number],
+      rotation: [0, 0, 0] as [number, number, number],
+      scale: [1, 1, 1] as [number, number, number],
+      color: '#2E8B57',
+      specId: 'ltm-1055-3d',
+      boomAngle: 45,
+      boomExtend: 0.3, // 30% extension
+      slew: 0,
+      loadLine: 8
+    }]))
+    setSelectedId(id)
+    log('addLTM1055Crane', { id })
+  }
+
+  // Add realistic LTM 1300-6.2 3D crane
+  const addLTM1300Crane = () => {
+    const id = `ltm1300-${cryptoRandom()}`
+    setObjects(prev => ([...prev, {
+      id,
+      type: 'ltm-1300-3d' as any,
+      name: 'Liebherr LTM 1300-6.2',
+      position: [0, 0, 0] as [number, number, number],
+      rotation: [0, 0, 0] as [number, number, number],
+      scale: [1, 1, 1] as [number, number, number],
+      color: '#2E8B57',
+      specId: 'ltm-1300-3d',
+      boomAngle: 45,
+      boomExtend: 0.3,
+      slew: 0,
+      loadLine: 12
+    }]))
+    setSelectedId(id)
+    log('addLTM1300Crane', { id })
   }
 
   const addCranePart = (partType: string) => {
@@ -2688,7 +2736,51 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
       )
     }
 
-    // Removed crane type - build your own with individual parts
+    // LTM 1055-3.1 3D Crane
+    if (o.type === 'ltm-1055-3d') {
+      return (
+        <group
+          key={o.id}
+          position={o.position}
+          rotation={o.rotation}
+          scale={o.scale}
+          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+          onPointerDown={(e) => { e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}
+        >
+          <LTM1055Crane3D
+            spec={LTM_1055_3D_SPEC}
+            boomAngleDeg={o.boomAngle ?? 45}
+            extension={o.boomExtend ?? 0.3}
+            loadLineLength={o.loadLine ?? 8}
+            slewAngle={o.slew ?? 0}
+            scaleFactor={1}
+          />
+        </group>
+      )
+    }
+
+    // LTM 1300-6.2 3D Crane (using same component with different spec)
+    if (o.type === 'ltm-1300-3d') {
+      return (
+        <group
+          key={o.id}
+          position={o.position}
+          rotation={o.rotation}
+          scale={o.scale}
+          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+          onPointerDown={(e) => { e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}
+        >
+          <LTM1055Crane3D
+            spec={LTM_1300_3D_SPEC}
+            boomAngleDeg={o.boomAngle ?? 45}
+            extension={o.boomExtend ?? 0.3}
+            loadLineLength={o.loadLine ?? 12}
+            slewAngle={o.slew ?? 0}
+            scaleFactor={1}
+          />
+        </group>
+      )
+    }
 
     if (o.type === 'tank' || o.type === 'vessel' || o.type === 'column' || o.type === 'exchanger') {
       const geoms: THREE.BufferGeometry[] = []
