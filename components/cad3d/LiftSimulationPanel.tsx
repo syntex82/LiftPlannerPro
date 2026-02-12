@@ -19,21 +19,45 @@ export default function LiftSimulationPanel({ selectedCraneId, craneState, onClo
   } = useLiftSimulationStore()
 
   const [activeTab, setActiveTab] = useState<'loads' | 'keyframes' | 'playback'>('loads')
-  const [newLoadType, setNewLoadType] = useState<'box' | 'cylinder' | 'sphere'>('box')
+  const [newLoadType, setNewLoadType] = useState<LoadObject['type']>('box')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Get default dimensions for each load type
+  const getLoadDimensions = (type: LoadObject['type']) => {
+    switch (type) {
+      case 'box': return { width: 2, height: 1.5, depth: 2, radius: undefined, weight: 5000 }
+      case 'cylinder': return { width: 2, height: 2, depth: 2, radius: 1, weight: 3000 }
+      case 'sphere': return { width: 2, height: 2, depth: 2, radius: 1, weight: 2000 }
+      case 'vessel': return { width: 3, height: 2, depth: 8, radius: 1, weight: 15000 }
+      case 'column': return { width: 3, height: 20, depth: 3, radius: 1.5, weight: 45000 }
+      case 'exchanger': return { width: 2, height: 1.5, depth: 6, radius: 0.75, weight: 8000 }
+      case 'reactor': return { width: 4, height: 8, depth: 4, radius: 2, weight: 35000 }
+      case 'drum': return { width: 6, height: 2, depth: 2, radius: 1, weight: 12000 }
+      case 'compressor': return { width: 3, height: 2.5, depth: 4, radius: undefined, weight: 18000 }
+      case 'pump': return { width: 1.5, height: 1.2, depth: 2, radius: undefined, weight: 2500 }
+      case 'pipe-spool': return { width: 4, height: 0.6, depth: 0.6, radius: 0.3, weight: 800 }
+      case 'valve': return { width: 1, height: 0.8, depth: 1.2, radius: undefined, weight: 1500 }
+      case 'motor': return { width: 1.2, height: 1.2, depth: 2, radius: 0.6, weight: 3500 }
+      default: return { width: 2, height: 1.5, depth: 2, radius: undefined, weight: 5000 }
+    }
+  }
+
   const handleAddLoad = useCallback(() => {
+    const dims = getLoadDimensions(newLoadType)
+    const riggingHeight = Math.max(1.5, dims.height * 0.3) // Scale rigging offset with height
     addLoadObject({
-      name: `Load ${loadObjects.length + 1}`,
+      name: `${newLoadType.charAt(0).toUpperCase() + newLoadType.slice(1)} ${loadObjects.length + 1}`,
       type: newLoadType,
-      width: 2, height: 1.5, depth: 2,
-      radius: newLoadType === 'cylinder' ? 1 : undefined,
-      weight: 5000,
+      width: dims.width,
+      height: dims.height,
+      depth: dims.depth,
+      radius: dims.radius,
+      weight: dims.weight,
       color: '#e67e22',
-      position: [0, 0.75, 5],
+      position: [0, dims.height / 2, 5],
       rotation: [0, 0, 0],
       attachedToCraneId: null,
-      riggingOffset: [0, 1.5, 0],
+      riggingOffset: [0, riggingHeight, 0],
       swingAngleX: 0, swingAngleZ: 0,
       swingVelocityX: 0, swingVelocityZ: 0
     })
@@ -126,12 +150,26 @@ export default function LiftSimulationPanel({ selectedCraneId, craneState, onClo
             <div className="flex gap-2">
               <select
                 value={newLoadType}
-                onChange={(e) => setNewLoadType(e.target.value as any)}
+                onChange={(e) => setNewLoadType(e.target.value as LoadObject['type'])}
                 className="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-xs text-white"
               >
-                <option value="box">Box</option>
-                <option value="cylinder">Cylinder</option>
-                <option value="sphere">Sphere</option>
+                <optgroup label="Basic Shapes">
+                  <option value="box">Box</option>
+                  <option value="cylinder">Cylinder</option>
+                  <option value="sphere">Sphere</option>
+                </optgroup>
+                <optgroup label="Refinery Equipment">
+                  <option value="vessel">Vessel</option>
+                  <option value="column">Column</option>
+                  <option value="exchanger">Exchanger</option>
+                  <option value="reactor">Reactor</option>
+                  <option value="drum">Drum</option>
+                  <option value="compressor">Compressor</option>
+                  <option value="pump">Pump</option>
+                  <option value="pipe-spool">Pipe Spool</option>
+                  <option value="valve">Valve</option>
+                  <option value="motor">Motor</option>
+                </optgroup>
               </select>
               <button
                 onClick={handleAddLoad}

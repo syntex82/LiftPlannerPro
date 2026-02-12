@@ -4,7 +4,7 @@ import { create } from 'zustand'
 export interface LoadObject {
   id: string
   name: string
-  type: 'box' | 'cylinder' | 'sphere' | 'custom'
+  type: 'box' | 'cylinder' | 'sphere' | 'vessel' | 'column' | 'exchanger' | 'reactor' | 'drum' | 'compressor' | 'pump' | 'pipe-spool' | 'valve' | 'motor' | 'custom'
   // Dimensions (meters)
   width: number
   height: number

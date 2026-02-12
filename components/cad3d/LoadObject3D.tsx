@@ -1,8 +1,7 @@
 "use client"
 
 import * as THREE from "three"
-import { useMemo, useRef } from "react"
-import { useFrame } from "@react-three/fiber"
+import { useMemo, useRef, Fragment } from "react"
 import { LoadObject } from "./liftSimulationStore"
 
 interface LoadObject3DProps {
@@ -19,7 +18,7 @@ export default function LoadObject3D({
   onClick
 }: LoadObject3DProps) {
   const groupRef = useRef<THREE.Group>(null)
-  
+
   // Materials
   const material = useMemo(() => new THREE.MeshStandardMaterial({
     color: load.color,
@@ -50,10 +49,10 @@ export default function LoadObject3D({
   // Calculate position based on attachment state
   const position = useMemo(() => {
     if (load.attachedToCraneId && hookPosition) {
-      // Position relative to hook with swing applied
-      const swingOffsetX = Math.sin(load.swingAngleX) * (load.riggingOffset[1] + load.height / 2)
-      const swingOffsetZ = Math.sin(load.swingAngleZ) * (load.riggingOffset[1] + load.height / 2)
-      
+      // Position relative to hook with swing applied - NEGATE for correct direction
+      const swingOffsetX = Math.sin(-load.swingAngleX) * (load.riggingOffset[1] + load.height / 2)
+      const swingOffsetZ = Math.sin(-load.swingAngleZ) * (load.riggingOffset[1] + load.height / 2)
+
       return [
         hookPosition[0] + load.riggingOffset[0] + swingOffsetX,
         hookPosition[1] - load.riggingOffset[1] - load.height / 2,
@@ -63,35 +62,131 @@ export default function LoadObject3D({
     return load.position
   }, [load, hookPosition])
 
-  // Calculate rotation including swing
+  // Calculate rotation including swing - NEGATE swing angles for correct visual rotation
   const rotation = useMemo(() => {
     if (load.attachedToCraneId) {
-      return [load.swingAngleX, load.rotation[1], load.swingAngleZ] as [number, number, number]
+      return [-load.swingAngleX, load.rotation[1], -load.swingAngleZ] as [number, number, number]
     }
     return load.rotation
   }, [load])
 
-  // Render rigging lines when attached
+  // Render the load shape based on type
+  const loadGeometry = useMemo(() => {
+    switch (load.type) {
+      case 'box':
+        return <boxGeometry args={[load.width, load.height, load.depth]} />
+      case 'cylinder':
+        return <cylinderGeometry args={[load.radius || load.width / 2, load.radius || load.width / 2, load.height, 24]} />
+      case 'sphere':
+        return <sphereGeometry args={[load.radius || load.width / 2, 24, 24]} />
+      case 'vessel':
+        // Horizontal vessel with elliptical heads
+        return <cylinderGeometry args={[load.radius || load.width / 2, load.radius || load.width / 2, load.depth, 24]} />
+      case 'column':
+        // Tall vertical column
+        return <cylinderGeometry args={[load.radius || load.width / 2, load.radius || load.width / 2, load.height, 24]} />
+      case 'exchanger':
+        // Shell and tube exchanger
+        return <cylinderGeometry args={[load.radius || load.width / 2, load.radius || load.width / 2, load.depth, 24]} />
+      case 'reactor':
+        // Reactor vessel
+        return <cylinderGeometry args={[load.radius || load.width / 2, load.radius || load.width / 2, load.height, 24]} />
+      case 'drum':
+        // Horizontal drum
+        return <cylinderGeometry args={[load.radius || load.height / 2, load.radius || load.height / 2, load.width, 24]} />
+      case 'compressor':
+        return <boxGeometry args={[load.width, load.height, load.depth]} />
+      case 'pump':
+        return <boxGeometry args={[load.width, load.height, load.depth]} />
+      case 'pipe-spool':
+        return <cylinderGeometry args={[load.radius || 0.3, load.radius || 0.3, load.width, 16]} />
+      case 'valve':
+        return <boxGeometry args={[load.width, load.height, load.depth]} />
+      case 'motor':
+        return <cylinderGeometry args={[load.radius || load.width / 2, load.radius || load.width / 2, load.depth, 24]} />
+      default:
+        return <boxGeometry args={[load.width, load.height, load.depth]} />
+    }
+  }, [load])
+
+  // Get rotation adjustment for horizontal equipment
+  const equipmentRotation = useMemo(() => {
+    if (load.type === 'vessel' || load.type === 'exchanger' || load.type === 'drum' || load.type === 'pipe-spool' || load.type === 'motor') {
+      // Rotate to lay horizontal (along X axis)
+      return [0, 0, Math.PI / 2] as [number, number, number]
+    }
+    return [0, 0, 0] as [number, number, number]
+  }, [load.type])
+
+  // Lifting lugs on top of load
+  const liftingLugs = useMemo(() => {
+    // Adjust lug positions based on equipment type
+    let lugPositions: [number, number, number][]
+
+    if (load.type === 'vessel' || load.type === 'exchanger' || load.type === 'drum') {
+      // For horizontal vessels, lugs on top along length
+      lugPositions = [
+        [-load.depth / 3, load.width / 2, 0],
+        [load.depth / 3, load.width / 2, 0],
+        [-load.depth / 3, load.width / 2, 0],
+        [load.depth / 3, load.width / 2, 0]
+      ]
+    } else {
+      lugPositions = [
+        [-load.width / 3, load.height / 2, -load.depth / 3],
+        [load.width / 3, load.height / 2, -load.depth / 3],
+        [load.width / 3, load.height / 2, load.depth / 3],
+        [-load.width / 3, load.height / 2, load.depth / 3]
+      ]
+    }
+
+    return lugPositions.map((pos, i) => (
+      <group key={`lug-${i}`} position={pos}>
+        {/* Lug plate */}
+        <mesh>
+          <boxGeometry args={[0.1, 0.15, 0.02]} />
+          <primitive object={riggingMaterial} attach="material" />
+        </mesh>
+        {/* Lug hole */}
+        <mesh position={[0, 0.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.03, 0.01, 8, 16]} />
+          <primitive object={riggingMaterial} attach="material" />
+        </mesh>
+      </group>
+    ))
+  }, [load, riggingMaterial])
+
+  // Calculate world positions of lifting lugs for rigging attachment
+  const worldLugPositions = useMemo(() => {
+    const lugOffsets: [number, number, number][] = [
+      [-load.width / 3, load.height / 2, -load.depth / 3],
+      [load.width / 3, load.height / 2, -load.depth / 3],
+      [load.width / 3, load.height / 2, load.depth / 3],
+      [-load.width / 3, load.height / 2, load.depth / 3]
+    ]
+
+    // Apply load rotation to get world positions
+    const euler = new THREE.Euler(rotation[0], rotation[1], rotation[2])
+    const rotMatrix = new THREE.Matrix4().makeRotationFromEuler(euler)
+
+    return lugOffsets.map(offset => {
+      const vec = new THREE.Vector3(offset[0], offset[1], offset[2])
+      vec.applyMatrix4(rotMatrix)
+      return [
+        position[0] + vec.x,
+        position[1] + vec.y,
+        position[2] + vec.z
+      ] as [number, number, number]
+    })
+  }, [load, position, rotation])
+
+  // Render rigging lines when attached - OUTSIDE the transformed group
   const riggingLines = useMemo(() => {
     if (!load.attachedToCraneId || !hookPosition) return null
 
-    const loadTop = [
-      position[0],
-      position[1] + load.height / 2,
-      position[2]
-    ]
-
-    // Create 4-point bridle rigging
-    const bridlePoints = [
-      [loadTop[0] - load.width / 3, loadTop[1], loadTop[2] - load.depth / 3],
-      [loadTop[0] + load.width / 3, loadTop[1], loadTop[2] - load.depth / 3],
-      [loadTop[0] + load.width / 3, loadTop[1], loadTop[2] + load.depth / 3],
-      [loadTop[0] - load.width / 3, loadTop[1], loadTop[2] + load.depth / 3]
-    ]
-
-    return bridlePoints.map((point, i) => {
+    return worldLugPositions.map((lugPos, i) => {
       const start = new THREE.Vector3(...hookPosition)
-      const end = new THREE.Vector3(point[0], point[1], point[2])
+      const end = new THREE.Vector3(...lugPos)
       const mid = start.clone().add(end).multiplyScalar(0.5)
       const length = start.distanceTo(end)
       const direction = end.clone().sub(start).normalize()
@@ -110,61 +205,34 @@ export default function LoadObject3D({
         </mesh>
       )
     })
-  }, [load, hookPosition, position, ropeMaterial])
+  }, [load, hookPosition, worldLugPositions, ropeMaterial])
 
-  // Render the load shape
-  const loadGeometry = useMemo(() => {
-    switch (load.type) {
-      case 'box':
-        return <boxGeometry args={[load.width, load.height, load.depth]} />
-      case 'cylinder':
-        return <cylinderGeometry args={[load.radius || load.width / 2, load.radius || load.width / 2, load.height, 24]} />
-      case 'sphere':
-        return <sphereGeometry args={[load.radius || load.width / 2, 24, 24]} />
-      default:
-        return <boxGeometry args={[load.width, load.height, load.depth]} />
-    }
-  }, [load])
-
-  // Lifting lugs on top of load
-  const liftingLugs = useMemo(() => {
-    const lugPositions = [
-      [-load.width / 3, load.height / 2, -load.depth / 3],
-      [load.width / 3, load.height / 2, -load.depth / 3],
-      [load.width / 3, load.height / 2, load.depth / 3],
-      [-load.width / 3, load.height / 2, load.depth / 3]
-    ]
-
-    return lugPositions.map((pos, i) => (
-      <group key={`lug-${i}`} position={pos as [number, number, number]}>
-        {/* Lug plate */}
-        <mesh>
-          <boxGeometry args={[0.1, 0.15, 0.02]} />
-          <primitive object={riggingMaterial} attach="material" />
-        </mesh>
-        {/* Lug hole */}
-        <mesh position={[0, 0.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.03, 0.01, 8, 16]} />
-          <primitive object={riggingMaterial} attach="material" />
-        </mesh>
-      </group>
-    ))
-  }, [load, riggingMaterial])
+  // Combine final rotation with equipment-specific rotation
+  const finalRotation = useMemo(() => {
+    return [
+      rotation[0] + equipmentRotation[0],
+      rotation[1] + equipmentRotation[1],
+      rotation[2] + equipmentRotation[2]
+    ] as [number, number, number]
+  }, [rotation, equipmentRotation])
 
   return (
-    <group ref={groupRef} position={position} rotation={rotation} onClick={onClick}>
-      {/* Main load body */}
-      <mesh castShadow receiveShadow>
-        {loadGeometry}
-        <primitive object={isSelected ? selectedMaterial : material} attach="material" />
-      </mesh>
-
-      {/* Lifting lugs */}
-      {liftingLugs}
-
-      {/* Rigging lines */}
+    <Fragment>
+      {/* Rigging lines rendered at world level - OUTSIDE the load group */}
       {riggingLines}
-    </group>
+
+      {/* Load object with local transforms */}
+      <group ref={groupRef} position={position} rotation={finalRotation} onClick={onClick}>
+        {/* Main load body */}
+        <mesh castShadow receiveShadow>
+          {loadGeometry}
+          <primitive object={isSelected ? selectedMaterial : material} attach="material" />
+        </mesh>
+
+        {/* Lifting lugs */}
+        {liftingLugs}
+      </group>
+    </Fragment>
   )
 }
 
