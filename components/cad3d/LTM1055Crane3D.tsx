@@ -81,9 +81,14 @@ export default function LTM1055Crane3D({
   const superWidth = 2.4 * s
   const superLength = 3.2 * s
 
-  // Boom pivot point - raised to clear crane cab
-  const boomPivotY = superY + superHeight + 0.8 * s
-  const boomPivotX = -0.7 * s
+  // Boom heel pin position - on top of A-frame, behind crane cab
+  const heelPinX = -1.2 * s  // Behind center of superstructure
+  const heelPinY = superY + superHeight + 1.5 * s  // Top of A-frame
+
+  // Luffing cylinder anchor points
+  const cylBaseX = -0.5 * s  // Base anchor on superstructure deck
+  const cylBaseY = superY + 0.3 * s  // Low on superstructure
+  const cylBoomAttachDist = 4 * s  // Distance along boom where cylinder attaches
 
   return (
     <group position={position} rotation={rotation}>
@@ -246,15 +251,69 @@ export default function LTM1055Crane3D({
           </mesh>
         ))}
 
+        {/* ========== A-FRAME STRUCTURE ========== */}
+        {(() => {
+          // A-frame legs - two angled beams from superstructure deck to heel pin
+          const aFrameBaseSpread = 1.2 * s  // How far apart the legs are at the base
+          const aFrameHeight = heelPinY - superY - 0.2 * s
+          const aFrameAngle = Math.atan2(aFrameHeight, aFrameBaseSpread / 2)
+          const aFrameLegLength = Math.sqrt(aFrameHeight * aFrameHeight + (aFrameBaseSpread / 2) * (aFrameBaseSpread / 2))
+
+          return (
+            <group position={[heelPinX, 0.2 * s, 0]}>
+              {/* A-frame legs (both sides) */}
+              {[-1, 1].map(side => (
+                <mesh
+                  key={`aframe-leg-${side}`}
+                  position={[aFrameBaseSpread / 4, aFrameHeight / 2, side * 0.5 * s]}
+                  rotation={[0, 0, aFrameAngle - Math.PI / 2]}
+                  castShadow
+                >
+                  <boxGeometry args={[0.2 * s, aFrameLegLength, 0.15 * s]} />
+                  <primitive object={matGreen} attach="material" />
+                </mesh>
+              ))}
+              {/* A-frame cross beam at top (heel pin mount) */}
+              <mesh position={[0, aFrameHeight, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                <cylinderGeometry args={[0.15 * s, 0.15 * s, 1.4 * s, 16]} />
+                <primitive object={matSteel} attach="material" />
+              </mesh>
+              {/* Heel pin (boom pivot) */}
+              <mesh position={[0, aFrameHeight, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                <cylinderGeometry args={[0.1 * s, 0.1 * s, 1.6 * s, 12]} />
+                <primitive object={matDarkGray} attach="material" />
+              </mesh>
+              {/* A-frame base plates */}
+              {[-1, 1].map(side => (
+                <mesh key={`aframe-base-${side}`} position={[aFrameBaseSpread / 2, 0, side * 0.5 * s]} castShadow>
+                  <boxGeometry args={[0.4 * s, 0.15 * s, 0.3 * s]} />
+                  <primitive object={matSteel} attach="material" />
+                </mesh>
+              ))}
+            </group>
+          )
+        })()}
+
         {/* ========== BOOM ASSEMBLY ========== */}
         {(() => {
-          // Boom pivot point relative to superstructure
-          const boomPivotLocalX = boomPivotX + 0.5 * s
-          const boomPivotLocalY = boomPivotY - superY
+          // Heel pin position relative to superstructure
+          const heelPinLocalX = heelPinX
+          const heelPinLocalY = heelPinY - superY
 
           // Calculate boom tip position (accounting for boom angle)
-          const boomTipLocalX = boomPivotLocalX + Math.cos(luffRad) * (currentBoomLength + 0.3 * s)
-          const boomTipLocalY = boomPivotLocalY + Math.sin(luffRad) * (currentBoomLength + 0.3 * s)
+          const boomTipLocalX = heelPinLocalX + Math.cos(luffRad) * (currentBoomLength + 0.3 * s)
+          const boomTipLocalY = heelPinLocalY + Math.sin(luffRad) * (currentBoomLength + 0.3 * s)
+
+          // Luffing cylinder geometry - connects superstructure to boom
+          const cylBaseLocalX = cylBaseX
+          const cylBaseLocalY = cylBaseY - superY
+          const cylBoomAttachX = heelPinLocalX + Math.cos(luffRad) * cylBoomAttachDist
+          const cylBoomAttachY = heelPinLocalY + Math.sin(luffRad) * cylBoomAttachDist
+          const cylLength = Math.sqrt(
+            Math.pow(cylBoomAttachX - cylBaseLocalX, 2) +
+            Math.pow(cylBoomAttachY - cylBaseLocalY, 2)
+          )
+          const cylAngle = Math.atan2(cylBoomAttachY - cylBaseLocalY, cylBoomAttachX - cylBaseLocalX)
 
           // Lattice cross-brace positions along boom
           const latticeCount = Math.floor(currentBoomLength / (2 * s))
@@ -262,8 +321,72 @@ export default function LTM1055Crane3D({
 
           return (
             <>
-              {/* Boom rotation group */}
-              <group position={[boomPivotLocalX, boomPivotLocalY, 0]} rotation={[0, 0, luffRad]}>
+              {/* ========== LUFFING CYLINDER (properly connected) ========== */}
+              <group>
+                {/* Cylinder base anchor on superstructure */}
+                <mesh position={[cylBaseLocalX, cylBaseLocalY, 0]} castShadow>
+                  <boxGeometry args={[0.4 * s, 0.3 * s, 0.6 * s]} />
+                  <primitive object={matSteel} attach="material" />
+                </mesh>
+                {/* Cylinder base pivot pin */}
+                <mesh position={[cylBaseLocalX, cylBaseLocalY, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                  <cylinderGeometry args={[0.08 * s, 0.08 * s, 0.8 * s, 12]} />
+                  <primitive object={matDarkGray} attach="material" />
+                </mesh>
+                {/* Main cylinder body */}
+                <mesh
+                  position={[
+                    cylBaseLocalX + Math.cos(cylAngle) * cylLength * 0.35,
+                    cylBaseLocalY + Math.sin(cylAngle) * cylLength * 0.35,
+                    0
+                  ]}
+                  rotation={[0, 0, cylAngle]}
+                  castShadow
+                >
+                  <cylinderGeometry args={[0.15 * s, 0.18 * s, cylLength * 0.7, 16]} />
+                  <primitive object={matSteel} attach="material" />
+                </mesh>
+                {/* Piston rod */}
+                <mesh
+                  position={[
+                    cylBaseLocalX + Math.cos(cylAngle) * cylLength * 0.75,
+                    cylBaseLocalY + Math.sin(cylAngle) * cylLength * 0.75,
+                    0
+                  ]}
+                  rotation={[0, 0, cylAngle]}
+                  castShadow
+                >
+                  <cylinderGeometry args={[0.08 * s, 0.08 * s, cylLength * 0.5, 12]} />
+                  <primitive object={matSteel} attach="material" />
+                </mesh>
+                {/* Cylinder top anchor (attaches to boom) */}
+                <mesh position={[cylBoomAttachX, cylBoomAttachY, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                  <cylinderGeometry args={[0.1 * s, 0.1 * s, 0.7 * s, 12]} />
+                  <primitive object={matDarkGray} attach="material" />
+                </mesh>
+              </group>
+
+              {/* Boom rotation group - pivots at heel pin */}
+              <group position={[heelPinLocalX, heelPinLocalY, 0]} rotation={[0, 0, luffRad]}>
+
+                {/* Boom heel section (connects to heel pin) */}
+                <mesh position={[-0.3 * s, 0, 0]} castShadow>
+                  <boxGeometry args={[0.8 * s, boomHeight * 1.2, boomWidth * 1.1]} />
+                  <primitive object={matYellow} attach="material" />
+                </mesh>
+                {/* Heel pin holes */}
+                {[-1, 1].map(side => (
+                  <mesh key={`heel-hole-${side}`} position={[-0.3 * s, 0, side * boomWidth * 0.6]} rotation={[Math.PI / 2, 0, 0]}>
+                    <torusGeometry args={[0.12 * s, 0.04 * s, 8, 16]} />
+                    <primitive object={matDarkGray} attach="material" />
+                  </mesh>
+                ))}
+
+                {/* Luffing cylinder attachment lug on boom */}
+                <mesh position={[cylBoomAttachDist, -boomHeight * 0.5, 0]} castShadow>
+                  <boxGeometry args={[0.5 * s, 0.4 * s, 0.6 * s]} />
+                  <primitive object={matYellow} attach="material" />
+                </mesh>
 
                 {/* Boom main structure - 4 corner chords (lattice boom) */}
                 {[
@@ -368,19 +491,6 @@ export default function LTM1055Crane3D({
           )
         })()}
 
-        {/* Boom luffing cylinder */}
-        <mesh
-          position={[
-            boomPivotX + 0.5 * s + Math.cos(luffRad) * 3 * s,
-            boomPivotY - superY - 1.5 * s + Math.sin(luffRad) * 1.5 * s,
-            0
-          ]}
-          rotation={[0, 0, luffRad - 0.3]}
-          castShadow
-        >
-          <cylinderGeometry args={[0.12 * s, 0.12 * s, 4 * s, 12]} />
-          <primitive object={matSteel} attach="material" />
-        </mesh>
       </group>
 
       {/* ========== OUTRIGGERS ========== */}
