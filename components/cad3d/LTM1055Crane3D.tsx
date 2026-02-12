@@ -204,24 +204,25 @@ export default function LTM1055Crane3D({
         </mesh>
 
         {/* ========== CRANE CAB ========== */}
-        <group position={[superLength / 2 - 0.8 * s, superHeight + 0.2 * s, -superWidth / 2 + 0.8 * s]}>
+        {/* Positioned to the LEFT SIDE of the boom (negative Z), clear of luffing cylinder */}
+        <group position={[superLength / 2 - 0.6 * s, superHeight + 0.2 * s, -superWidth / 2 - 0.3 * s]}>
           {/* Cab body - larger and more prominent */}
           <mesh position={[0, 0.85 * s, 0]} castShadow receiveShadow>
             <boxGeometry args={[1.8 * s, 1.7 * s, 1.5 * s]} />
             <primitive object={matGreen} attach="material" />
           </mesh>
-          {/* Front window - large panoramic */}
+          {/* Front window - large panoramic (facing forward/boom direction) */}
           <mesh position={[0.85 * s, 0.95 * s, 0]} rotation={[0, 0, -0.12]}>
             <boxGeometry args={[0.1 * s, 1.3 * s, 1.3 * s]} />
             <primitive object={matGlass} attach="material" />
           </mesh>
-          {/* Side window - right side (outer) */}
-          <mesh position={[0.1 * s, 0.95 * s, 0.73 * s]}>
+          {/* Side window - outer side (away from boom) */}
+          <mesh position={[0.1 * s, 0.95 * s, -0.73 * s]}>
             <boxGeometry args={[1.4 * s, 1.2 * s, 0.08 * s]} />
             <primitive object={matGlass} attach="material" />
           </mesh>
-          {/* Side window - left side (inner) */}
-          <mesh position={[0.1 * s, 0.95 * s, -0.73 * s]}>
+          {/* Side window - inner side (towards boom) */}
+          <mesh position={[0.1 * s, 0.95 * s, 0.73 * s]}>
             <boxGeometry args={[1.4 * s, 1.2 * s, 0.08 * s]} />
             <primitive object={matGlass} attach="material" />
           </mesh>
