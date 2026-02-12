@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { FilePlus, FolderOpen, Save, MousePointer, Move, RotateCw, Expand, Copy, Trash2, Settings, Terminal, Grid, Magnet, Box as BoxIcon, Circle, PenLine, Square, PenTool, Zap, Minus, Plus, RotateCcw, Layers, Eye, EyeOff, Scissors, Maximize2, Slash, Radius, Cog, Anchor, Hexagon, Link2, Package, Truck } from "lucide-react"
+import { FilePlus, FolderOpen, Save, MousePointer, Move, RotateCw, Expand, Copy, Trash2, Settings, Terminal, Grid, Magnet, Box as BoxIcon, Circle, PenLine, Square, PenTool, Zap, Minus, Plus, RotateCcw, Layers, Eye, EyeOff, Scissors, Maximize2, Slash, Radius, Cog, Anchor, Hexagon, Link2, Package, Truck, Ruler, Target, Crosshair } from "lucide-react"
 
 export default function Ribbon() {
   const [activeTab, setActiveTab] = useState<'file'|'modeling'|'insert'|'profiles'|'view'>('file')
@@ -248,6 +248,20 @@ export default function Ribbon() {
                   </button>
                   <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Ungroup selected" onClick={()=>fire({action:'ungroup'})}>
                     <Layers className="w-3 h-3 mb-0.5" /> Ungroup
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-col border-r border-gray-600 px-2 py-2">
+                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Measure</div>
+                <div className="flex gap-1">
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Toggle bounding box display" onClick={()=>fire({action:'toggle-bounds', data:true})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Bounds
+                  </button>
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Toggle center of mass display" onClick={()=>fire({action:'toggle-com', data:true})}>
+                    <Target className="w-3 h-3 mb-0.5" /> CoM
+                  </button>
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Measure distance between objects" onClick={()=>fire({action:'measure-distance'})}>
+                    <Ruler className="w-3 h-3 mb-0.5" /> Dist
                   </button>
                 </div>
               </div>

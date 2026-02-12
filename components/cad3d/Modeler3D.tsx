@@ -79,6 +79,8 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
   const [saveToLibraryOpen, setSaveToLibraryOpen] = useState(false)
   const [loadFromLibraryOpen, setLoadFromLibraryOpen] = useState(false)
   const [showSimulationPanel, setShowSimulationPanel] = useState(false)
+  const [showBoundingBox, setShowBoundingBox] = useState(false)
+  const [showCenterOfMass, setShowCenterOfMass] = useState(false)
 
   // Lift simulation store
   const {
@@ -946,6 +948,10 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
           setObjects(prev => prev.map(o => o.id===idSel ? ({...o, smoothShading: true, chamferDistance: distance } as any) : o))
           log('chamfer', { id: idSel, distance })
         }
+      } else if (action === 'toggle-bounds') {
+        setShowBoundingBox(data)
+      } else if (action === 'toggle-com') {
+        setShowCenterOfMass(data)
       }
     }
     window.addEventListener('cad3d:modeler', onModeler as any)
@@ -4542,7 +4548,73 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
         />
       )}
 
+      {/* Bounding Box Visualization */}
+      {showBoundingBox && selectedId && (() => {
+        const obj = objects.find(o => o.id === selectedId)
+        if (!obj) return null
+        // Calculate bounding box size based on object type
+        let size: [number, number, number] = [1, 1, 1]
+        if (obj.type === 'box' && obj.size) {
+          size = [obj.size[0] * obj.scale[0], obj.size[1] * obj.scale[1], obj.size[2] * obj.scale[2]]
+        } else if (obj.type === 'sphere') {
+          const r = (obj.radius ?? 0.5) * 2
+          size = [r * obj.scale[0], r * obj.scale[1], r * obj.scale[2]]
+        } else if (obj.type === 'cylinder' || obj.type === 'tube') {
+          const r = (obj.radius ?? 0.5) * 2
+          const h = obj.height ?? 1
+          size = [r * obj.scale[0], h * obj.scale[1], r * obj.scale[2]]
+        } else if (obj.type === 'cone') {
+          const r = Math.max(obj.radiusBottom ?? 1, obj.radiusTop ?? 0) * 2
+          const h = obj.height ?? 2
+          size = [r * obj.scale[0], h * obj.scale[1], r * obj.scale[2]]
+        } else if (obj.type === 'torus') {
+          const r = ((obj.radius ?? 1) + (obj.tubeRadius ?? 0.3)) * 2
+          size = [r * obj.scale[0], (obj.tubeRadius ?? 0.3) * 2 * obj.scale[1], r * obj.scale[2]]
+        } else if (obj.type === 'pyramid') {
+          const r = (obj.radius ?? 1) * 2
+          const h = obj.height ?? 2
+          size = [r * obj.scale[0], h * obj.scale[1], r * obj.scale[2]]
+        } else if (obj.type === 'wedge') {
+          size = [(obj.width ?? 1) * obj.scale[0], (obj.height ?? 1) * obj.scale[1], (obj.depth ?? 2) * obj.scale[2]]
+        } else if (obj.type === 'dome') {
+          const r = (obj.radius ?? 1) * 2
+          size = [r * obj.scale[0], (obj.radius ?? 1) * obj.scale[1], r * obj.scale[2]]
+        }
+        return (
+          <mesh position={obj.position}>
+            <boxGeometry args={size} />
+            <meshBasicMaterial color="#00ff00" wireframe transparent opacity={0.5} />
+          </mesh>
+        )
+      })()}
 
+      {/* Center of Mass Visualization */}
+      {showCenterOfMass && selectedId && (() => {
+        const obj = objects.find(o => o.id === selectedId)
+        if (!obj) return null
+        return (
+          <group position={obj.position}>
+            {/* Center sphere */}
+            <mesh>
+              <sphereGeometry args={[0.1, 16, 16]} />
+              <meshBasicMaterial color="#ff6600" />
+            </mesh>
+            {/* Crosshair lines using thin cylinders */}
+            <mesh rotation={[0, 0, Math.PI/2]}>
+              <cylinderGeometry args={[0.02, 0.02, 0.6, 8]} />
+              <meshBasicMaterial color="#ff6600" />
+            </mesh>
+            <mesh>
+              <cylinderGeometry args={[0.02, 0.02, 0.6, 8]} />
+              <meshBasicMaterial color="#ff6600" />
+            </mesh>
+            <mesh rotation={[Math.PI/2, 0, 0]}>
+              <cylinderGeometry args={[0.02, 0.02, 0.6, 8]} />
+              <meshBasicMaterial color="#ff6600" />
+            </mesh>
+          </group>
+        )
+      })()}
 
       {/* Box Selection Overlay (global) */}
       {showGizmo && boxSelect.start && boxSelect.end && (
