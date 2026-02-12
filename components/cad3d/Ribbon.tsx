@@ -297,6 +297,17 @@ export default function Ribbon() {
                 </div>
               </div>
               <div className="flex flex-col border-r border-gray-600 px-2 py-2">
+                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">3D Cranes</div>
+                <div className="flex gap-1">
+                  <button className="p-1 rounded hover:bg-yellow-700/60 w-14 h-12 text-[8px] text-yellow-300 flex flex-col items-center justify-center font-bold" title="Liebherr LTM 1055-3.1 (55t, 3-axle)" onClick={()=>fire({action:'insert-ltm1055'})}>
+                    <BoxIcon className="w-4 h-4 mb-0.5" /> LTM 1055
+                  </button>
+                  <button className="p-1 rounded hover:bg-yellow-700/60 w-14 h-12 text-[8px] text-yellow-300 flex flex-col items-center justify-center font-bold" title="Liebherr LTM 1300-6.2 (300t, 6-axle)" onClick={()=>fire({action:'insert-ltm1300'})}>
+                    <BoxIcon className="w-4 h-4 mb-0.5" /> LTM 1300
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-col border-r border-gray-600 px-2 py-2">
                 <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Crane Parts</div>
                 <div className="flex gap-1">
                   <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Crane chassis with wheels" onClick={()=>fire({action:'add-crane-part', data:'base'})}>
