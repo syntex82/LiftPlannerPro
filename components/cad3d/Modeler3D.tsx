@@ -335,9 +335,9 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
         addColumn()
       } else if (action === 'insert-crane') {
         addCrane()
-      } else if (action === 'insert-ltm1055') {
+      } else if (action === 'insert-ltm1055' || action === 'add-ltm1055-crane') {
         addLTM1055Crane()
-      } else if (action === 'insert-ltm1300') {
+      } else if (action === 'insert-ltm1300' || action === 'add-ltm1300-crane') {
         addLTM1300Crane()
       } else if (action === 'insert-exchanger') {
         addExchanger()
@@ -542,6 +542,22 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
         }
       } else if (action === 'add-scaffolding') {
         addScaffolding(data?.height ?? 10, data?.width ?? 3, data?.depth ?? 2, data?.levels ?? 4)
+      } else if (action === 'add-scaffold-tower') {
+        addScaffoldTower(data?.height ?? 6, data?.width ?? 1.35, data?.depth ?? 2.5)
+      } else if (action === 'add-scaffold-bay') {
+        addScaffoldBay(data?.height ?? 2, data?.width ?? 2.5, data?.depth ?? 0.75)
+      } else if (action === 'add-scaffold-stair') {
+        addScaffoldStair(data?.height ?? 8, data?.width ?? 2.5, data?.depth ?? 2.5)
+      } else if (action === 'add-steel-beam') {
+        addSteelBeam(data?.length ?? 6, data?.flangeWidth ?? 0.2, data?.webHeight ?? 0.4)
+      } else if (action === 'add-steel-column') {
+        addSteelColumn(data?.height ?? 4, data?.flangeWidth ?? 0.25, data?.webHeight ?? 0.25)
+      } else if (action === 'add-handrail') {
+        addHandrail(data?.length ?? 3, data?.railHeight ?? 1.1)
+      } else if (action === 'add-ladder') {
+        addLadder(data?.height ?? 4, data?.width ?? 0.5)
+      } else if (action === 'add-platform') {
+        addPlatform(data?.width ?? 2.5, data?.length ?? 3, data?.thickness ?? 0.05)
       } else if (action === 'add-single-pole') {
         addSinglePole(data?.height ?? 10, data?.diameter ?? 0.1)
       } else if (action === 'add-unit-beam') {
@@ -1489,6 +1505,109 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
     ])
     setSelectedId(id)
     log("addUnitBeam", { id, length, width, height })
+  }
+
+  // Scaffold Tower - mobile scaffold with wheels
+  const addScaffoldTower = (height: number = 6, width: number = 1.35, depth: number = 2.5) => {
+    const id = `scaffold-tower-${cryptoRandom()}`
+    setObjects(prev => [...prev, {
+      id, type: 'scaffold-tower', name: 'Scaffold Tower',
+      position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      height, width, depth, levels: Math.ceil(height / 2),
+      hasWheels: true, hasStairs: false, color: '#4a90d9'
+    } as any])
+    setSelectedId(id)
+    log('addScaffoldTower', { id })
+  }
+
+  // Scaffold Bay - single bay section
+  const addScaffoldBay = (height: number = 2, width: number = 2.5, depth: number = 0.75) => {
+    const id = `scaffold-bay-${cryptoRandom()}`
+    setObjects(prev => [...prev, {
+      id, type: 'scaffold-bay', name: 'Scaffold Bay',
+      position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      height, width, depth, color: '#707070'
+    } as any])
+    setSelectedId(id)
+    log('addScaffoldBay', { id })
+  }
+
+  // Scaffold with Stair Access
+  const addScaffoldStair = (height: number = 8, width: number = 2.5, depth: number = 2.5) => {
+    const id = `scaffold-stair-${cryptoRandom()}`
+    setObjects(prev => [...prev, {
+      id, type: 'scaffold-stair', name: 'Scaffold Staircase',
+      position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      height, width, depth, levels: Math.ceil(height / 2),
+      hasStairs: true, color: '#707070'
+    } as any])
+    setSelectedId(id)
+    log('addScaffoldStair', { id })
+  }
+
+  // Steel I-Beam
+  const addSteelBeam = (length: number = 6, flangeWidth: number = 0.2, webHeight: number = 0.4) => {
+    const id = `steel-beam-${cryptoRandom()}`
+    setObjects(prev => [...prev, {
+      id, type: 'steel-beam', name: 'Steel Beam',
+      position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      length, flangeWidth, webHeight, flangeThickness: 0.015, webThickness: 0.01,
+      color: '#c0c0c0', steelGrade: 'S355'
+    } as any])
+    setSelectedId(id)
+    log('addSteelBeam', { id })
+  }
+
+  // Steel Column
+  const addSteelColumn = (height: number = 4, flangeWidth: number = 0.25, webHeight: number = 0.25) => {
+    const id = `steel-column-${cryptoRandom()}`
+    setObjects(prev => [...prev, {
+      id, type: 'steel-column', name: 'Steel Column',
+      position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      height, flangeWidth, webHeight, flangeThickness: 0.02, webThickness: 0.012,
+      color: '#c0c0c0', steelGrade: 'S355'
+    } as any])
+    setSelectedId(id)
+    log('addSteelColumn', { id })
+  }
+
+  // Handrail Section
+  const addHandrail = (length: number = 3, railHeight: number = 1.1) => {
+    const id = `handrail-${cryptoRandom()}`
+    setObjects(prev => [...prev, {
+      id, type: 'handrail', name: 'Handrail',
+      position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      railLength: length, railHeight, postSpacing: 1.5,
+      hasMidRail: true, hasToeBoard: true, color: '#ffcc00'
+    } as any])
+    setSelectedId(id)
+    log('addHandrail', { id })
+  }
+
+  // Access Ladder
+  const addLadder = (height: number = 4, width: number = 0.5) => {
+    const id = `ladder-${cryptoRandom()}`
+    setObjects(prev => [...prev, {
+      id, type: 'ladder', name: 'Ladder',
+      position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      ladderHeight: height, ladderWidth: width, rungSpacing: 0.3,
+      hasCage: height > 3, color: '#707070'
+    } as any])
+    setSelectedId(id)
+    log('addLadder', { id })
+  }
+
+  // Work Platform
+  const addPlatform = (width: number = 2.5, length: number = 3, thickness: number = 0.05) => {
+    const id = `platform-${cryptoRandom()}`
+    setObjects(prev => [...prev, {
+      id, type: 'platform', name: 'Work Platform',
+      position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      platformWidth: width, platformLength: length, platformThickness: thickness,
+      hasKickplate: true, color: '#8b7355'
+    } as any])
+    setSelectedId(id)
+    log('addPlatform', { id })
   }
 
   const addCrane = () => {
@@ -2682,6 +2801,236 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
 	      )
 	    }
 
+	    // Scaffold Tower rendering - mobile scaffold with wheels
+	    if (o.type === 'scaffold-tower') {
+	      const height = (o as any).height ?? 6
+	      const width = (o as any).width ?? 1.35
+	      const depth = (o as any).depth ?? 2.5
+	      const levels = (o as any).levels ?? 3
+	      const hasWheels = (o as any).hasWheels ?? true
+	      const postDiameter = 0.05
+	      const beamWidth = 0.04
+
+	      const geometries: THREE.BufferGeometry[] = []
+	      const postRadius = postDiameter / 2
+	      const levelHeight = height / Math.max(1, levels)
+
+	      // Vertical posts at corners
+	      const corners = [
+	        [-width / 2, 0, -depth / 2],
+	        [width / 2, 0, -depth / 2],
+	        [width / 2, 0, depth / 2],
+	        [-width / 2, 0, depth / 2],
+	      ]
+
+	      for (const corner of corners) {
+	        const postGeom = new THREE.CylinderGeometry(postRadius, postRadius, height, 8)
+	        postGeom.translate(corner[0], height / 2, corner[2])
+	        geometries.push(postGeom)
+	      }
+
+	      // Horizontal beams at each level
+	      for (let level = 0; level <= levels; level++) {
+	        const y = level * levelHeight
+	        // Beams along width
+	        for (const z of [-depth / 2, depth / 2]) {
+	          const beamGeom = new THREE.BoxGeometry(width, beamWidth, beamWidth)
+	          beamGeom.translate(0, y, z)
+	          geometries.push(beamGeom)
+	        }
+	        // Beams along depth
+	        for (const x of [-width / 2, width / 2]) {
+	          const beamGeom = new THREE.BoxGeometry(beamWidth, beamWidth, depth)
+	          beamGeom.translate(x, y, 0)
+	          geometries.push(beamGeom)
+	        }
+	      }
+
+	      // Diagonal braces
+	      for (let level = 0; level < levels; level++) {
+	        const y1 = level * levelHeight
+	        const y2 = (level + 1) * levelHeight
+	        const braceRadius = postRadius * 0.6
+	        // X-braces on front and back
+	        const diagonals = [
+	          { from: [-width/2, y1, -depth/2], to: [width/2, y2, -depth/2] },
+	          { from: [width/2, y1, -depth/2], to: [-width/2, y2, -depth/2] },
+	        ]
+	        for (const d of diagonals) {
+	          const dx = d.to[0] - d.from[0], dy = d.to[1] - d.from[1], dz = d.to[2] - d.from[2]
+	          const len = Math.sqrt(dx*dx + dy*dy + dz*dz)
+	          const g = new THREE.CylinderGeometry(braceRadius, braceRadius, len, 6)
+	          const mx = (d.from[0] + d.to[0])/2, my = (d.from[1] + d.to[1])/2, mz = (d.from[2] + d.to[2])/2
+	          const m = new THREE.Matrix4()
+	          m.lookAt(new THREE.Vector3(d.from[0], d.from[1], d.from[2]), new THREE.Vector3(d.to[0], d.to[1], d.to[2]), new THREE.Vector3(0,1,0))
+	          m.multiply(new THREE.Matrix4().makeRotationX(Math.PI/2))
+	          g.applyMatrix4(m)
+	          g.translate(mx, my, mz)
+	          geometries.push(g)
+	        }
+	      }
+
+	      // Platform at top
+	      const deckGeom = new THREE.BoxGeometry(width - 0.05, 0.03, depth - 0.05)
+	      deckGeom.translate(0, height + 0.015, 0)
+	      geometries.push(deckGeom)
+
+	      // Wheels at base
+	      if (hasWheels) {
+	        const wheelRadius = 0.1
+	        const wheelWidth = 0.05
+	        for (const corner of corners) {
+	          const wheelGeom = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 12)
+	          wheelGeom.rotateZ(Math.PI / 2)
+	          wheelGeom.translate(corner[0], wheelRadius, corner[2])
+	          geometries.push(wheelGeom)
+	        }
+	      }
+
+	      const merged = mergeGeometries(geometries)
+	      return (
+	        <mesh key={o.id} position={o.position} rotation={o.rotation} scale={o.scale}
+	          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+	          castShadow receiveShadow
+	          onPointerDown={(e)=>{ e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}>
+	          <primitive object={merged} attach="geometry" />
+	          <primitive object={texMat ?? mat} attach="material" />
+	        </mesh>
+	      )
+	    }
+
+	    // Scaffold Bay rendering - single bay section
+	    if (o.type === 'scaffold-bay') {
+	      const height = (o as any).height ?? 2
+	      const width = (o as any).width ?? 2.5
+	      const depth = (o as any).depth ?? 0.75
+	      const postDiameter = 0.048
+	      const beamWidth = 0.04
+
+	      const geometries: THREE.BufferGeometry[] = []
+	      const postRadius = postDiameter / 2
+
+	      // 4 vertical posts
+	      const corners = [
+	        [-width/2, 0, -depth/2], [width/2, 0, -depth/2],
+	        [width/2, 0, depth/2], [-width/2, 0, depth/2],
+	      ]
+	      for (const c of corners) {
+	        const g = new THREE.CylinderGeometry(postRadius, postRadius, height, 8)
+	        g.translate(c[0], height/2, c[2])
+	        geometries.push(g)
+	      }
+
+	      // Horizontal ledgers at top and bottom
+	      for (const y of [0, height]) {
+	        for (const z of [-depth/2, depth/2]) {
+	          const g = new THREE.BoxGeometry(width, beamWidth, beamWidth)
+	          g.translate(0, y, z)
+	          geometries.push(g)
+	        }
+	        for (const x of [-width/2, width/2]) {
+	          const g = new THREE.BoxGeometry(beamWidth, beamWidth, depth)
+	          g.translate(x, y, 0)
+	          geometries.push(g)
+	        }
+	      }
+
+	      // Cross braces on one side
+	      const br = postRadius * 0.5
+	      const diags = [
+	        { from: [-width/2, 0, -depth/2], to: [width/2, height, -depth/2] },
+	        { from: [width/2, 0, -depth/2], to: [-width/2, height, -depth/2] },
+	      ]
+	      for (const d of diags) {
+	        const dx = d.to[0]-d.from[0], dy = d.to[1]-d.from[1], dz = d.to[2]-d.from[2]
+	        const len = Math.sqrt(dx*dx+dy*dy+dz*dz)
+	        const g = new THREE.CylinderGeometry(br, br, len, 6)
+	        const m = new THREE.Matrix4()
+	        m.lookAt(new THREE.Vector3(...d.from as [number,number,number]), new THREE.Vector3(...d.to as [number,number,number]), new THREE.Vector3(0,1,0))
+	        m.multiply(new THREE.Matrix4().makeRotationX(Math.PI/2))
+	        g.applyMatrix4(m)
+	        g.translate((d.from[0]+d.to[0])/2, (d.from[1]+d.to[1])/2, (d.from[2]+d.to[2])/2)
+	        geometries.push(g)
+	      }
+
+	      const merged = mergeGeometries(geometries)
+	      return (
+	        <mesh key={o.id} position={o.position} rotation={o.rotation} scale={o.scale}
+	          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+	          castShadow receiveShadow
+	          onPointerDown={(e)=>{ e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}>
+	          <primitive object={merged} attach="geometry" />
+	          <primitive object={texMat ?? mat} attach="material" />
+	        </mesh>
+	      )
+	    }
+
+	    // Scaffold Staircase rendering
+	    if (o.type === 'scaffold-stair') {
+	      const height = (o as any).height ?? 8
+	      const width = (o as any).width ?? 2.5
+	      const depth = (o as any).depth ?? 2.5
+	      const levels = (o as any).levels ?? 4
+	      const postDiameter = 0.05
+	      const beamWidth = 0.04
+
+	      const geometries: THREE.BufferGeometry[] = []
+	      const postRadius = postDiameter / 2
+	      const levelHeight = height / levels
+
+	      // Vertical posts
+	      const corners = [
+	        [-width/2, 0, -depth/2], [width/2, 0, -depth/2],
+	        [width/2, 0, depth/2], [-width/2, 0, depth/2],
+	      ]
+	      for (const c of corners) {
+	        const g = new THREE.CylinderGeometry(postRadius, postRadius, height, 8)
+	        g.translate(c[0], height/2, c[2])
+	        geometries.push(g)
+	      }
+
+	      // Platforms and stairs at each level
+	      for (let lv = 0; lv <= levels; lv++) {
+	        const y = lv * levelHeight
+	        // Platform deck
+	        const deck = new THREE.BoxGeometry(width * 0.4, 0.03, depth - 0.1)
+	        deck.translate(-width * 0.3, y, 0)
+	        geometries.push(deck)
+
+	        // Stair stringers and treads
+	        if (lv < levels) {
+	          const stairWidth = width * 0.5
+	          const stairDepth = depth - 0.2
+	          const treads = 6
+	          const treadHeight = levelHeight / treads
+	          const treadDepth = stairDepth / treads
+	          for (let t = 0; t < treads; t++) {
+	            const tread = new THREE.BoxGeometry(stairWidth, 0.03, treadDepth * 0.8)
+	            tread.translate(width * 0.25, y + (t + 0.5) * treadHeight, -depth/2 + (t + 0.5) * treadDepth)
+	            geometries.push(tread)
+	          }
+	        }
+
+	        // Horizontal beams
+	        for (const z of [-depth/2, depth/2]) {
+	          const g = new THREE.BoxGeometry(width, beamWidth, beamWidth)
+	          g.translate(0, y, z)
+	          geometries.push(g)
+	        }
+	      }
+
+	      const merged = mergeGeometries(geometries)
+	      return (
+	        <mesh key={o.id} position={o.position} rotation={o.rotation} scale={o.scale}
+	          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+	          castShadow receiveShadow
+	          onPointerDown={(e)=>{ e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}>
+	          <primitive object={merged} attach="geometry" />
+	          <primitive object={texMat ?? mat} attach="material" />
+	        </mesh>
+	      )
+	    }
+
 	    // Single Pole rendering
 	    if (o.type === 'single-pole') {
 	      const height = (o as any).height ?? 10
@@ -2716,6 +3065,260 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
 	          castShadow receiveShadow
 	          onPointerDown={(e)=>{ e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}>
 	          <primitive object={beamGeom} attach="geometry" />
+	          <primitive object={texMat ?? mat} attach="material" />
+	        </mesh>
+	      )
+	    }
+
+	    // Steel Beam (I-beam) rendering
+	    if (o.type === 'steel-beam') {
+	      const length = (o as any).length ?? 6
+	      const flangeW = (o as any).flangeWidth ?? 0.2
+	      const webH = (o as any).webHeight ?? 0.4
+	      const flangeT = (o as any).flangeThickness ?? 0.015
+	      const webT = (o as any).webThickness ?? 0.01
+
+	      const geometries: THREE.BufferGeometry[] = []
+	      // Top flange
+	      const topFlange = new THREE.BoxGeometry(length, flangeT, flangeW)
+	      topFlange.translate(0, webH/2 + flangeT/2, 0)
+	      geometries.push(topFlange)
+	      // Bottom flange
+	      const botFlange = new THREE.BoxGeometry(length, flangeT, flangeW)
+	      botFlange.translate(0, -webH/2 - flangeT/2, 0)
+	      geometries.push(botFlange)
+	      // Web
+	      const web = new THREE.BoxGeometry(length, webH, webT)
+	      geometries.push(web)
+
+	      const merged = mergeGeometries(geometries)
+	      return (
+	        <mesh key={o.id} position={o.position} rotation={o.rotation} scale={o.scale}
+	          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+	          castShadow receiveShadow
+	          onPointerDown={(e)=>{ e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}>
+	          <primitive object={merged} attach="geometry" />
+	          <primitive object={texMat ?? mat} attach="material" />
+	        </mesh>
+	      )
+	    }
+
+	    // Steel Column (H-section vertical) rendering
+	    if (o.type === 'steel-column') {
+	      const height = (o as any).height ?? 4
+	      const flangeW = (o as any).flangeWidth ?? 0.25
+	      const webH = (o as any).webHeight ?? 0.25
+	      const flangeT = (o as any).flangeThickness ?? 0.02
+	      const webT = (o as any).webThickness ?? 0.012
+
+	      const geometries: THREE.BufferGeometry[] = []
+	      // Two flanges (parallel to each other)
+	      const flange1 = new THREE.BoxGeometry(flangeW, height, flangeT)
+	      flange1.translate(0, height/2, webH/2 + flangeT/2)
+	      geometries.push(flange1)
+	      const flange2 = new THREE.BoxGeometry(flangeW, height, flangeT)
+	      flange2.translate(0, height/2, -webH/2 - flangeT/2)
+	      geometries.push(flange2)
+	      // Web connecting flanges
+	      const web = new THREE.BoxGeometry(webT, height, webH)
+	      web.translate(0, height/2, 0)
+	      geometries.push(web)
+
+	      const merged = mergeGeometries(geometries)
+	      return (
+	        <mesh key={o.id} position={o.position} rotation={o.rotation} scale={o.scale}
+	          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+	          castShadow receiveShadow
+	          onPointerDown={(e)=>{ e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}>
+	          <primitive object={merged} attach="geometry" />
+	          <primitive object={texMat ?? mat} attach="material" />
+	        </mesh>
+	      )
+	    }
+
+	    // Handrail rendering
+	    if (o.type === 'handrail') {
+	      const length = (o as any).railLength ?? 3
+	      const railH = (o as any).railHeight ?? 1.1
+	      const postSpacing = (o as any).postSpacing ?? 1.5
+	      const hasMidRail = (o as any).hasMidRail ?? true
+	      const hasToeBoard = (o as any).hasToeBoard ?? true
+	      const postRadius = 0.025
+	      const railRadius = 0.02
+
+	      const geometries: THREE.BufferGeometry[] = []
+	      const postCount = Math.max(2, Math.ceil(length / postSpacing) + 1)
+	      const actualSpacing = length / (postCount - 1)
+
+	      // Posts
+	      for (let i = 0; i < postCount; i++) {
+	        const x = -length/2 + i * actualSpacing
+	        const post = new THREE.CylinderGeometry(postRadius, postRadius, railH, 8)
+	        post.translate(x, railH/2, 0)
+	        geometries.push(post)
+	      }
+
+	      // Top rail
+	      const topRail = new THREE.CylinderGeometry(railRadius, railRadius, length, 8)
+	      topRail.rotateZ(Math.PI/2)
+	      topRail.translate(0, railH, 0)
+	      geometries.push(topRail)
+
+	      // Mid rail
+	      if (hasMidRail) {
+	        const midRail = new THREE.CylinderGeometry(railRadius, railRadius, length, 8)
+	        midRail.rotateZ(Math.PI/2)
+	        midRail.translate(0, railH * 0.5, 0)
+	        geometries.push(midRail)
+	      }
+
+	      // Toe board
+	      if (hasToeBoard) {
+	        const toeBoard = new THREE.BoxGeometry(length, 0.15, 0.02)
+	        toeBoard.translate(0, 0.075, 0)
+	        geometries.push(toeBoard)
+	      }
+
+	      const merged = mergeGeometries(geometries)
+	      return (
+	        <mesh key={o.id} position={o.position} rotation={o.rotation} scale={o.scale}
+	          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+	          castShadow receiveShadow
+	          onPointerDown={(e)=>{ e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}>
+	          <primitive object={merged} attach="geometry" />
+	          <primitive object={texMat ?? mat} attach="material" />
+	        </mesh>
+	      )
+	    }
+
+	    // Ladder rendering
+	    if (o.type === 'ladder') {
+	      const height = (o as any).ladderHeight ?? 4
+	      const width = (o as any).ladderWidth ?? 0.5
+	      const rungSpacing = (o as any).rungSpacing ?? 0.3
+	      const hasCage = (o as any).hasCage ?? false
+	      const railRadius = 0.025
+	      const rungRadius = 0.015
+
+	      const geometries: THREE.BufferGeometry[] = []
+
+	      // Side rails
+	      const leftRail = new THREE.CylinderGeometry(railRadius, railRadius, height, 8)
+	      leftRail.translate(-width/2, height/2, 0)
+	      geometries.push(leftRail)
+	      const rightRail = new THREE.CylinderGeometry(railRadius, railRadius, height, 8)
+	      rightRail.translate(width/2, height/2, 0)
+	      geometries.push(rightRail)
+
+	      // Rungs
+	      const rungCount = Math.floor(height / rungSpacing)
+	      for (let i = 1; i <= rungCount; i++) {
+	        const y = i * rungSpacing
+	        const rung = new THREE.CylinderGeometry(rungRadius, rungRadius, width, 8)
+	        rung.rotateZ(Math.PI/2)
+	        rung.translate(0, y, 0)
+	        geometries.push(rung)
+	      }
+
+	      // Safety cage (if height > 3m)
+	      if (hasCage && height > 2.5) {
+	        const cageRadius = 0.4
+	        const cageStartHeight = 2.5
+	        const cageRings = Math.floor((height - cageStartHeight) / 0.75)
+	        for (let i = 0; i <= cageRings; i++) {
+	          const y = cageStartHeight + i * 0.75
+	          const ring = new THREE.TorusGeometry(cageRadius, 0.015, 8, 16, Math.PI)
+	          ring.rotateX(Math.PI/2)
+	          ring.rotateY(Math.PI/2)
+	          ring.translate(0, y, cageRadius * 0.5)
+	          geometries.push(ring)
+	        }
+	        // Vertical cage bars
+	        for (let angle = -Math.PI/2; angle <= Math.PI/2; angle += Math.PI/6) {
+	          const x = Math.sin(angle) * cageRadius
+	          const z = Math.cos(angle) * cageRadius * 0.5
+	          const bar = new THREE.CylinderGeometry(0.01, 0.01, height - cageStartHeight, 6)
+	          bar.translate(x, cageStartHeight + (height - cageStartHeight)/2, z)
+	          geometries.push(bar)
+	        }
+	      }
+
+	      const merged = mergeGeometries(geometries)
+	      return (
+	        <mesh key={o.id} position={o.position} rotation={o.rotation} scale={o.scale}
+	          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+	          castShadow receiveShadow
+	          onPointerDown={(e)=>{ e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}>
+	          <primitive object={merged} attach="geometry" />
+	          <primitive object={texMat ?? mat} attach="material" />
+	        </mesh>
+	      )
+	    }
+
+	    // Work Platform rendering
+	    if (o.type === 'platform') {
+	      const width = (o as any).platformWidth ?? 2.5
+	      const length = (o as any).platformLength ?? 3
+	      const thickness = (o as any).platformThickness ?? 0.05
+	      const hasKickplate = (o as any).hasKickplate ?? true
+
+	      const geometries: THREE.BufferGeometry[] = []
+
+	      // Main deck (planks)
+	      const plankWidth = 0.25
+	      const plankGap = 0.01
+	      let x = -width/2 + plankWidth/2
+	      while (x < width/2) {
+	        const plank = new THREE.BoxGeometry(plankWidth - plankGap, thickness, length)
+	        plank.translate(x, thickness/2, 0)
+	        geometries.push(plank)
+	        x += plankWidth
+	      }
+
+	      // Support frame
+	      const frameH = 0.06
+	      const frameW = 0.04
+	      // Longitudinal beams
+	      const beam1 = new THREE.BoxGeometry(frameW, frameH, length)
+	      beam1.translate(-width/2 + frameW/2, -frameH/2, 0)
+	      geometries.push(beam1)
+	      const beam2 = new THREE.BoxGeometry(frameW, frameH, length)
+	      beam2.translate(width/2 - frameW/2, -frameH/2, 0)
+	      geometries.push(beam2)
+	      // Cross beams
+	      const cross1 = new THREE.BoxGeometry(width, frameH, frameW)
+	      cross1.translate(0, -frameH/2, -length/2 + frameW/2)
+	      geometries.push(cross1)
+	      const cross2 = new THREE.BoxGeometry(width, frameH, frameW)
+	      cross2.translate(0, -frameH/2, length/2 - frameW/2)
+	      geometries.push(cross2)
+
+	      // Kickplate/toe board on edges
+	      if (hasKickplate) {
+	        const kickH = 0.15
+	        const kickT = 0.02
+	        // All four sides
+	        const kick1 = new THREE.BoxGeometry(width, kickH, kickT)
+	        kick1.translate(0, thickness + kickH/2, -length/2)
+	        geometries.push(kick1)
+	        const kick2 = new THREE.BoxGeometry(width, kickH, kickT)
+	        kick2.translate(0, thickness + kickH/2, length/2)
+	        geometries.push(kick2)
+	        const kick3 = new THREE.BoxGeometry(kickT, kickH, length)
+	        kick3.translate(-width/2, thickness + kickH/2, 0)
+	        geometries.push(kick3)
+	        const kick4 = new THREE.BoxGeometry(kickT, kickH, length)
+	        kick4.translate(width/2, thickness + kickH/2, 0)
+	        geometries.push(kick4)
+	      }
+
+	      const merged = mergeGeometries(geometries)
+	      return (
+	        <mesh key={o.id} position={o.position} rotation={o.rotation} scale={o.scale}
+	          ref={ref => { objRefs.current[o.id] = ref as any; if (ref && selectedId === o.id) selectedRef.current = ref as any }}
+	          castShadow receiveShadow
+	          onPointerDown={(e)=>{ e.stopPropagation(); setSelectedId(o.id); setSelectedIds([o.id]); setSelectedFace(null); selectedRef.current = objRefs.current[o.id] }}>
+	          <primitive object={merged} attach="geometry" />
 	          <primitive object={texMat ?? mat} attach="material" />
 	        </mesh>
 	      )

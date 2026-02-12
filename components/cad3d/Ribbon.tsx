@@ -348,16 +348,50 @@ export default function Ribbon() {
                 </div>
               </div>
               <div className="flex flex-col border-r border-gray-600 px-2 py-2">
-                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Site</div>
+                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Scaffolding</div>
                 <div className="flex gap-1">
                   <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add scaffolding structure" onClick={()=>fire({action:'add-scaffolding', data:{height:10, width:3, depth:2, levels:4}})}>
                     <BoxIcon className="w-3 h-3 mb-0.5" /> Scaffold
                   </button>
-                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add single pole" onClick={()=>fire({action:'add-single-pole', data:{height:10, diameter:0.1}})}>
-                    <BoxIcon className="w-3 h-3 mb-0.5" /> Pole
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add mobile scaffold tower with wheels" onClick={()=>fire({action:'add-scaffold-tower', data:{height:6, width:1.35, depth:2.5}})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Tower
+                  </button>
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add single scaffold bay section" onClick={()=>fire({action:'add-scaffold-bay', data:{height:2, width:2.5, depth:0.75}})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Bay
+                  </button>
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add scaffold with stair access" onClick={()=>fire({action:'add-scaffold-stair', data:{height:8, width:2.5, depth:2.5}})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Stair
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-col border-r border-gray-600 px-2 py-2">
+                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Steel</div>
+                <div className="flex gap-1">
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add steel I-beam" onClick={()=>fire({action:'add-steel-beam', data:{length:6, flangeWidth:0.2, webHeight:0.4}})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> I-Beam
+                  </button>
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add steel column (H-section)" onClick={()=>fire({action:'add-steel-column', data:{height:4, flangeWidth:0.25, webHeight:0.25}})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Column
                   </button>
                   <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add unit beam" onClick={()=>fire({action:'add-unit-beam', data:{length:3, width:0.08, height:0.08}})}>
                     <BoxIcon className="w-3 h-3 mb-0.5" /> Beam
+                  </button>
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add single pole" onClick={()=>fire({action:'add-single-pole', data:{height:10, diameter:0.1}})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Pole
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-col border-r border-gray-600 px-2 py-2">
+                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">Access</div>
+                <div className="flex gap-1">
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add work platform with kickplate" onClick={()=>fire({action:'add-platform', data:{width:2.5, length:3, thickness:0.05}})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Platform
+                  </button>
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add access ladder" onClick={()=>fire({action:'add-ladder', data:{height:4, width:0.5}})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Ladder
+                  </button>
+                  <button className="p-1 rounded hover:bg-gray-700/60 w-12 h-12 text-[8px] text-gray-300 flex flex-col items-center justify-center" title="Add safety handrail" onClick={()=>fire({action:'add-handrail', data:{length:3, railHeight:1.1}})}>
+                    <BoxIcon className="w-3 h-3 mb-0.5" /> Handrail
                   </button>
                 </div>
               </div>

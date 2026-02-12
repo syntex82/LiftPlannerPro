@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type ModelerObjectType = "box" | "cylinder" | "sphere" | "tube" | "lathe" | "sweep" | "union" | "pipe" | "ibeam" | "hbeam" | "cchannel" | "tank" | "vessel" | "column" | "exchanger" | "crane" | "crane-plan" | "ltm-1055-3d" | "ltm-1300-3d" | "window" | "hook-block" | "scaffolding" | "single-pole" | "unit-beam" | "gltf" | "editable-mesh" | "terrain" | "distillation-column" | "cooling-tower" | "flare-stack" | "pipe-rack" | "storage-sphere" | "reactor" | "furnace" | "compressor" | "pump" | "drum"
+export type ModelerObjectType = "box" | "cylinder" | "sphere" | "tube" | "lathe" | "sweep" | "union" | "pipe" | "ibeam" | "hbeam" | "cchannel" | "tank" | "vessel" | "column" | "exchanger" | "crane" | "crane-plan" | "ltm-1055-3d" | "ltm-1300-3d" | "window" | "hook-block" | "scaffolding" | "scaffold-tower" | "scaffold-bay" | "scaffold-stair" | "steel-beam" | "steel-column" | "handrail" | "ladder" | "platform" | "single-pole" | "unit-beam" | "gltf" | "editable-mesh" | "terrain" | "distillation-column" | "cooling-tower" | "flare-stack" | "pipe-rack" | "storage-sphere" | "reactor" | "furnace" | "compressor" | "pump" | "drum"
 
 export interface ModelerObject {
   id: string
@@ -71,6 +71,32 @@ export interface ModelerObject {
   postDiameter?: number // vertical post diameter
   beamWidth?: number // horizontal beam width
   beamHeight?: number // horizontal beam height
+  // scaffold tower/bay params
+  towerHeight?: number // scaffold tower total height
+  bayWidth?: number // single bay width
+  bayLength?: number // single bay length
+  hasWheels?: boolean // mobile scaffold tower
+  hasStairs?: boolean // has stair access
+  // steel structure params
+  flangeWidth?: number // I-beam/H-beam flange width
+  webHeight?: number // I-beam/H-beam web height
+  steelGrade?: string // steel grade (S275, S355, etc.)
+  // handrail params
+  railHeight?: number // handrail height
+  railLength?: number // handrail length
+  postSpacing?: number // spacing between posts
+  hasMidRail?: boolean // has mid-rail
+  hasToeBoard?: boolean // has toe board
+  // ladder params
+  ladderHeight?: number // ladder height
+  ladderWidth?: number // ladder width
+  rungSpacing?: number // spacing between rungs
+  hasCage?: boolean // has safety cage
+  // platform params
+  platformWidth?: number // platform width
+  platformLength?: number // platform length
+  platformThickness?: number // deck thickness
+  hasKickplate?: boolean // has kickplate/toe board
   // editable mesh data (optional)
   vertices?: [number, number, number][]
   faces?: [number, number, number][] // triangle indices
