@@ -3869,6 +3869,7 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
             loadLineLength={o.loadLine ?? 8}
             slewAngle={o.slew ?? 0}
             scaleFactor={1}
+            outriggersDeployed={(o as any).outriggersDeployed ?? true}
           />
         </group>
       )
@@ -3892,6 +3893,7 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
             loadLineLength={o.loadLine ?? 12}
             slewAngle={o.slew ?? 0}
             scaleFactor={1}
+            outriggersDeployed={(o as any).outriggersDeployed ?? true}
           />
         </group>
       )
@@ -4781,7 +4783,7 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
         const isCrane = selectedObj?.type === 'ltm-1055-3d' || selectedObj?.type === 'ltm-1300-3d'
         if (!isCrane || !selectedObj) return null
 
-        const updateCraneProp = (prop: string, value: number) => {
+        const updateCraneProp = (prop: string, value: number | boolean) => {
           setObjects(prev => prev.map(o =>
             o.id === selectedId ? { ...o, [prop]: value } : o
           ))
@@ -4895,6 +4897,26 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
                     <span>1m</span>
                     <span>50m</span>
                   </div>
+                </div>
+
+                {/* Outriggers Toggle */}
+                <div>
+                  <div className="flex justify-between items-center text-xs mb-1">
+                    <span className="text-gray-400">Outriggers</span>
+                    <span className={`text-xs font-mono ${(selectedObj as any).outriggersDeployed ?? true ? 'text-green-400' : 'text-gray-500'}`}>
+                      {(selectedObj as any).outriggersDeployed ?? true ? 'Deployed' : 'Retracted'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => updateCraneProp('outriggersDeployed', !((selectedObj as any).outriggersDeployed ?? true))}
+                    className={`w-full px-3 py-2 rounded text-xs font-medium transition-colors ${
+                      (selectedObj as any).outriggersDeployed ?? true
+                        ? 'bg-green-600 hover:bg-green-500 text-white'
+                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                    }`}
+                  >
+                    {(selectedObj as any).outriggersDeployed ?? true ? 'Retract Outriggers' : 'Deploy Outriggers'}
+                  </button>
                 </div>
 
                 {/* Quick presets */}

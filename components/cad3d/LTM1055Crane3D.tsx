@@ -13,6 +13,7 @@ export interface LTM1055Crane3DProps {
   position?: [number, number, number]
   rotation?: [number, number, number]
   slewAngle?: number
+  outriggersDeployed?: boolean
 }
 
 export default function LTM1055Crane3D({
@@ -23,7 +24,8 @@ export default function LTM1055Crane3D({
   loadLineLength = 8,
   position = [0, 0, 0],
   rotation = [0, 0, 0],
-  slewAngle = 0
+  slewAngle = 0,
+  outriggersDeployed = true
 }: LTM1055Crane3DProps) {
   const s = scaleFactor
 
@@ -465,7 +467,7 @@ export default function LTM1055Crane3D({
 
       {/* ========== OUTRIGGERS ========== */}
       {(() => {
-        const beamLength = 3.5 * s  // How far the beam extends
+        const beamLength = outriggersDeployed ? 3.5 * s : 0.3 * s  // Extended or retracted
         const outriggerPositions = [
           { x: chassisLength * 0.38, side: 1 },   // Front right
           { x: chassisLength * 0.38, side: -1 },  // Front left
@@ -474,26 +476,31 @@ export default function LTM1055Crane3D({
         ]
         return outriggerPositions.map((pos, idx) => (
           <group key={`outrigger-${idx}`} position={[pos.x, groundClearance + chassisHeight / 2, 0]}>
-            {/* Outrigger box (attached to chassis side) */}
+            {/* Outrigger box (attached to chassis side) - always visible */}
             <mesh position={[0, 0, pos.side * (chassisWidth / 2 + 0.15 * s)]} castShadow>
               <boxGeometry args={[0.6 * s, chassisHeight * 0.7, 0.3 * s]} />
               <primitive object={matGreen} attach="material" />
             </mesh>
-            {/* Outrigger beam - extends from box outward */}
+            {/* Outrigger beam - extends from box outward (shorter when retracted) */}
             <mesh position={[0, -0.1 * s, pos.side * (chassisWidth / 2 + beamLength / 2 + 0.3 * s)]} castShadow>
               <boxGeometry args={[0.25 * s, 0.2 * s, beamLength]} />
               <primitive object={matYellow} attach="material" />
             </mesh>
-            {/* Jack cylinder - at end of beam, going down */}
-            <mesh position={[0, -groundClearance / 2 - 0.1 * s, pos.side * (chassisWidth / 2 + beamLength + 0.3 * s)]} castShadow>
-              <cylinderGeometry args={[0.08 * s, 0.08 * s, groundClearance + chassisHeight * 0.4, 12]} />
-              <primitive object={matSteel} attach="material" />
-            </mesh>
-            {/* Outrigger pad - at bottom of jack */}
-            <mesh position={[0, -groundClearance - chassisHeight * 0.1, pos.side * (chassisWidth / 2 + beamLength + 0.3 * s)]} castShadow receiveShadow>
-              <cylinderGeometry args={[0.45 * s, 0.45 * s, 0.12 * s, 16]} />
-              <primitive object={matDarkGray} attach="material" />
-            </mesh>
+            {/* Jack cylinder and pad - only when deployed */}
+            {outriggersDeployed && (
+              <>
+                {/* Jack cylinder - at end of beam, going down */}
+                <mesh position={[0, -groundClearance / 2 - 0.1 * s, pos.side * (chassisWidth / 2 + beamLength + 0.3 * s)]} castShadow>
+                  <cylinderGeometry args={[0.08 * s, 0.08 * s, groundClearance + chassisHeight * 0.4, 12]} />
+                  <primitive object={matSteel} attach="material" />
+                </mesh>
+                {/* Outrigger pad - at bottom of jack */}
+                <mesh position={[0, -groundClearance - chassisHeight * 0.1, pos.side * (chassisWidth / 2 + beamLength + 0.3 * s)]} castShadow receiveShadow>
+                  <cylinderGeometry args={[0.45 * s, 0.45 * s, 0.12 * s, 16]} />
+                  <primitive object={matDarkGray} attach="material" />
+                </mesh>
+              </>
+            )}
           </group>
         ))
       })()}
