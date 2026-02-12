@@ -242,68 +242,126 @@ export default function LTM1055Crane3D({
         ))}
 
         {/* ========== BOOM ASSEMBLY ========== */}
-        <group position={[boomPivotX + 0.5 * s, boomPivotY - superY, 0]} rotation={[0, 0, luffRad]}>
+        {(() => {
+          // Boom pivot point relative to superstructure
+          const boomPivotLocalX = boomPivotX + 0.5 * s
+          const boomPivotLocalY = boomPivotY - superY
 
-          {/* Boom base section */}
-          <mesh position={[currentBoomLength / 2, 0, 0]} castShadow receiveShadow>
-            <boxGeometry args={[currentBoomLength, boomHeight, boomWidth]} />
-            <primitive object={matYellow} attach="material" />
-          </mesh>
+          // Calculate boom tip position (accounting for boom angle)
+          const boomTipLocalX = boomPivotLocalX + Math.cos(luffRad) * (currentBoomLength + 0.3 * s)
+          const boomTipLocalY = boomPivotLocalY + Math.sin(luffRad) * (currentBoomLength + 0.3 * s)
 
-          {/* Boom lattice detail (top and bottom rails) */}
-          {[-1, 1].map(side => (
-            <mesh key={`boom-rail-${side}`} position={[currentBoomLength / 2, side * boomHeight * 0.45, 0]} castShadow>
-              <boxGeometry args={[currentBoomLength, 0.08 * s, boomWidth * 1.05]} />
-              <primitive object={matYellow} attach="material" />
-            </mesh>
-          ))}
+          // Lattice cross-brace positions along boom
+          const latticeCount = Math.floor(currentBoomLength / (2 * s))
+          const latticePositions = Array.from({ length: latticeCount }, (_, i) => (i + 1) * (currentBoomLength / (latticeCount + 1)))
 
-          {/* Boom head */}
-          <group position={[currentBoomLength + 0.3 * s, 0, 0]}>
-            <mesh castShadow>
-              <boxGeometry args={[0.6 * s, boomHeight * 1.3, boomWidth * 1.4]} />
-              <primitive object={matYellow} attach="material" />
-            </mesh>
-            {/* Sheaves */}
-            {[-1, 0, 1].map(k => (
-              <mesh key={`sheave-${k}`} position={[0.35 * s, 0, k * 0.2 * s]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-                <torusGeometry args={[0.18 * s, 0.04 * s, 12, 24]} />
-                <primitive object={matSteel} attach="material" />
-              </mesh>
-            ))}
-          </group>
+          return (
+            <>
+              {/* Boom rotation group */}
+              <group position={[boomPivotLocalX, boomPivotLocalY, 0]} rotation={[0, 0, luffRad]}>
 
-          {/* ========== HOOK BLOCK & LOAD LINE ========== */}
-          <group position={[currentBoomLength + 0.3 * s, 0, 0]}>
-            {/* Load line */}
-            <mesh position={[0, -loadLineLength / 2, 0]}>
-              <cylinderGeometry args={[0.02 * s, 0.02 * s, loadLineLength, 8]} />
-              <primitive object={matSteel} attach="material" />
-            </mesh>
-            {/* Hook block */}
-            <mesh position={[0, -loadLineLength, 0]} castShadow>
-              <boxGeometry args={[0.5 * s, 0.7 * s, 0.4 * s]} />
-              <primitive object={matDarkGray} attach="material" />
-            </mesh>
-            {/* Hook block sheaves */}
-            {[-1, 1].map(k => (
-              <mesh key={`block-sheave-${k}`} position={[0, -loadLineLength + 0.1 * s, k * 0.12 * s]} rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[0.12 * s, 0.03 * s, 8, 16]} />
-                <primitive object={matSteel} attach="material" />
-              </mesh>
-            ))}
-            {/* Hook */}
-            <mesh position={[0, -loadLineLength - 0.6 * s, 0]} rotation={[0, 0, Math.PI]} castShadow>
-              <torusGeometry args={[0.3 * s, 0.08 * s, 12, 24, Math.PI * 1.5]} />
-              <primitive object={matYellow} attach="material" />
-            </mesh>
-            {/* Hook shank */}
-            <mesh position={[0, -loadLineLength - 0.35 * s, 0]} castShadow>
-              <cylinderGeometry args={[0.06 * s, 0.06 * s, 0.3 * s, 12]} />
-              <primitive object={matSteel} attach="material" />
-            </mesh>
-          </group>
-        </group>
+                {/* Boom main structure - 4 corner chords (lattice boom) */}
+                {[
+                  { y: boomHeight * 0.4, z: boomWidth * 0.4 },
+                  { y: boomHeight * 0.4, z: -boomWidth * 0.4 },
+                  { y: -boomHeight * 0.4, z: boomWidth * 0.4 },
+                  { y: -boomHeight * 0.4, z: -boomWidth * 0.4 }
+                ].map((corner, idx) => (
+                  <mesh key={`chord-${idx}`} position={[currentBoomLength / 2, corner.y, corner.z]} castShadow>
+                    <boxGeometry args={[currentBoomLength, 0.12 * s, 0.12 * s]} />
+                    <primitive object={matYellow} attach="material" />
+                  </mesh>
+                ))}
+
+                {/* Lattice cross-braces (X pattern) */}
+                {latticePositions.map((xPos, idx) => (
+                  <group key={`lattice-${idx}`} position={[xPos, 0, 0]}>
+                    {/* Top horizontal */}
+                    <mesh position={[0, boomHeight * 0.4, 0]} castShadow>
+                      <boxGeometry args={[0.08 * s, 0.08 * s, boomWidth * 0.8]} />
+                      <primitive object={matYellow} attach="material" />
+                    </mesh>
+                    {/* Bottom horizontal */}
+                    <mesh position={[0, -boomHeight * 0.4, 0]} castShadow>
+                      <boxGeometry args={[0.08 * s, 0.08 * s, boomWidth * 0.8]} />
+                      <primitive object={matYellow} attach="material" />
+                    </mesh>
+                    {/* Side verticals */}
+                    {[-1, 1].map(side => (
+                      <mesh key={`vert-${side}`} position={[0, 0, side * boomWidth * 0.4]} castShadow>
+                        <boxGeometry args={[0.08 * s, boomHeight * 0.8, 0.08 * s]} />
+                        <primitive object={matYellow} attach="material" />
+                      </mesh>
+                    ))}
+                    {/* Diagonal braces (X pattern on sides) */}
+                    {[-1, 1].map(side => (
+                      <mesh key={`diag-${side}`} position={[0, 0, side * boomWidth * 0.4]} rotation={[0, 0, Math.PI / 4]} castShadow>
+                        <boxGeometry args={[0.06 * s, boomHeight * 1.1, 0.06 * s]} />
+                        <primitive object={matYellow} attach="material" />
+                      </mesh>
+                    ))}
+                  </group>
+                ))}
+
+                {/* Boom head (sheave block) */}
+                <group position={[currentBoomLength + 0.3 * s, 0, 0]}>
+                  {/* Head frame */}
+                  <mesh castShadow>
+                    <boxGeometry args={[0.5 * s, boomHeight * 1.2, boomWidth * 1.3]} />
+                    <primitive object={matYellow} attach="material" />
+                  </mesh>
+                  {/* Sheaves (pulleys) */}
+                  {[-1, 0, 1].map(k => (
+                    <mesh key={`sheave-${k}`} position={[0.3 * s, 0, k * 0.18 * s]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+                      <torusGeometry args={[0.15 * s, 0.035 * s, 12, 24]} />
+                      <primitive object={matSteel} attach="material" />
+                    </mesh>
+                  ))}
+                </group>
+              </group>
+
+              {/* ========== HOOK BLOCK & LOAD LINE (VERTICAL - outside boom rotation) ========== */}
+              <group position={[boomTipLocalX, boomTipLocalY, 0]}>
+                {/* Load line - hangs vertically from boom tip */}
+                <mesh position={[0, -loadLineLength / 2, 0]}>
+                  <cylinderGeometry args={[0.025 * s, 0.025 * s, loadLineLength, 8]} />
+                  <primitive object={matSteel} attach="material" />
+                </mesh>
+
+                {/* Hook block */}
+                <group position={[0, -loadLineLength, 0]}>
+                  {/* Block body */}
+                  <mesh castShadow>
+                    <boxGeometry args={[0.4 * s, 0.6 * s, 0.35 * s]} />
+                    <primitive object={matDarkGray} attach="material" />
+                  </mesh>
+                  {/* Block sheaves */}
+                  {[-1, 1].map(k => (
+                    <mesh key={`block-sheave-${k}`} position={[0, 0.1 * s, k * 0.1 * s]} rotation={[Math.PI / 2, 0, 0]}>
+                      <torusGeometry args={[0.1 * s, 0.025 * s, 8, 16]} />
+                      <primitive object={matSteel} attach="material" />
+                    </mesh>
+                  ))}
+                  {/* Hook shank */}
+                  <mesh position={[0, -0.4 * s, 0]} castShadow>
+                    <cylinderGeometry args={[0.05 * s, 0.05 * s, 0.25 * s, 12]} />
+                    <primitive object={matSteel} attach="material" />
+                  </mesh>
+                  {/* Hook - proper crane hook shape */}
+                  <mesh position={[0, -0.65 * s, 0]} rotation={[0, 0, Math.PI]} castShadow>
+                    <torusGeometry args={[0.25 * s, 0.06 * s, 12, 24, Math.PI * 1.5]} />
+                    <primitive object={matYellow} attach="material" />
+                  </mesh>
+                  {/* Safety latch */}
+                  <mesh position={[0.15 * s, -0.55 * s, 0]} rotation={[0, 0, -0.3]} castShadow>
+                    <boxGeometry args={[0.2 * s, 0.03 * s, 0.04 * s]} />
+                    <primitive object={matYellow} attach="material" />
+                  </mesh>
+                </group>
+              </group>
+            </>
+          )
+        })()}
 
         {/* Boom luffing cylinder */}
         <mesh

@@ -3276,6 +3276,170 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
         </Html>
       )}
 
+      {/* ========== CRANE CONTROL PANEL ========== */}
+      {(() => {
+        const selectedObj = objects.find(o => o.id === selectedId)
+        const isCrane = selectedObj?.type === 'ltm-1055-3d' || selectedObj?.type === 'ltm-1300-3d'
+        if (!isCrane || !selectedObj) return null
+
+        const updateCraneProp = (prop: string, value: number) => {
+          setObjects(prev => prev.map(o =>
+            o.id === selectedId ? { ...o, [prop]: value } : o
+          ))
+        }
+
+        const craneName = selectedObj.type === 'ltm-1055-3d' ? 'LTM 1055-3.1' : 'LTM 1300-6.2'
+        const boomAngle = (selectedObj as any).boomAngle ?? 45
+        const boomExtend = (selectedObj as any).boomExtend ?? 0.3
+        const slew = (selectedObj as any).slew ?? 0
+        const loadLine = (selectedObj as any).loadLine ?? 8
+
+        return (
+          <Html fullscreen>
+            <div
+              data-ui-layer
+              className="absolute top-20 left-4 w-72 bg-gray-900/95 border border-yellow-600/50 rounded-lg shadow-2xl text-gray-200 pointer-events-auto"
+              style={{ zIndex: 180 }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-3 py-2 bg-yellow-700/30 border-b border-yellow-600/30 rounded-t-lg">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  <span className="text-sm font-bold text-yellow-400">{craneName} Controls</span>
+                </div>
+              </div>
+
+              {/* Controls */}
+              <div className="p-3 space-y-4">
+                {/* Boom Angle */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-400">Boom Angle (Luff)</span>
+                    <span className="text-yellow-400 font-mono">{boomAngle.toFixed(1)}°</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="82"
+                    step="1"
+                    value={boomAngle}
+                    onChange={(e) => updateCraneProp('boomAngle', parseFloat(e.target.value))}
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
+                    <span>0°</span>
+                    <span>82°</span>
+                  </div>
+                </div>
+
+                {/* Boom Extension */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-400">Boom Extension</span>
+                    <span className="text-yellow-400 font-mono">{(boomExtend * 100).toFixed(0)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={boomExtend}
+                    onChange={(e) => updateCraneProp('boomExtend', parseFloat(e.target.value))}
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
+                    <span>Retracted</span>
+                    <span>Full</span>
+                  </div>
+                </div>
+
+                {/* Slew Angle */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-400">Slew (Rotation)</span>
+                    <span className="text-yellow-400 font-mono">{slew.toFixed(1)}°</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-180"
+                    max="180"
+                    step="1"
+                    value={slew}
+                    onChange={(e) => updateCraneProp('slew', parseFloat(e.target.value))}
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
+                    <span>-180°</span>
+                    <span>0°</span>
+                    <span>180°</span>
+                  </div>
+                </div>
+
+                {/* Load Line Length */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-400">Load Line Length</span>
+                    <span className="text-yellow-400 font-mono">{loadLine.toFixed(1)}m</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="50"
+                    step="0.5"
+                    value={loadLine}
+                    onChange={(e) => updateCraneProp('loadLine', parseFloat(e.target.value))}
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
+                    <span>1m</span>
+                    <span>50m</span>
+                  </div>
+                </div>
+
+                {/* Quick presets */}
+                <div className="pt-2 border-t border-gray-700">
+                  <div className="text-xs text-gray-400 mb-2">Quick Presets</div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        updateCraneProp('boomAngle', 75)
+                        updateCraneProp('boomExtend', 0.2)
+                        updateCraneProp('loadLine', 5)
+                      }}
+                      className="flex-1 px-2 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                    >
+                      High Lift
+                    </button>
+                    <button
+                      onClick={() => {
+                        updateCraneProp('boomAngle', 45)
+                        updateCraneProp('boomExtend', 0.5)
+                        updateCraneProp('loadLine', 15)
+                      }}
+                      className="flex-1 px-2 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                    >
+                      Mid Reach
+                    </button>
+                    <button
+                      onClick={() => {
+                        updateCraneProp('boomAngle', 20)
+                        updateCraneProp('boomExtend', 1.0)
+                        updateCraneProp('loadLine', 25)
+                      }}
+                      className="flex-1 px-2 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                    >
+                      Long Reach
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Html>
+        )
+      })()}
+
       {/* Simple cursor dot only */}
       {showCrosshair && cursorPosition && drawTool && (
         <mesh position={[safeCursorPosition[0], 0.01, safeCursorPosition[2]]}>
