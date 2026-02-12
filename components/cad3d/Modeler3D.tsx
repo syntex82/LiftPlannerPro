@@ -17,6 +17,9 @@ import RealisticCrane3D from "./RealisticCrane3D"
 import LTM1055Crane3D from "./LTM1055Crane3D"
 import { SaveToLibraryDialog } from "./SaveToLibraryDialog"
 import { LoadFromLibraryDialog } from "./LoadFromLibraryDialog"
+import { useLiftSimulationStore } from "./liftSimulationStore"
+import LoadObject3D from "./LoadObject3D"
+import LiftSimulationPanel from "./LiftSimulationPanel"
 
 import { LTM1300_AXLE_POS_MM } from "@/lib/ltm1300"
 import { LTM_1055_3D_SPEC, LTM_1300_3D_SPEC, getCrane3DById } from "@/lib/crane-3d-models"
@@ -75,6 +78,17 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
   const [showProps, setShowProps] = useState(true)
   const [saveToLibraryOpen, setSaveToLibraryOpen] = useState(false)
   const [loadFromLibraryOpen, setLoadFromLibraryOpen] = useState(false)
+  const [showSimulationPanel, setShowSimulationPanel] = useState(false)
+
+  // Lift simulation store
+  const {
+    loadObjects, selectedLoadId, setSelectedLoadId, isPlaying, currentTime,
+    setCurrentTime, playbackSpeed, keyframes, getInterpolatedCraneState,
+    updateSwingPhysics, enablePhysics
+  } = useLiftSimulationStore()
+
+  // Track previous hook position for physics
+  const prevHookPositionRef = useRef<Record<string, [number, number, number]>>({})
 
   // Refs mapping id -> Object3D for TransformControls targeting
   const [showOutliner, setShowOutliner] = useState(true)
@@ -138,6 +152,89 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
     setDrawTool(null)
     setDrawPoints([])
   }, [])
+
+  // Calculate hook position from crane state
+  const calculateHookPosition = useCallback((craneObj: ModelerObject): [number, number, number] => {
+    const boomAngle = (craneObj.boomAngle ?? 45) * Math.PI / 180
+    const boomExtend = craneObj.boomExtend ?? 0.3
+    const loadLine = craneObj.loadLine ?? 8
+    const slew = (craneObj.slew ?? 0) * Math.PI / 180
+
+    // Base boom length (approximately 11m for LTM1055)
+    const baseBoomLength = 11
+    const maxExtension = 29 // max extended boom length
+    const boomLength = baseBoomLength + (maxExtension - baseBoomLength) * boomExtend
+
+    // Calculate boom tip position relative to crane
+    const boomTipX = Math.cos(boomAngle) * boomLength
+    const boomTipY = Math.sin(boomAngle) * boomLength + 3.5 // superstructure height
+
+    // Apply slew rotation
+    const slewedX = boomTipX * Math.cos(slew)
+    const slewedZ = boomTipX * Math.sin(slew)
+
+    // Add crane world position and subtract load line
+    return [
+      craneObj.position[0] + slewedX,
+      craneObj.position[1] + boomTipY - loadLine,
+      craneObj.position[2] + slewedZ
+    ]
+  }, [])
+
+  // Animation loop for lift simulation playback
+  useEffect(() => {
+    if (!isPlaying) return
+    let lastTime = performance.now()
+    let animationId: number
+
+    const animate = () => {
+      const now = performance.now()
+      const deltaTime = (now - lastTime) / 1000 * playbackSpeed
+      lastTime = now
+
+      const newTime = currentTime + deltaTime
+      setCurrentTime(newTime)
+
+      // Update crane states from keyframes
+      objects.forEach(obj => {
+        if (obj.type === 'ltm-1055-3d' || obj.type === 'ltm-1300-3d') {
+          const interpolatedState = getInterpolatedCraneState(obj.id, newTime)
+          if (interpolatedState) {
+            setObjects(prev => prev.map(o =>
+              o.id === obj.id ? {
+                ...o,
+                boomAngle: interpolatedState.boomAngle,
+                boomExtend: interpolatedState.boomExtend,
+                slew: interpolatedState.slew,
+                loadLine: interpolatedState.loadLine
+              } : o
+            ))
+          }
+
+          // Update physics for attached loads
+          if (enablePhysics) {
+            const hookPos = calculateHookPosition(obj)
+            const prevPos = prevHookPositionRef.current[obj.id] || hookPos
+            const hookAccel: [number, number, number] = [
+              (hookPos[0] - prevPos[0]) / deltaTime / deltaTime,
+              0,
+              (hookPos[2] - prevPos[2]) / deltaTime / deltaTime
+            ]
+            prevHookPositionRef.current[obj.id] = hookPos
+
+            loadObjects.filter(l => l.attachedToCraneId === obj.id).forEach(load => {
+              updateSwingPhysics(load.id, deltaTime, hookAccel)
+            })
+          }
+        }
+      })
+
+      animationId = requestAnimationFrame(animate)
+    }
+
+    animationId = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(animationId)
+  }, [isPlaying, currentTime, playbackSpeed, objects, setObjects, setCurrentTime, getInterpolatedCraneState, enablePhysics, loadObjects, updateSwingPhysics, calculateHookPosition])
 
   const extrudeSelectedFace = useCallback((distance: number) => {
     if (!selectedFace) return
@@ -3434,11 +3531,69 @@ export default function Modeler3D({ showGizmo = true }: { showGizmo?: boolean })
                     </button>
                   </div>
                 </div>
+
+                {/* Simulation Button */}
+                <div className="pt-2 border-t border-gray-700">
+                  <button
+                    onClick={() => setShowSimulationPanel(true)}
+                    className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-500 rounded text-xs font-medium flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Lift Simulation
+                  </button>
+                </div>
               </div>
             </div>
           </Html>
         )
       })()}
+
+      {/* ========== LIFT SIMULATION PANEL ========== */}
+      {showSimulationPanel && (
+        <Html fullscreen>
+          <div
+            data-ui-layer
+            className="absolute top-20 right-4 pointer-events-auto"
+            style={{ zIndex: 190 }}
+          >
+            <LiftSimulationPanel
+              selectedCraneId={selectedId}
+              craneState={(() => {
+                const selectedObj = objects.find(o => o.id === selectedId)
+                if (!selectedObj || (selectedObj.type !== 'ltm-1055-3d' && selectedObj.type !== 'ltm-1300-3d')) return null
+                return {
+                  boomAngle: (selectedObj as any).boomAngle ?? 45,
+                  boomExtend: (selectedObj as any).boomExtend ?? 0.3,
+                  slew: (selectedObj as any).slew ?? 0,
+                  loadLine: (selectedObj as any).loadLine ?? 8,
+                  position: selectedObj.position
+                }
+              })()}
+              onClose={() => setShowSimulationPanel(false)}
+            />
+          </div>
+        </Html>
+      )}
+
+      {/* ========== LOAD OBJECTS ========== */}
+      {loadObjects.map(load => {
+        // Find the crane this load is attached to
+        const attachedCrane = load.attachedToCraneId ? objects.find(o => o.id === load.attachedToCraneId) : null
+        const hookPosition = attachedCrane ? calculateHookPosition(attachedCrane) : undefined
+
+        return (
+          <LoadObject3D
+            key={load.id}
+            load={load}
+            hookPosition={hookPosition}
+            isSelected={selectedLoadId === load.id}
+            onClick={() => setSelectedLoadId(load.id)}
+          />
+        )
+      })}
 
       {/* Simple cursor dot only */}
       {showCrosshair && cursorPosition && drawTool && (
