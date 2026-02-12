@@ -204,7 +204,7 @@ export default function LTM1055Crane3D({
         </mesh>
 
         {/* ========== CRANE CAB ========== */}
-        <group position={[superLength / 2 + 0.2 * s, superHeight + 0.2 * s, superWidth / 2 - 0.6 * s]}>
+        <group position={[superLength / 2 - 0.8 * s, superHeight + 0.2 * s, -superWidth / 2 + 0.8 * s]}>
           {/* Cab body - larger and more prominent */}
           <mesh position={[0, 0.85 * s, 0]} castShadow receiveShadow>
             <boxGeometry args={[1.8 * s, 1.7 * s, 1.5 * s]} />
@@ -308,48 +308,30 @@ export default function LTM1055Crane3D({
 
           return (
             <>
-              {/* ========== LUFFING CYLINDER (properly connected) ========== */}
+              {/* ========== LUFFING CYLINDER (single piece from base to boom) ========== */}
               <group>
                 {/* Cylinder base anchor on superstructure */}
                 <mesh position={[cylBaseLocalX, cylBaseLocalY, 0]} castShadow>
-                  <boxGeometry args={[0.4 * s, 0.3 * s, 0.6 * s]} />
+                  <boxGeometry args={[0.5 * s, 0.4 * s, 0.8 * s]} />
                   <primitive object={matSteel} attach="material" />
                 </mesh>
-                {/* Cylinder base pivot pin */}
-                <mesh position={[cylBaseLocalX, cylBaseLocalY, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-                  <cylinderGeometry args={[0.08 * s, 0.08 * s, 0.8 * s, 12]} />
-                  <primitive object={matDarkGray} attach="material" />
-                </mesh>
-                {/* Main cylinder body */}
+                {/* Main cylinder - single piece connecting base to boom */}
                 <mesh
                   position={[
-                    cylBaseLocalX + Math.cos(cylAngle) * cylLength * 0.35,
-                    cylBaseLocalY + Math.sin(cylAngle) * cylLength * 0.35,
+                    (cylBaseLocalX + cylBoomAttachX) / 2,
+                    (cylBaseLocalY + cylBoomAttachY) / 2,
                     0
                   ]}
-                  rotation={[0, 0, cylAngle]}
+                  rotation={[0, 0, cylAngle - Math.PI / 2]}
                   castShadow
                 >
-                  <cylinderGeometry args={[0.15 * s, 0.18 * s, cylLength * 0.7, 16]} />
-                  <primitive object={matSteel} attach="material" />
-                </mesh>
-                {/* Piston rod */}
-                <mesh
-                  position={[
-                    cylBaseLocalX + Math.cos(cylAngle) * cylLength * 0.75,
-                    cylBaseLocalY + Math.sin(cylAngle) * cylLength * 0.75,
-                    0
-                  ]}
-                  rotation={[0, 0, cylAngle]}
-                  castShadow
-                >
-                  <cylinderGeometry args={[0.08 * s, 0.08 * s, cylLength * 0.5, 12]} />
+                  <cylinderGeometry args={[0.12 * s, 0.15 * s, cylLength, 16]} />
                   <primitive object={matSteel} attach="material" />
                 </mesh>
                 {/* Cylinder top anchor (attaches to boom) */}
-                <mesh position={[cylBoomAttachX, cylBoomAttachY, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-                  <cylinderGeometry args={[0.1 * s, 0.1 * s, 0.7 * s, 12]} />
-                  <primitive object={matDarkGray} attach="material" />
+                <mesh position={[cylBoomAttachX, cylBoomAttachY, 0]} castShadow>
+                  <boxGeometry args={[0.4 * s, 0.3 * s, 0.5 * s]} />
+                  <primitive object={matYellow} attach="material" />
                 </mesh>
               </group>
 
