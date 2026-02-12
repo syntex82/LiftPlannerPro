@@ -234,7 +234,7 @@ export default function CAD3DClient() {
         </div>
 
         {/* Right Side Panels */}
-        <div className="flex flex-col">
+        <div className="flex flex-col h-full">
           {/* Properties Panel */}
           <PropertiesPanel />
           {/* Layer management panel */}
